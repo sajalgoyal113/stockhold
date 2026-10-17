@@ -931,31 +931,41 @@ with tab_trends:
     </div>
     """)
     
-    hist_df = pd.DataFrame({
-        "Fiscal Year": data["trend_years"],
-        "Revenue (₹ Cr)": data["rev_history"],
-        "PAT (₹ Cr)": data["pat_history"],
-        "Operating Cash Flow (CFO)": data["cfo_history"],
-        "Free Cash Flow (FCF)": data["fcf_history"] if data["fcf_history"] else [0]*len(data["trend_years"])
-    })
-    
-    fig_hist = px.bar(
-        hist_df,
-        x="Fiscal Year",
-        y=["Revenue (₹ Cr)", "Operating Cash Flow (CFO)", "PAT (₹ Cr)"],
-        barmode="group",
-        color_discrete_sequence=["#00d2ff", "#00f5a0", "#818cf8"]
+    min_len = min(
+        len(data["trend_years"]),
+        len(data["rev_history"]) if data.get("rev_history") else 0,
+        len(data["pat_history"]) if data.get("pat_history") else 0,
+        len(data["cfo_history"]) if data.get("cfo_history") else 0
     )
-    fig_hist.update_layout(
-        height=380,
-        margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Plus Jakarta Sans", color="#94a3b8"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    st.plotly_chart(fig_hist, use_container_width=True)
-    st.dataframe(hist_df, use_container_width=True)
+    if min_len > 0:
+        fcf_vals = data["fcf_history"][-min_len:] if (data.get("fcf_history") and len(data["fcf_history"]) >= min_len) else [0.0]*min_len
+        hist_df = pd.DataFrame({
+            "Fiscal Year": data["trend_years"][-min_len:],
+            "Revenue (₹ Cr)": data["rev_history"][-min_len:],
+            "PAT (₹ Cr)": data["pat_history"][-min_len:],
+            "Operating Cash Flow (CFO)": data["cfo_history"][-min_len:],
+            "Free Cash Flow (FCF)": fcf_vals
+        })
+        
+        fig_hist = px.bar(
+            hist_df,
+            x="Fiscal Year",
+            y=["Revenue (₹ Cr)", "Operating Cash Flow (CFO)", "PAT (₹ Cr)"],
+            barmode="group",
+            color_discrete_sequence=["#00d2ff", "#00f5a0", "#818cf8"]
+        )
+        fig_hist.update_layout(
+            height=380,
+            margin=dict(l=10, r=10, t=20, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Plus Jakarta Sans", color="#94a3b8"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_hist, use_container_width=True)
+        st.dataframe(hist_df, use_container_width=True)
+    else:
+        st.info("Multi-year trajectory is being aggregated from the latest filings.")
 
 with tab_raw:
     st.html("""

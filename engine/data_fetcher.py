@@ -92,9 +92,22 @@ def fetch_company_data(ticker: str):
         try:
             r = requests.get(u, headers=HEADERS, timeout=12)
             if r.status_code == 200:
-                html = r.text
-                final_url = u
-                break
+                soup_check = BeautifulSoup(r.text, "html.parser")
+                has_valid_data = False
+                for li in soup_check.find_all("li", class_="flex"):
+                    name_span = li.find("span", class_="name")
+                    val_span = li.find("span", class_="value")
+                    if name_span and val_span and "Current Price" in name_span.text:
+                        if clean_num(val_span.text) > 0:
+                            has_valid_data = True
+                            break
+                if has_valid_data:
+                    html = r.text
+                    final_url = u
+                    break
+                elif not html:
+                    html = r.text
+                    final_url = u
         except Exception:
             continue
             
