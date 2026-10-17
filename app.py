@@ -322,13 +322,30 @@ with st.sidebar:
     st.caption("Calibrate forward growth vectors and probability allocations.")
     
     st.markdown("---")
-    st.markdown("**🤖 Google AI Studio Key (Optional)**")
-    api_key = st.text_input(
-        "API Key:",
-        type="password",
-        help="Get a 100% free API key from aistudio.google.com for live AI synthesis",
-        label_visibility="collapsed"
-    )
+    st.markdown("**🤖 Google AI Studio Engine**")
+    
+    # Auto-detect from Streamlit Secrets or Environment
+    secret_key = ""
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            secret_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+    if not secret_key:
+        import os
+        secret_key = os.environ.get("GEMINI_API_KEY", "")
+        
+    if secret_key:
+        api_key = secret_key
+        st.markdown("<div style='font-size: 0.8rem; color: #00f5a0; font-weight: 600; padding: 4px 8px; background: rgba(0,245,160,0.1); border-radius: 6px; border: 1px solid rgba(0,245,160,0.3);'>🟢 Live Gemini AI Active (via Secret)</div>", unsafe_allow_html=True)
+    else:
+        api_key = st.text_input(
+            "API Key:",
+            type="password",
+            placeholder="Paste GEMINI_API_KEY...",
+            help="Get a 100% free API key from aistudio.google.com for live AI synthesis",
+            label_visibility="collapsed"
+        )
 
     st.markdown("---")
     st.markdown("**📈 Compounding Assumptions**")
