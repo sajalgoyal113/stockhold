@@ -33,15 +33,55 @@ Generate a concise, institutional-grade strategic evaluation with the following 
 
 Format with crisp, scannable Markdown with clean bullet points and bold financial metrics.
 """
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(prompt)
-            if response and response.text:
-                return {
-                    "source": "Gemini 1.5 Flash (Live AI Analysis)",
-                    "content": response.text
-                }
-        except Exception as e:
-            # Fallback to deterministic synthesis if API call fails
+            # Dynamically discover active models authorized for this API key to avoid 404s
+            target_model = None
+            try:
+                for m in genai.list_models():
+                    if "generateContent" in m.supported_generation_methods:
+                        m_name = m.name.replace("models/", "")
+                        if "2.5-flash" in m_name:
+                            target_model = m_name
+                            break
+                        elif "2.0-flash" in m_name and not target_model:
+                            target_model = m_name
+                        elif "flash-latest" in m_name and not target_model:
+                            target_model = m_name
+                        elif "flash" in m_name and not target_model:
+                            target_model = m_name
+            except Exception:
+                pass
+
+            # Candidate model fallback chain
+            candidates = []
+            if target_model:
+                candidates.append(target_model)
+            candidates.extend([
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-flash-latest",
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash",
+                "gemini-pro"
+            ])
+            
+            # De-duplicate while preserving order
+            models_to_try = []
+            for c in candidates:
+                if c not in models_to_try:
+                    models_to_try.append(c)
+
+            for m_name in models_to_try:
+                try:
+                    model = genai.GenerativeModel(m_name)
+                    response = model.generate_content(prompt)
+                    if response and response.text:
+                        return {
+                            "source": f"Google Gemini ({m_name} Live AI)",
+                            "content": response.text
+                        }
+                except Exception:
+                    continue
+        except Exception:
             pass
 
     # Deterministic Institutional Fallback Synthesis
