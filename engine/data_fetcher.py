@@ -23,11 +23,18 @@ COMMON_ALIASES = {
     "POLICYBAZAAR": "POLICYBZR",
     "TATAMOTORS": "TMCV",
     "L&T": "LT",
-    "M&M": "M&M"
+    "M&M": "M&M",
+    "CYIENT DLM": "CYIENTDLM",
+    "CYIENT-DLM": "CYIENTDLM",
+    "CYIENT_DLM": "CYIENTDLM",
+    "IXIGO": "IXIGO",
+    "LE TRAVENUES": "IXIGO",
+    "LE TRAVENUES TECHNOLOGY": "IXIGO"
 }
 
 TOP_TRENDING_STOCKS = [
     {"ticker": "ETERNAL", "display": "ZOMATO", "sector": "Quick-Commerce"},
+    {"ticker": "CYIENTDLM", "display": "CYIENT DLM", "sector": "Aerospace EMS"},
     {"ticker": "COFORGE", "display": "COFORGE", "sector": "Enterprise IT"},
     {"ticker": "DIXON", "display": "DIXON TECH", "sector": "EMS & Mobile PLI"},
     {"ticker": "KAYNES", "display": "KAYNES TECH", "sector": "OSAT & Defense EMS"},
@@ -37,6 +44,7 @@ TOP_TRENDING_STOCKS = [
     {"ticker": "HAL", "display": "HAL", "sector": "Defense Aviation"},
     {"ticker": "BEL", "display": "BEL", "sector": "Defense Electronics"},
     {"ticker": "CDSL", "display": "CDSL", "sector": "Capital Markets"},
+    {"ticker": "IXIGO", "display": "IXIGO", "sector": "Travel Tech"},
     {"ticker": "ANGELONE", "display": "ANGEL ONE", "sector": "Fintech Brokerage"},
     {"ticker": "SUZLON", "display": "SUZLON", "sector": "Wind Energy Turnaround"},
     {"ticker": "TATAELXSI", "display": "TATA ELXSI", "sector": "Automotive Software"},
@@ -235,11 +243,16 @@ def fetch_company_data(ticker: str):
         # Shares count
         if cmp > 0 and mcap_cr > 0:
             shares_cr = mcap_cr / cmp
-            # TTM EPS based on current diluted share count:
-            ttm_eps = ttm_pat / shares_cr if shares_cr > 0 else ttm_eps_sum
         else:
             shares_cr = 0.0
-            ttm_eps = ttm_eps_sum
+
+        # Exact Rolling TTM EPS from last 4 reported quarters as mandated by GEMINI.md Rule 1
+        if len(last_4_eps) == 4 and ttm_eps_sum > 0:
+            ttm_eps = round(ttm_eps_sum, 2)
+        elif shares_cr > 0 and ttm_pat > 0:
+            ttm_eps = round(ttm_pat / shares_cr, 2)
+        else:
+            ttm_eps = round(ttm_eps_sum, 2)
     else:
         # Fallback to P&L TTM
         shares_cr = (mcap_cr / cmp) if cmp > 0 else 0.0
@@ -248,7 +261,9 @@ def fetch_company_data(ticker: str):
         ttm_sales = clean_num(pl_data.get("Sales", ["0"])[-1]) if "Sales" in pl_data else 0.0
 
     if ttm_eps <= 0 and pe > 0 and cmp > 0:
-        ttm_eps = cmp / pe
+        ttm_eps = round(cmp / pe, 2)
+    elif pe <= 0 and ttm_eps > 0 and cmp > 0:
+        pe = round(cmp / ttm_eps, 1)
 
     # 6. Extract 4-Year Trend Metrics for Forensics
     trend_years = pl_headers[-5:-1] if pl_headers and len(pl_headers) >= 5 else (pl_headers or ["FY23", "FY24", "FY25", "FY26"])
@@ -307,6 +322,7 @@ def fetch_company_data(ticker: str):
         "ttm_pat": ttm_pat,
         "ttm_sales": ttm_sales,
         "ttm_eps": round(ttm_eps, 2),
+        "ttm_eps_sum": round(ttm_eps_sum, 2) if (ttm_eps_sum is not None) else None,
         "last_4_quarters": last_4_quarters,
         "q_headers": q_headers,
         "q_data": q_data,

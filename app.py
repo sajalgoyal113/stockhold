@@ -363,6 +363,8 @@ with st.spinner(f"Analyzing institutional filings and concall disclosures for {t
         col_r1, col_r2 = st.columns([1, 1])
         if col_r1.button("🔄 Force Re-fetch Live Data"):
             st.cache_data.clear()
+            for k in list(st.session_state.keys()):
+                del st.session_state[k]
             st.rerun()
         st.stop()
 
@@ -425,16 +427,16 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=35, value=calibrated["base_cagr"], step=1, key=f"base_cagr_{ticker}") / 100.0
-    bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=50, value=calibrated["bull_cagr"], step=1, key=f"bull_cagr_{ticker}") / 100.0
+    base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=50, value=calibrated["base_cagr"], step=1, key=f"base_cagr_{ticker}") / 100.0
+    bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=60, value=calibrated["bull_cagr"], step=1, key=f"bull_cagr_{ticker}") / 100.0
 
     col_eg1, col_eg2 = st.columns(2)
     base_exit_g = col_eg1.number_input("Base Exit Growth (%):", value=float(calibrated["base_exit_g"]), step=1.0, key=f"base_eg_{ticker}") / 100.0
     bull_exit_g = col_eg2.number_input("Bull Exit Growth (%):", value=float(calibrated["bull_exit_g"]), step=1.0, key=f"bull_eg_{ticker}") / 100.0
 
     col_p1, col_p2 = st.columns(2)
-    base_peg = col_p1.number_input("Base PEG:", value=1.60, step=0.05, key=f"base_peg_{ticker}")
-    bull_peg = col_p2.number_input("Bull PEG:", value=1.85, step=0.05, key=f"bull_peg_{ticker}")
+    base_peg = col_p1.number_input("Base PEG:", value=float(calibrated.get("base_peg", 1.60)), step=0.05, key=f"base_peg_{ticker}")
+    bull_peg = col_p2.number_input("Bull PEG:", value=float(calibrated.get("bull_peg", 1.85)), step=0.05, key=f"bull_peg_{ticker}")
 
     prob_split = st.slider(
         "Base Case Probability Weight (%):",
@@ -446,8 +448,10 @@ with st.sidebar:
     bull_prob = (100 - prob_split) / 100.0
 
     st.markdown("---")
-    if st.button("🔄 Clear Cache & Refresh Data", use_container_width=True):
+    if st.button("🔄 Clear Cache & Reset Defaults", use_container_width=True):
         st.cache_data.clear()
+        for k in list(st.session_state.keys()):
+            del st.session_state[k]
         st.rerun()
 
 cmp = data["cmp"]
@@ -470,6 +474,11 @@ val_res = calculate_forward_pe_valuation(
     bull_peg=bull_peg,
     base_prob=base_prob,
     bull_prob=bull_prob,
+    base_reason=calibrated.get("base_reason"),
+    bull_reason=calibrated.get("bull_reason"),
+    dilution_pct_annual=calibrated.get("dilution", 0.0),
+    current_margin=calibrated.get("current_margin"),
+    target_margin_yr2=calibrated.get("target_margin_yr2"),
     regime_override=selected_regime_override,
     ticker=ticker
 )
@@ -849,14 +858,14 @@ with tab_matrix:
     with c1:
         st.markdown(f"""
         **Base Case Friction & Multiple Derating:**
-        * Incorporates discretionary budget slowdowns, milestone gate friction, or legacy margin capping.
+        * **Operational Rationale:** {val_res.get('base_reason', 'Incorporates discretionary budget slowdowns, milestone gate friction, or legacy margin capping.')}
         * Multiples compress from current **{pe:.1f}x** down to **{val_res['base_exit_pe']}x** on normalized terminal growth.
         * 2-Year Forward P/E at CMP: **{val_res['fwd_pe_base']}x** (< 50x hurdle {'✅ PASS' if val_res['pass_fwd_pe'] else '❌ FAIL'}).
         """)
     with c2:
         st.markdown(f"""
         **Bull Case Flawless Execution:**
-        * Flawless operational ramp across key accounts, sustained contract wins, and operating leverage.
+        * **Operational Rationale:** {val_res.get('bull_reason', 'Flawless operational ramp across key accounts, sustained contract wins, and operating leverage.')}
         * Exit P/E sustains at **{val_res['bull_exit_pe']}x** driven by continued growth visibility.
         * Mandated Bull Upside: **{'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']}%** (Hurdle >= 50% {'✅ PASS' if val_res['pass_upside'] else '❌ FAIL'}).
         """)
@@ -1055,9 +1064,9 @@ report_content = f"""```text
 
 --- UNDERLYING SCENARIO TARGET BREAKDOWN & EXPLANATION ---
 • Base Case Target ({val_res['base_prob']}% Prob):   ₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}%) | Exit P/E: {val_res['base_exit_pe']:.1f}x
-  Rationale: Execution friction, milestone delays, or margin compression.
+  Rationale: {val_res.get('base_reason', 'Execution friction, delayed milestone delivery, or moderate volume ramp')}
 • Bull Case Target ({val_res['bull_prob']}% Prob):   ₹{val_res['target_bull']:,.2f} ({'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']:.1f}%) | Exit P/E: {val_res['bull_exit_pe']:.1f}x
-  Rationale: Flawless execution, market share consolidation, and operating leverage.
+  Rationale: {val_res.get('bull_reason', 'Flawless execution, market share consolidation, and strong operational leverage')}
 ================================================================================
 ```
 

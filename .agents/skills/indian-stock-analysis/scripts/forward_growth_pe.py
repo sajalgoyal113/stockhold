@@ -400,67 +400,307 @@ if __name__ == "__main__":
         bull_pe=args.bull_pe
     )
 
+KNOWN_COMPANY_PROFILES = {
+    "ETERNAL": {
+        "base_cagr": 35, "bull_cagr": 42,
+        "base_exit_g": 28.0, "bull_exit_g": 35.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "dilution": 0.02,
+        "current_margin": 0.0064, "target_margin_yr2": 0.045,
+        "rationale": "Elite Founder-Led execution (Deepinder Goyal); consistently meets/beats aggressive guidance $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "Execution friction in dark store ramp; competitive pressure from Zepto/Swiggy capping net margin at 4.5%",
+        "bull_reason": "Blinkit scale economics, dark store density, and food delivery operating leverage driving net margin to 6.5%",
+        "is_platform": True
+    },
+    "CYIENTDLM": {
+        "base_cagr": 22, "bull_cagr": 32,
+        "base_exit_g": 20.0, "bull_exit_g": 25.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 65, "bull_prob": 35,
+        "rationale": "High customer concentration (Honeywell 40%+) & working capital intensity $\\implies$ 65% Base / 35% Bull margin-of-safety penalty (GEMINI.md Rule 6)",
+        "base_reason": "Aerospace box-build conversion lag, extended component validation cycles, and working capital bottlenecks",
+        "bull_reason": "Flawless execution of record ₹2,814 Cr backlog, Honeywell Micro VCS ramp, and margin expansion to 12.5%",
+        "is_platform": False
+    },
+    "IXIGO": {
+        "base_cagr": 16, "bull_cagr": 28,
+        "base_exit_g": 16.0, "bull_exit_g": 26.0,
+        "base_peg": 1.25, "bull_peg": 1.60,
+        "base_prob": 75, "bull_prob": 25,
+        "rationale": "High regulatory vulnerability and sovereign supplier trap (IRCTC dependency) $\\implies$ 75% Base / 25% Bull margin-of-safety dominance (GEMINI.md Rule 6)",
+        "base_reason": "Moderating railway/bus growth (~13-16%), ongoing take-rate headwinds in flights, and IRCTC policy risk",
+        "bull_reason": "Flawless execution: hotel segment explodes (3x GTV expansion), flight commissions stabilize, AbhiBus commands private bus market",
+        "is_platform": False
+    },
+    "DIXON": {
+        "base_cagr": 30, "bull_cagr": 40,
+        "base_exit_g": 25.0, "bull_exit_g": 32.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "rationale": "Elite Founder-Led execution (Atul Lall); dominant EMS market share and PLI compounding $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "Component localization delays, smartphone assembly margin competition, or supply chain bottlenecks",
+        "bull_reason": "Explosive smartphone export PLI ramp (Motorola/Xiaomi/Ismartu), IT hardware PLI scale, and OSAT integration",
+        "is_platform": False
+    },
+    "TRENT": {
+        "base_cagr": 28, "bull_cagr": 38,
+        "base_exit_g": 24.0, "bull_exit_g": 32.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "rationale": "Elite execution credibility; unparalleled fast-fashion supply chain dominance $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "Same-store sales growth (SSSG) moderation in mature Zudio clusters and tier-2 competitive discounting",
+        "bull_reason": "Hyper-accelerated Zudio store rollouts (200+ annually), Star Bazaar grocery turnaround, and international expansion",
+        "is_platform": False
+    },
+    "KAYNES": {
+        "base_cagr": 32, "bull_cagr": 42,
+        "base_exit_g": 26.0, "bull_exit_g": 34.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "rationale": "High-credibility specialized EMS & OSAT pioneer with massive order visibility $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "Sanand OSAT facility commercialization lag and aerospace component qualification lead-times",
+        "bull_reason": "Commercial operation of Sanand semiconductor OSAT, defense electronics localization, and multi-year export ramp",
+        "is_platform": False
+    },
+    "POLYCAB": {
+        "base_cagr": 20, "bull_cagr": 28,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "rationale": "Market-leading distribution moat & Project Leap delivery $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "Real estate construction cycle moderation and volatile copper/aluminum commodity raw material pass-through lags",
+        "bull_reason": "Project Leap distribution expansion, infrastructure capex tailwinds, and aggressive export penetration",
+        "is_platform": False
+    },
+    "HAL": {
+        "base_cagr": 18, "bull_cagr": 25,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Sovereign defense monopoly with multi-year order book visibility (5x+ revenue) $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "GE-404 engine supply chain bottlenecks and extended government milestone verification schedules",
+        "bull_reason": "Record ₹1.2 Lakh Cr defense backlog execution, Tejas Mk1A delivery ramp, and indigenous defense export breakthroughs",
+        "is_platform": False
+    },
+    "BEL": {
+        "base_cagr": 18, "bull_cagr": 25,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Contracted defense electronics monopoly with high margin resilience $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Electronic component procurement cycle elongation and lumpy quarterly milestone billings",
+        "bull_reason": "QRSAM, naval radar suites, electronic warfare systems rollout, and non-defense diversification",
+        "is_platform": False
+    },
+    "CDSL": {
+        "base_cagr": 22, "bull_cagr": 30,
+        "base_exit_g": 20.0, "bull_exit_g": 26.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Contracted duopoly with >70% active demat market share and zero credit risk $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Retail demat account additions cool off after market all-time highs; annual issuer fee growth moderates",
+        "bull_reason": "Systematic retail financialization, soaring transaction volumes, pledged share charges, and insurance repository scale",
+        "is_platform": False
+    },
+    "COFORGE": {
+        "base_cagr": 20, "bull_cagr": 26,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Consistent industry-leading execution with solid order intake $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Cigniti integration friction, discretionary BFS budget delays, and higher integration amortizations",
+        "bull_reason": "Synergies from Cigniti acquisition, $2B revenue run-rate milestone, and multi-year order intake records",
+        "is_platform": False
+    },
+    "NETWEB": {
+        "base_cagr": 35, "bull_cagr": 45,
+        "base_exit_g": 28.0, "bull_exit_g": 36.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 50, "bull_prob": 50,
+        "rationale": "Direct beneficiary of national AI computing infrastructure capex $\\implies$ 50/50 balanced weighting (GEMINI.md Rule 6)",
+        "base_reason": "GPU allocation bottlenecks from NVIDIA and lumpy enterprise AI capex disbursement cycles",
+        "bull_reason": "Explosive Sovereign AI cloud buildouts in India, NVIDIA partnership scale, and Tyrone AI server deployments",
+        "is_platform": False
+    },
+    "PERSISTENT": {
+        "base_cagr": 20, "bull_cagr": 27,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Tier-1 digital engineering compounder with robust deal-win momentum $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Tech vendor consolidation pressure and delayed enterprise software sales cycles",
+        "bull_reason": "Digital engineering leadership, healthcare/life sciences expansion, and GenAI client pilots conversion",
+        "is_platform": False
+    },
+    "KPITTECH": {
+        "base_cagr": 22, "bull_cagr": 30,
+        "base_exit_g": 20.0, "bull_exit_g": 26.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Pure-play mobility software specialist with deep OEM architecture integration $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Global OEM EV program delays and European automotive discretionary R&D budget pressures",
+        "bull_reason": "SDV (Software-Defined Vehicle) architectural shift, middleware leadership, and commercial vehicle electrification",
+        "is_platform": False
+    },
+    "TATAELXSI": {
+        "base_cagr": 18, "bull_cagr": 25,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Premium design-led ER&D leader with zero net debt and pristine ROE $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Media & telecom vertical headwinds and delayed design-to-production OEM signoffs",
+        "bull_reason": "Transportation SDV design wins, medical device software regulatory clearances, and design-led engineering moat",
+        "is_platform": False
+    },
+    "SUZLON": {
+        "base_cagr": 24, "bull_cagr": 35,
+        "base_exit_g": 20.0, "bull_exit_g": 26.0,
+        "base_peg": 1.50, "bull_peg": 1.75,
+        "base_prob": 65, "bull_prob": 35,
+        "rationale": "Turnaround wind OEM with massive cyclical order book but transmission infrastructure risks $\\implies$ 65/35 margin-of-safety allocation (GEMINI.md Rule 6)",
+        "base_reason": "Right-of-way and power grid evacuation infrastructure bottlenecks delaying wind farm project execution",
+        "bull_reason": "Clean balance sheet turnaround, commercial & industrial (C&I) order book surge (5+ GW), and 3.x MW turbine ramp",
+        "is_platform": False
+    },
+    "ANGELONE": {
+        "base_cagr": 22, "bull_cagr": 30,
+        "base_exit_g": 18.0, "bull_exit_g": 25.0,
+        "base_peg": 1.40, "bull_peg": 1.65,
+        "base_prob": 65, "bull_prob": 35,
+        "rationale": "Fintech brokerage with high ROE but elevated regulatory scrutiny on F&O derivatives $\\implies$ 65/35 margin-of-safety allocation (GEMINI.md Rule 6)",
+        "base_reason": "SEBI index derivatives regulations curbing retail F&O volume churn and raising compliance costs",
+        "bull_reason": "Aggressive market share capture in tier-2/3 cities, loan distribution, and wealth management platform monetization",
+        "is_platform": False
+    },
+    "PAYTM": {
+        "base_cagr": 22, "bull_cagr": 32,
+        "base_exit_g": 20.0, "bull_exit_g": 26.0,
+        "base_peg": 1.50, "bull_peg": 1.75,
+        "base_prob": 65, "bull_prob": 35,
+        "rationale": "High merchant distribution scale recovering from regulatory shocks $\\implies$ 65/35 margin-of-safety allocation (GEMINI.md Rule 6)",
+        "base_reason": "Merchant soundbox price competition and regulatory transition friction in payment partner banks",
+        "bull_reason": "Merchant device subscription lock-in, DLG loan distribution recovery, and cost rationalization driving operating EBITDA",
+        "is_platform": False
+    },
+    "POLICYBZR": {
+        "base_cagr": 24, "bull_cagr": 34,
+        "base_exit_g": 20.0, "bull_exit_g": 28.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 60, "bull_prob": 40,
+        "rationale": "Market-dominant insurtech platform with network scale $\\implies$ 60/40 balanced allocation (GEMINI.md Rule 6)",
+        "base_reason": "Health insurance premium inflation customer resistance and direct composite insurance license competition",
+        "bull_reason": "90%+ online insurance distribution monopoly, Paisabazaar credit turnaround, and operating leverage surge",
+        "is_platform": False
+    },
+    "JYOTICNC": {
+        "base_cagr": 25, "bull_cagr": 35,
+        "base_exit_g": 22.0, "bull_exit_g": 28.0,
+        "base_peg": 1.60, "bull_peg": 1.85,
+        "base_prob": 55, "bull_prob": 45,
+        "rationale": "Specialized 5-axis CNC machine tool import substitution leader with multi-year order book $\\implies$ 55/45 institutional standard (GEMINI.md Rule 6)",
+        "base_reason": "Extended customer installation and validation timelines for complex 5-axis aerospace machining centers",
+        "bull_reason": "Massive aerospace & defense import substitution demand, record order book execution, and debt elimination",
+        "is_platform": False
+    },
+    "PRESTIGE": {
+        "base_cagr": 20, "bull_cagr": 28,
+        "base_exit_g": 18.0, "bull_exit_g": 24.0,
+        "base_peg": 1.50, "bull_peg": 1.75,
+        "base_prob": 60, "bull_prob": 40,
+        "rationale": "Tier-1 pan-India real estate developer with robust pre-sales velocity $\\implies$ 60/40 institutional allocation (GEMINI.md Rule 6)",
+        "base_reason": "Municipal approval delays for major NCR/Mumbai township launches and residential mortgage rate sensitivities",
+        "bull_reason": "Record pre-sales booking milestones, aggressive pan-India expansion (NCR/Mumbai), and hospitality/retail REIT monetizations",
+        "is_platform": False
+    }
+}
+
 def calibrate_stock_parameters(company_data: dict) -> dict:
-    sales_3yr = company_data.get("sales_growth_3yr")
-    pat_3yr = company_data.get("profit_growth_3yr")
-    roe_3yr = company_data.get("roe_3yr")
-    
-    # 1. Base Case CAGR: Anchor realistically to recent momentum
-    if sales_3yr is not None and sales_3yr > 0:
-        if sales_3yr >= 50.0:
-            base_cagr = min(30, max(22, int(round(sales_3yr * 0.45))))
-        elif sales_3yr >= 30.0:
-            base_cagr = min(26, max(20, int(round(sales_3yr * 0.65))))
-        elif sales_3yr >= 20.0:
-            base_cagr = min(23, max(18, int(round(sales_3yr * 0.85))))
-        else:
-            base_cagr = max(14, min(20, int(round(sales_3yr))))
-    else:
-        rev_hist = company_data.get("rev_history", [])
-        if len(rev_hist) >= 2 and rev_hist[0] > 0 and rev_hist[-1] > rev_hist[0]:
-            n_yrs = len(rev_hist) - 1
-            calc_cagr = (math.pow(rev_hist[-1] / rev_hist[0], 1.0 / n_yrs) - 1.0) * 100
-            base_cagr = max(15, min(28, int(round(calc_cagr * 0.65))))
-        else:
-            base_cagr = 20
+    """
+    Calibrates growth, exit multiples, and dynamic probability split strictly matching GEMINI.md directives.
+    """
+    ticker = (company_data.get("ticker") or "").upper().replace(" ", "").replace("-", "")
+    if ticker in KNOWN_COMPANY_PROFILES:
+        profile = KNOWN_COMPANY_PROFILES[ticker].copy()
+        profile["bull_prob"] = 100 - profile["base_prob"]
+        return profile
 
-    # 2. Bull Case CAGR: typically +6% to +8% over Base Case
-    bull_cagr = min(45, base_cagr + (8 if (sales_3yr or base_cagr) >= 25 else 6))
+    sales_3yr = company_data.get("sales_growth_3yr") or 0.0
+    pat_3yr = company_data.get("profit_growth_3yr") or 0.0
+    roe_3yr = company_data.get("roe_3yr") or 0.0
+    roce = company_data.get("roce") or 0.0
+    debtor_days = company_data.get("latest_debtor_days") or 60.0
+    about = (company_data.get("about") or "").lower()
 
-    # 3. Base Exit Growth: anchored to ROE and terminal reinvestment rate
-    if roe_3yr is not None and roe_3yr > 0:
-        base_exit_g = min(20.0, max(14.0, round(roe_3yr * 0.6, 1)))
-    else:
-        base_exit_g = 16.0
-    bull_exit_g = min(25.0, round(base_exit_g * 1.3, 1))
-
-    # 4. Probability Weighting (calibrated to cash conversion & governance)
     cum_cfo = sum(company_data.get("cfo_history", []))
     cum_pat = sum(company_data.get("pat_history", []))
     cfo_pat_ratio = (cum_cfo / cum_pat) if cum_pat > 0 else 0.5
 
-    if cfo_pat_ratio >= 0.80 and (sales_3yr or base_cagr) >= 22:
+    # 1. Archetype 4: Sovereign Supplier / High Regulatory Vulnerability
+    is_sovereign_trap = any(w in about for w in ["irctc", "railway ticket", "sovereign", "concessionaire", "toll"])
+    if is_sovereign_trap:
+        base_cagr = 16
+        bull_cagr = 28
+        base_exit_g = 16.0
+        bull_exit_g = 26.0
+        base_peg = 1.25
+        bull_peg = 1.60
+        base_prob = 75
+        rationale = "High regulatory vulnerability or sovereign supplier trap $\\implies$ 75% Base / 25% Bull margin-of-safety dominance (GEMINI.md Archetype 4)"
+        base_reason = "Moderating top-line growth under supplier take-rate caps or regulatory intervention"
+        bull_reason = "Flawless category expansion, multi-modal market share capture, and high-margin ancillary revenue"
+
+    # 2. Archetype 1: Elite Execution & Secular Sunrise Compounder
+    elif (sales_3yr >= 25.0 or pat_3yr >= 25.0) and cfo_pat_ratio >= 0.70 and roce >= 18.0:
+        base_cagr = min(35, max(25, int(round(sales_3yr * 0.85)))) if sales_3yr > 0 else 25
+        bull_cagr = min(48, base_cagr + 10)
+        base_exit_g = min(28.0, max(22.0, round(base_cagr * 0.85, 1)))
+        bull_exit_g = min(36.0, max(28.0, round(bull_cagr * 0.85, 1)))
+        base_peg = 1.60
+        bull_peg = 1.85
         base_prob = 50
-        rationale = f"Elite execution & cash conversion (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 50/50 balanced weighting"
-    elif cfo_pat_ratio >= 0.50:
-        base_prob = 55
-        rationale = f"Solid operational delivery (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 55/45 institutional standard"
-    elif cfo_pat_ratio < 0.20:
+        rationale = f"Elite execution & cash conversion (CFO/PAT {cfo_pat_ratio:.1f}x, ROCE {roce:.0f}%) $\\implies$ 50/50 balanced weighting (GEMINI.md Archetype 1)"
+        base_reason = f"Execution friction, milestone delays, or temporary margin capping (CAGR {base_cagr}%)"
+        bull_reason = f"Flawless execution, market share consolidation, and strong operational leverage (CAGR {bull_cagr}%)"
+
+    # 3. Archetype 3: Working Capital Friction or Client Concentration Drag
+    elif cfo_pat_ratio < 0.40 or debtor_days > 130:
+        base_cagr = 22
+        bull_cagr = 32
+        base_exit_g = 20.0
+        bull_exit_g = 25.0
+        base_peg = 1.60
+        bull_peg = 1.85
         base_prob = 65
-        rationale = f"Working capital friction (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 65/35 margin-of-safety penalty"
+        rationale = f"Working capital friction (CFO/PAT {cfo_pat_ratio:.1f}x, Debtor Days {debtor_days:.0f}d) $\\implies$ 65/35 margin-of-safety allocation (GEMINI.md Archetype 3)"
+        base_reason = "Working capital conversion lag, delayed milestone delivery, or customer concentration deferrals"
+        bull_reason = "Order book conversion acceleration, working capital normalization, and operating leverage"
+
+    # 4. Archetype 2: Mature Contracted Oligopoly / Stable Sunrise Franchise
     else:
-        base_prob = 60
-        rationale = "Prudent institutional allocation"
+        base_cagr = min(25, max(20, int(round(sales_3yr * 0.9)))) if sales_3yr > 0 else 20
+        bull_cagr = base_cagr + 8
+        base_exit_g = min(22.0, max(18.0, round(base_cagr * 0.85, 1)))
+        bull_exit_g = min(28.0, max(22.0, round(bull_cagr * 0.85, 1)))
+        base_peg = 1.60
+        bull_peg = 1.85
+        base_prob = 55
+        rationale = "Mature contracted franchise with high operational stability $\\implies$ 55/45 institutional standard (GEMINI.md Archetype 2)"
+        base_reason = f"Steady-state volume compounding with legacy margin discipline (CAGR {base_cagr}%)"
+        bull_reason = f"Market share capture, capacity additions, and pricing power (CAGR {bull_cagr}%)"
 
     return {
         "base_cagr": base_cagr,
         "bull_cagr": bull_cagr,
         "base_exit_g": base_exit_g,
         "bull_exit_g": bull_exit_g,
-        "base_peg": 1.60,
-        "bull_peg": 1.85,
+        "base_peg": base_peg,
+        "bull_peg": bull_peg,
         "base_prob": base_prob,
         "bull_prob": 100 - base_prob,
         "cfo_pat_ratio": round(cfo_pat_ratio, 2),
-        "rationale": rationale
+        "rationale": rationale,
+        "base_reason": base_reason,
+        "bull_reason": bull_reason,
+        "is_platform": (company_data.get("ttm_pat", 0.0) / company_data.get("ttm_sales", 1.0) < 0.02) and (company_data.get("ttm_sales", 0.0) >= 1000.0)
     }
