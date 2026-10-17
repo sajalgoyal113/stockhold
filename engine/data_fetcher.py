@@ -17,8 +17,42 @@ def clean_num(val_str):
     except ValueError:
         return 0.0
 
+COMMON_ALIASES = {
+    "ZOMATO": "ETERNAL",
+    "ONE97": "PAYTM",
+    "POLICYBAZAAR": "POLICYBZR",
+    "TATAMOTORS": "TMCV",
+    "L&T": "LT",
+    "M&M": "M&M"
+}
+
+def resolve_screener_ticker(query: str) -> str:
+    cleaned = query.upper().strip()
+    if cleaned in COMMON_ALIASES:
+        return COMMON_ALIASES[cleaned]
+    # Check if direct request works
+    try:
+        r = requests.get(f"https://www.screener.in/company/{cleaned}/", headers=HEADERS, timeout=5)
+        if r.status_code == 200:
+            return cleaned
+    except Exception:
+        pass
+    # Try Screener Search API
+    try:
+        sr = requests.get(f"https://www.screener.in/api/company/search/?q={query}", headers=HEADERS, timeout=6)
+        if sr.status_code == 200:
+            results = sr.json()
+            if results and len(results) > 0:
+                url = results[0].get("url", "")
+                m = re.search(r"/company/([^/]+)/", url)
+                if m:
+                    return m.group(1).upper()
+    except Exception:
+        pass
+    return cleaned
+
 def fetch_company_data(ticker: str):
-    ticker = ticker.upper().strip()
+    ticker = resolve_screener_ticker(ticker)
     
     # Try consolidated first, fallback to standalone
     urls = [

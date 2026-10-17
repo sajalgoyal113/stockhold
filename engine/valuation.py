@@ -5,6 +5,9 @@ def calculate_forward_pe_valuation(
     cmp: float,
     mcap_cr: float,
     ttm_eps: float,
+    ttm_sales: float = 0.0,
+    ttm_pat: float = 0.0,
+    shares_cr: float = 0.0,
     base_cagr: float = 0.20,
     bull_cagr: float = 0.25,
     base_exit_growth: float = 0.16,
@@ -32,28 +35,72 @@ def calculate_forward_pe_valuation(
     last_reported_fy = running_fy - 1
     
     if is_h1:
-        regime = "H1 (Q1/Q2)"
+        regime_period = "H1 (Q1/Q2)"
         target_yr1_fy = f"FY{running_fy % 100}"
         target_yr2_fy = f"FY{(running_fy + 1) % 100}"
         comp_years_yr1 = 1
         comp_years_yr2 = 2
     else:
-        regime = "H2 (Q3/Q4 Roll-Forward)"
+        regime_period = "H2 (Q3/Q4 Roll-Forward)"
         target_yr1_fy = f"FY{(running_fy + 1) % 100}"
         target_yr2_fy = f"FY{(running_fy + 2) % 100}"
         comp_years_yr1 = 2
         comp_years_yr2 = 3
 
-    # Dynamic exit multiples
-    base_exit_pe = round(base_exit_growth * 100 * base_peg, 1)
-    bull_exit_pe = round(bull_exit_growth * 100 * bull_peg, 1)
-
-    # EPS projections
-    eps_base_yr1 = ttm_eps * math.pow(1 + base_cagr, comp_years_yr1)
-    eps_base_yr2 = ttm_eps * math.pow(1 + base_cagr, comp_years_yr2)
+    # Detect Regime: Regime 1 (Steady-State Margin) vs Regime 2 (Platform Operating Leverage)
+    npm = (ttm_pat / ttm_sales) if (ttm_sales > 0 and ttm_pat > 0) else 0.10
+    trailing_pe = (cmp / ttm_eps) if ttm_eps > 0 else 999.0
     
-    eps_bull_yr1 = ttm_eps * math.pow(1 + bull_cagr, comp_years_yr1)
-    eps_bull_yr2 = ttm_eps * math.pow(1 + bull_cagr, comp_years_yr2)
+    # If P/E > 80x or Net Profit Margin < 2.5%, company is in early-profitability / hyper-expansion phase
+    is_platform_compounder = (trailing_pe > 80.0 or npm < 0.025) and ttm_sales > 0
+    
+    if is_platform_compounder:
+        regime_model = "Regime 2: Platform Operating Leverage & Margin Expansion"
+        # In Regime 2, revenue compounds aggressively while net margins expand towards steady-state
+        rev_cagr_base = max(0.35, base_cagr * 1.6)
+        rev_cagr_bull = max(0.42, bull_cagr * 1.7)
+        
+        target_margin_base = max(0.045, min(0.065, npm * 4.0)) # Expands to 4.5% - 6.5% NPM
+        target_margin_bull = max(0.060, min(0.085, npm * 6.0)) # Expands to 6.0% - 8.5% NPM
+        
+        rev_base_yr1 = ttm_sales * math.pow(1 + rev_cagr_base, comp_years_yr1)
+        rev_base_yr2 = ttm_sales * math.pow(1 + rev_cagr_base, comp_years_yr2)
+        
+        rev_bull_yr1 = ttm_sales * math.pow(1 + rev_cagr_bull, comp_years_yr1)
+        rev_bull_yr2 = ttm_sales * math.pow(1 + rev_cagr_bull, comp_years_yr2)
+        
+        # Intermediate margin progression
+        margin_base_yr1 = npm + (target_margin_base - npm) * 0.5
+        margin_bull_yr1 = npm + (target_margin_bull - npm) * 0.5
+        
+        pat_base_yr1 = rev_base_yr1 * margin_base_yr1
+        pat_base_yr2 = rev_base_yr2 * target_margin_base
+        
+        pat_bull_yr1 = rev_bull_yr1 * margin_bull_yr1
+        pat_bull_yr2 = rev_bull_yr2 * target_margin_bull
+        
+        effective_shares = shares_cr if shares_cr > 0 else (mcap_cr / cmp if cmp > 0 else 1.0)
+        
+        eps_base_yr1 = pat_base_yr1 / effective_shares
+        eps_base_yr2 = pat_base_yr2 / effective_shares
+        
+        eps_bull_yr1 = pat_bull_yr1 / effective_shares
+        eps_bull_yr2 = pat_bull_yr2 / effective_shares
+        
+        # High-growth platform compounders warrant 45x - 60x exit multiples given 30%+ runway
+        base_exit_pe = max(45.0, round(base_exit_growth * 100 * max(1.8, base_peg), 1))
+        bull_exit_pe = max(60.0, round(bull_exit_growth * 100 * max(2.0, bull_peg), 1))
+        
+    else:
+        regime_model = "Regime 1: Steady-State Margin Growth"
+        base_exit_pe = round(base_exit_growth * 100 * base_peg, 1)
+        bull_exit_pe = round(bull_exit_growth * 100 * bull_peg, 1)
+
+        eps_base_yr1 = ttm_eps * math.pow(1 + base_cagr, comp_years_yr1)
+        eps_base_yr2 = ttm_eps * math.pow(1 + base_cagr, comp_years_yr2)
+        
+        eps_bull_yr1 = ttm_eps * math.pow(1 + bull_cagr, comp_years_yr1)
+        eps_bull_yr2 = ttm_eps * math.pow(1 + bull_cagr, comp_years_yr2)
 
     # Target Prices at 2-Year Horizon
     target_base = eps_base_yr2 * base_exit_pe
@@ -99,18 +146,20 @@ def calculate_forward_pe_valuation(
         verdict_color = "blue"
 
     # Buy trigger range
-    buy_low = target_base / (1.0 + 0.25)  # price giving 25% base cushion
-    buy_high = target_base / (1.0 + 0.10) # price giving 10% base cushion
+    buy_low = target_base / (1.0 + 0.25)
+    buy_high = target_base / (1.0 + 0.10)
 
     return {
-        "regime": regime,
+        "regime": regime_period,
+        "regime_model": regime_model,
+        "is_platform": is_platform_compounder,
         "base_fy": f"FY{last_reported_fy % 100}",
         "target_yr1_fy": target_yr1_fy,
         "target_yr2_fy": target_yr2_fy,
         "comp_years_yr1": comp_years_yr1,
         "comp_years_yr2": comp_years_yr2,
         "ttm_eps": ttm_eps,
-        "trailing_pe": cmp / ttm_eps if ttm_eps > 0 else 0.0,
+        "trailing_pe": trailing_pe,
         "base_cagr": base_cagr,
         "bull_cagr": bull_cagr,
         "base_exit_pe": base_exit_pe,

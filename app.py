@@ -389,6 +389,9 @@ val_res = calculate_forward_pe_valuation(
     cmp=cmp,
     mcap_cr=mcap,
     ttm_eps=ttm_eps,
+    ttm_sales=data.get("ttm_sales", 0.0),
+    ttm_pat=data.get("ttm_pat", 0.0),
+    shares_cr=data.get("shares_cr", 0.0),
     base_cagr=base_cagr,
     bull_cagr=bull_cagr,
     base_exit_growth=base_exit_g,
@@ -411,10 +414,22 @@ forensic_res = run_forensic_audit(
     ebit=data["ttm_pat"] * 1.3
 )
 
+# Normalize FCF for platform/expansion compounders
+latest_fcf = data["fcf_history"][-1] if data.get("fcf_history") else 0.0
+latest_cfo = data["cfo_history"][-1] if data.get("cfo_history") else 0.0
+if latest_fcf > 0:
+    base_fcf_input = latest_fcf
+elif latest_cfo > 0:
+    base_fcf_input = latest_cfo * 0.75
+elif data.get("ttm_pat", 0.0) > 0:
+    base_fcf_input = data["ttm_pat"] * 0.80
+else:
+    base_fcf_input = max(50.0, data.get("ttm_sales", 0.0) * 0.03)
+
 rev_dcf_res = run_reverse_dcf(
     cmp=cmp,
     mcap_cr=mcap,
-    fcf_0=data["fcf_history"][-1] if data["fcf_history"] else (data["cfo_history"][-1] * 0.7 if data["cfo_history"] else 100.0)
+    fcf_0=base_fcf_input
 )
 
 pill_map = {
@@ -479,7 +494,7 @@ card_html = f"""
 
     <div style="margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-tertiary); flex-wrap: wrap; gap: 8px;">
         <div>
-            Target Horizon: <b style="color: var(--text-secondary);">{val_res['regime']} ({val_res['base_fy']} Base &rarr; 1-Yr: {val_res['target_yr1_fy']} | 2-Yr: {val_res['target_yr2_fy']})</b>
+            Target Horizon: <b style="color: var(--text-secondary);">{val_res['regime']} ({val_res['base_fy']} Base &rarr; 1-Yr: {val_res['target_yr1_fy']} | 2-Yr: {val_res['target_yr2_fy']})</b> &bull; Engine: <span style="color: #a5b4fc; font-weight: 600;">{val_res['regime_model']}</span>
         </div>
         <div>
             Ideal Accumulation Zone: <b class="color-emerald">₹{val_res['buy_low']} – ₹{val_res['buy_high']}</b>
@@ -592,11 +607,14 @@ if not chart_df.empty:
         showlegend=False
     ))
     
-    # 5. Callout Badge Annotation (Positioned inside to the left with ax=-85 so it NEVER gets cut off)
+    ret_sign = '+' if val_res['total_expected_return_pct'] >= 0 else ''
+    ret_color = '#00f5a0' if val_res['total_expected_return_pct'] >= 0 else '#fb7185'
+    
+    # 5. Callout Badge Annotation (Positioned inside to the left with ax=-95 so it NEVER gets cut off)
     fig.add_annotation(
         x=dates_future[-1],
         y=expected_target,
-        text=f"<b>Expected Target: ₹{expected_target:,.0f}</b><br><span style='color: #00f5a0; font-weight: 700;'>+{val_res['total_expected_return_pct']:.1f}% ({val_res['target_yr2_fy']})</span>",
+        text=f"<b>Expected Target: ₹{expected_target:,.0f}</b><br><span style='color: {ret_color}; font-weight: 700;'>{ret_sign}{val_res['total_expected_return_pct']:.1f}% ({val_res['target_yr2_fy']})</span>",
         showarrow=True,
         arrowhead=2,
         arrowsize=1.2,

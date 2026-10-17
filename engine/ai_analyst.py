@@ -77,7 +77,7 @@ Format with crisp, scannable Markdown with clean bullet points and bold financia
 
 ### 4. Actionable Price Triggers & Kill-Switches
 
-* **Ideal Entry / Accumulation Zone**: **₹{valuation_result['buy_low']} – ₹{valuation_result['buy_high']}** (Where Base Case downside is protected $>15\%$ and Bull Case upside provides asymmetric payoff).
+* **Ideal Entry / Accumulation Zone**: **₹{valuation_result['buy_low']} – ₹{valuation_result['buy_high']}** (Where Base Case downside is protected $>15%$ and Bull Case upside provides asymmetric payoff).
 * **Kill Switch #1 (Growth Deceleration)**: Exit if quarterly YoY top-line growth decelerates below 12% for two consecutive quarters.
 * **Kill Switch #2 (Operating Margin Compression)**: Exit if EBITDA margin compresses by $>200$ bps organically due to unremunerative price wars.
 * **Kill Switch #3 (Working Capital Deterioration)**: Exit if Debtor Days / DSO expands by $>25$ days without corresponding revenue milestones or cash conversion.
