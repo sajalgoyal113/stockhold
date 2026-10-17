@@ -80,39 +80,42 @@ def resolve_screener_ticker(query: str) -> str:
 def fetch_company_data(ticker: str):
     ticker = resolve_screener_ticker(ticker)
     
-    # Try consolidated first, fallback to standalone
+    # Try consolidated and standalone URLs
     urls = [
         f"https://www.screener.in/company/{ticker}/consolidated/",
         f"https://www.screener.in/company/{ticker}/"
     ]
     
-    html = None
-    final_url = None
+    valid_candidates = []
     for u in urls:
         try:
             r = requests.get(u, headers=HEADERS, timeout=12)
             if r.status_code == 200:
                 soup_check = BeautifulSoup(r.text, "html.parser")
-                has_valid_data = False
                 for li in soup_check.find_all("li", class_="flex"):
                     name_span = li.find("span", class_="name")
                     val_span = li.find("span", class_="value")
                     if name_span and val_span and "Current Price" in name_span.text:
-                        if clean_num(val_span.text) > 0:
-                            has_valid_data = True
+                        p_val = clean_num(val_span.text)
+                        if p_val > 0:
+                            valid_candidates.append((u, r.text))
                             break
-                if has_valid_data:
-                    html = r.text
-                    final_url = u
-                    break
-                elif not html:
-                    html = r.text
-                    final_url = u
         except Exception:
             continue
             
+    # Prefer consolidated if available with valid price, else standalone
+    html = None
+    final_url = None
+    for u, page_html in valid_candidates:
+        if "/consolidated/" in u:
+            html = page_html
+            final_url = u
+            break
+    if not html and valid_candidates:
+        final_url, html = valid_candidates[0]
+
     if not html:
-        raise ValueError(f"Could not fetch data for ticker: {ticker} from Screener.in")
+        raise ValueError(f"Could not fetch valid financial data for ticker: {ticker} from Screener.in")
 
     soup = BeautifulSoup(html, "html.parser")
     

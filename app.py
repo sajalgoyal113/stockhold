@@ -391,15 +391,28 @@ with st.sidebar:
     bull_prob = (100 - prob_split) / 100.0
 
 # --- DATA FETCHING & PROCESSING ---
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def load_company(symbol: str):
-    return fetch_company_data(symbol)
+    company_data = fetch_company_data(symbol)
+    if not company_data or company_data.get("cmp", 0) <= 0:
+        raise ValueError(f"Invalid market data retrieved for {symbol}")
+    return company_data
+
+with st.sidebar:
+    st.markdown("---")
+    if st.button("🔄 Clear Cache & Refresh Data", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
 with st.spinner(f"Analyzing institutional filings and concall disclosures for {ticker}..."):
     try:
         data = load_company(ticker)
     except Exception as e:
-        st.error(f"Unable to load financial model for '{ticker}'. Please verify the NSE/BSE ticker symbol.")
+        st.error(f"⚠️ Unable to load financial model for '{ticker}'. This might happen due to temporary network timeouts or an unrecognized ticker.")
+        col_r1, col_r2 = st.columns([1, 1])
+        if col_r1.button("🔄 Force Re-fetch Live Data"):
+            st.cache_data.clear()
+            st.rerun()
         st.stop()
 
 cmp = data["cmp"]
