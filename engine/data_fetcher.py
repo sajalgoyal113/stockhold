@@ -179,6 +179,30 @@ def fetch_company_data(ticker: str):
     rat_headers, rat_data = parse_section_table("ratios")
     sh_headers, sh_data = parse_section_table("shareholding")
 
+    # 4b. Helper to parse Compounded Growth & ROE ranges tables
+    growth_ranges = {}
+    for r_table in soup.find_all("table", class_="ranges-table"):
+        th = r_table.find("th")
+        if not th:
+            continue
+        title = th.text.strip().lower()
+        for tr in r_table.find_all("tr"):
+            tds = tr.find_all("td")
+            if len(tds) >= 2:
+                k = tds[0].text.strip().lower()
+                val = clean_num(tds[1].text)
+                if "sales growth" in title:
+                    if "3 years" in k: growth_ranges["sales_growth_3yr"] = val
+                    elif "5 years" in k: growth_ranges["sales_growth_5yr"] = val
+                    elif "ttm" in k: growth_ranges["sales_growth_ttm"] = val
+                elif "profit growth" in title:
+                    if "3 years" in k: growth_ranges["profit_growth_3yr"] = val
+                    elif "5 years" in k: growth_ranges["profit_growth_5yr"] = val
+                    elif "ttm" in k: growth_ranges["profit_growth_ttm"] = val
+                elif "return on equity" in title:
+                    if "3 years" in k: growth_ranges["roe_3yr"] = val
+                    elif "last year" in k: growth_ranges["roe_last_yr"] = val
+
     # 5. Compute Rolling TTM EPS and PAT from last 4 reported quarters
     ttm_pat = 0.0
     ttm_sales = 0.0
@@ -303,5 +327,11 @@ def fetch_company_data(ticker: str):
         "fcf_history": fcf_history,
         "latest_debt": latest_debt,
         "latest_debtor_days": latest_debtor_days,
-        "chart_df": chart_df
+        "chart_df": chart_df,
+        "sales_growth_3yr": growth_ranges.get("sales_growth_3yr"),
+        "sales_growth_5yr": growth_ranges.get("sales_growth_5yr"),
+        "sales_growth_ttm": growth_ranges.get("sales_growth_ttm"),
+        "profit_growth_3yr": growth_ranges.get("profit_growth_3yr"),
+        "profit_growth_5yr": growth_ranges.get("profit_growth_5yr"),
+        "roe_3yr": growth_ranges.get("roe_3yr")
     }

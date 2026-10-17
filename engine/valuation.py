@@ -206,3 +206,68 @@ def calculate_forward_pe_valuation(
         "buy_low": round(buy_low, 1),
         "buy_high": round(buy_high, 1)
     }
+
+def calibrate_stock_parameters(company_data: dict) -> dict:
+    sales_3yr = company_data.get("sales_growth_3yr")
+    pat_3yr = company_data.get("profit_growth_3yr")
+    roe_3yr = company_data.get("roe_3yr")
+    
+    # 1. Base Case CAGR: Anchor realistically to recent momentum
+    if sales_3yr is not None and sales_3yr > 0:
+        if sales_3yr >= 50.0:
+            base_cagr = min(30, max(22, int(round(sales_3yr * 0.45))))
+        elif sales_3yr >= 30.0:
+            base_cagr = min(26, max(20, int(round(sales_3yr * 0.65))))
+        elif sales_3yr >= 20.0:
+            base_cagr = min(23, max(18, int(round(sales_3yr * 0.85))))
+        else:
+            base_cagr = max(14, min(20, int(round(sales_3yr))))
+    else:
+        rev_hist = company_data.get("rev_history", [])
+        if len(rev_hist) >= 2 and rev_hist[0] > 0 and rev_hist[-1] > rev_hist[0]:
+            n_yrs = len(rev_hist) - 1
+            calc_cagr = (math.pow(rev_hist[-1] / rev_hist[0], 1.0 / n_yrs) - 1.0) * 100
+            base_cagr = max(15, min(28, int(round(calc_cagr * 0.65))))
+        else:
+            base_cagr = 20
+
+    # 2. Bull Case CAGR: typically +6% to +8% over Base Case
+    bull_cagr = min(45, base_cagr + (8 if (sales_3yr or base_cagr) >= 25 else 6))
+
+    # 3. Base Exit Growth: anchored to ROE and terminal reinvestment rate
+    if roe_3yr is not None and roe_3yr > 0:
+        base_exit_g = min(20.0, max(14.0, round(roe_3yr * 0.6, 1)))
+    else:
+        base_exit_g = 16.0
+    bull_exit_g = min(25.0, round(base_exit_g * 1.3, 1))
+
+    # 4. Probability Weighting (calibrated to cash conversion & governance)
+    cum_cfo = sum(company_data.get("cfo_history", []))
+    cum_pat = sum(company_data.get("pat_history", []))
+    cfo_pat_ratio = (cum_cfo / cum_pat) if cum_pat > 0 else 0.5
+
+    if cfo_pat_ratio >= 0.80 and (sales_3yr or base_cagr) >= 22:
+        base_prob = 50
+        rationale = f"Elite execution & cash conversion (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 50/50 balanced weighting"
+    elif cfo_pat_ratio >= 0.50:
+        base_prob = 55
+        rationale = f"Solid operational delivery (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 55/45 institutional standard"
+    elif cfo_pat_ratio < 0.20:
+        base_prob = 65
+        rationale = f"Working capital friction (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 65/35 margin-of-safety penalty"
+    else:
+        base_prob = 60
+        rationale = "Prudent institutional allocation"
+
+    return {
+        "base_cagr": base_cagr,
+        "bull_cagr": bull_cagr,
+        "base_exit_g": base_exit_g,
+        "bull_exit_g": bull_exit_g,
+        "base_peg": 1.60,
+        "bull_peg": 1.85,
+        "base_prob": base_prob,
+        "bull_prob": 100 - base_prob,
+        "cfo_pat_ratio": round(cfo_pat_ratio, 2),
+        "rationale": rationale
+    }

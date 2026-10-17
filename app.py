@@ -6,7 +6,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 
 from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
-from engine.valuation import calculate_forward_pe_valuation
+from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
 from engine.forensics import run_forensic_audit
 from engine.reverse_dcf import run_reverse_dcf
 from engine.ai_analyst import generate_ai_analysis
@@ -338,6 +338,28 @@ ticker = (selected_chip if selected_chip else ticker_input).upper().strip()
 if st.query_params.get("ticker") != ticker:
     st.query_params["ticker"] = ticker
 
+# --- DATA FETCHING & PROCESSING ---
+@st.cache_data(ttl=1800, show_spinner=False)
+def load_company(symbol: str):
+    company_data = fetch_company_data(symbol)
+    if not company_data or company_data.get("cmp", 0) <= 0:
+        raise ValueError(f"Invalid market data retrieved for {symbol}")
+    return company_data
+
+with st.spinner(f"Analyzing institutional filings and concall disclosures for {ticker}..."):
+    try:
+        data = load_company(ticker)
+    except Exception as e:
+        st.error(f"⚠️ Unable to load financial model for '{ticker}'. This might happen due to temporary network timeouts or an unrecognized ticker.")
+        col_r1, col_r2 = st.columns([1, 1])
+        if col_r1.button("🔄 Force Re-fetch Live Data"):
+            st.cache_data.clear()
+            st.rerun()
+        st.stop()
+
+# Dynamically calibrate model parameters to the company's specific growth momentum & cash conversion
+calibrated = calibrate_stock_parameters(data)
+
 # --- SIDEBAR PARAMETERS ---
 with st.sidebar:
     st.markdown("### ⚙️ Analytical Tuning")
@@ -385,49 +407,39 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("**📈 Compounding Assumptions**")
-    base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=35, value=20, step=1) / 100.0
-    bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=50, value=25, step=1) / 100.0
+    st.markdown(f"""
+    <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.8rem; line-height: 1.4;">
+        <b style="color: #a5b4fc;">✨ Dynamic Calibration ({data['ticker']}):</b><br>
+        <span style="color: #94a3b8;">{calibrated['rationale']}</span><br>
+        <span style="color: #cbd5e1;">• 3-Yr Sales CAGR: <b>{data.get('sales_growth_3yr') if data.get('sales_growth_3yr') is not None else 'N/A'}%</b></span><br>
+        <span style="color: #cbd5e1;">• 3-Yr Profit CAGR: <b>{data.get('profit_growth_3yr') if data.get('profit_growth_3yr') is not None else 'N/A'}%</b></span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=35, value=calibrated["base_cagr"], step=1, key=f"base_cagr_{ticker}") / 100.0
+    bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=50, value=calibrated["bull_cagr"], step=1, key=f"bull_cagr_{ticker}") / 100.0
 
     col_eg1, col_eg2 = st.columns(2)
-    base_exit_g = col_eg1.number_input("Base Exit Growth (%):", value=16.0, step=1.0) / 100.0
-    bull_exit_g = col_eg2.number_input("Bull Exit Growth (%):", value=22.0, step=1.0) / 100.0
+    base_exit_g = col_eg1.number_input("Base Exit Growth (%):", value=float(calibrated["base_exit_g"]), step=1.0, key=f"base_eg_{ticker}") / 100.0
+    bull_exit_g = col_eg2.number_input("Bull Exit Growth (%):", value=float(calibrated["bull_exit_g"]), step=1.0, key=f"bull_eg_{ticker}") / 100.0
 
     col_p1, col_p2 = st.columns(2)
-    base_peg = col_p1.number_input("Base PEG:", value=1.60, step=0.05)
-    bull_peg = col_p2.number_input("Bull PEG:", value=1.85, step=0.05)
+    base_peg = col_p1.number_input("Base PEG:", value=1.60, step=0.05, key=f"base_peg_{ticker}")
+    bull_peg = col_p2.number_input("Bull PEG:", value=1.85, step=0.05, key=f"bull_peg_{ticker}")
 
     prob_split = st.slider(
         "Base Case Probability Weight (%):",
-        min_value=20, max_value=80, value=55, step=5,
-        help="Calibrated to founder credibility, moat defensibility, and guidance track record."
+        min_value=20, max_value=80, value=calibrated["base_prob"], step=5,
+        help="Calibrated dynamically to founder credibility, cash flow hygiene (CFO/PAT), and guidance track record.",
+        key=f"prob_{ticker}"
     )
     base_prob = prob_split / 100.0
     bull_prob = (100 - prob_split) / 100.0
 
-# --- DATA FETCHING & PROCESSING ---
-@st.cache_data(ttl=1800, show_spinner=False)
-def load_company(symbol: str):
-    company_data = fetch_company_data(symbol)
-    if not company_data or company_data.get("cmp", 0) <= 0:
-        raise ValueError(f"Invalid market data retrieved for {symbol}")
-    return company_data
-
-with st.sidebar:
     st.markdown("---")
     if st.button("🔄 Clear Cache & Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-
-with st.spinner(f"Analyzing institutional filings and concall disclosures for {ticker}..."):
-    try:
-        data = load_company(ticker)
-    except Exception as e:
-        st.error(f"⚠️ Unable to load financial model for '{ticker}'. This might happen due to temporary network timeouts or an unrecognized ticker.")
-        col_r1, col_r2 = st.columns([1, 1])
-        if col_r1.button("🔄 Force Re-fetch Live Data"):
-            st.cache_data.clear()
-            st.rerun()
-        st.stop()
 
 cmp = data["cmp"]
 mcap = data["mcap_cr"]
