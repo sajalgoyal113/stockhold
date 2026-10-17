@@ -297,9 +297,16 @@ st.html("""
 </div>
 """)
 
+# --- URL QUERY PARAMS FOR DIRECT SHAREABLE LINKS & SEO ---
+query_ticker = st.query_params.get("ticker", "").strip().upper()
+if not query_ticker:
+    query_ticker = st.query_params.get("stock", "").strip().upper()
+
+default_val = query_ticker if query_ticker else "COFORGE"
+
 ticker_input = st.text_input(
     "Search any Indian Stock:",
-    value="COFORGE",
+    value=default_val,
     placeholder="Search ticker, e.g. COFORGE, DIXON, KAYNES, TRENT, ZOMATO...",
     label_visibility="collapsed"
 )
@@ -315,6 +322,10 @@ if chip_cols[4].button("TRENT"): selected_chip = "TRENT"
 if chip_cols[5].button("ZOMATO"): selected_chip = "ZOMATO"
 
 ticker = (selected_chip if selected_chip else ticker_input).upper().strip()
+
+# Sync active ticker to browser URL query param for shareability and Googlebot indexing
+if st.query_params.get("ticker") != ticker:
+    st.query_params["ticker"] = ticker
 
 # --- SIDEBAR PARAMETERS ---
 with st.sidebar:
@@ -441,6 +452,34 @@ pill_map = {
 pill_cls = pill_map.get(val_res["verdict_color"], "pill-blue")
 
 clean_about = data['about'].replace("[1]", "").replace("[2]", "").replace("[3]", "").replace("  ", " ").strip()
+
+# --- PROGRAMMATIC SEO METADATA & SCHEMA.ORG STRUCTURED DATA ---
+seo_desc = f"{data['name']} ({ticker}) 2-Year Target Price ₹{val_res['expected_target']:,.0f} (+{val_res['total_expected_return_pct']:.1f}% Upside). Comprehensive institutional forward P/E valuation, forensic cash conversion, 7 Powers moat audit, and reverse DCF."
+st.html(f"""
+<head>
+    <title>{data['name']} ({ticker}) Stock Analysis & 2-Yr Target Price | StockHold</title>
+    <meta name="description" content="{seo_desc}">
+    <meta name="keywords" content="{ticker} stock analysis, {ticker} share price target, {data['name']} fair value, {ticker} P/E ratio, {ticker} reverse DCF, Indian stock research">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{data['name']} ({ticker}) Target Price ₹{val_res['expected_target']:,.0f} | StockHold">
+    <meta property="og:description" content="{seo_desc}">
+    <meta property="og:url" content="https://stockhold.streamlit.app/?ticker={ticker}">
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "FinancialProduct",
+      "name": "{data['name']} ({ticker}) Equity Research & Target Price",
+      "description": "{seo_desc}",
+      "category": "Equity Research",
+      "provider": {{
+        "@type": "Organization",
+        "name": "StockHold",
+        "url": "https://stockhold.streamlit.app"
+      }}
+    }}
+    </script>
+</head>
+""")
 
 # --- HERO VALUATION SCORECARD (RENDERED VIA st.html FOR ZERO CODE BLOCKS) ---
 card_html = f"""
@@ -921,3 +960,27 @@ st.download_button(
     file_name=f"{ticker}_StockHold_research_dossier.md",
     mime="text/markdown"
 )
+
+# --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
+st.html("""
+<div class="glass-card" style="margin-top: 40px; border-top: 1px solid var(--border-subtle); padding: 24px; text-align: center;">
+    <div style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
+        Institutional Indian Equities Coverage (NSE / BSE)
+    </div>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
+        <a href="/?ticker=COFORGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Coforge Valuation</a>
+        <a href="/?ticker=ETERNAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Zomato / Eternal Target</a>
+        <a href="/?ticker=DIXON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Dixon Technologies Analysis</a>
+        <a href="/?ticker=KAYNES" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Kaynes Technology Target</a>
+        <a href="/?ticker=TRENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Trent Fair Value</a>
+        <a href="/?ticker=TATAMOTORS" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Motors Forecast</a>
+        <a href="/?ticker=POLYCAB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Polycab India Valuation</a>
+        <a href="/?ticker=HAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Hindustan Aeronautics Moat</a>
+        <a href="/?ticker=BEL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Bharat Electronics Target</a>
+        <a href="/?ticker=PERSISTENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Persistent Systems Research</a>
+    </div>
+    <div style="margin-top: 18px; font-size: 0.78rem; color: #64748b;">
+        © 2026 StockHold &bull; Institutional AI Equity Research & Valuation Engine for Indian Equities.
+    </div>
+</div>
+""")
