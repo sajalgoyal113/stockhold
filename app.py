@@ -285,7 +285,7 @@ st.html("""
     </div>
     <div class="brand-badge">
         <div class="live-dot"></div>
-        <span>INSTITUTIONAL AI RESEARCH</span>
+        <span>INSTITUTIONAL AI RESEARCH • v2.6 LIVE</span>
     </div>
 </div>
 """)
