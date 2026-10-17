@@ -5,17 +5,18 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 
-from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
-from engine.valuation import calculate_forward_pe_valuation
+import importlib
+import inspect
+import engine.data_fetcher
+import engine.valuation
 try:
-    from engine.valuation import calibrate_stock_parameters
-except ImportError:
-    def calibrate_stock_parameters(data):
-        return {
-            "base_cagr": 20, "bull_cagr": 25, "base_exit_g": 16.0, "bull_exit_g": 22.0,
-            "base_peg": 1.60, "bull_peg": 1.85, "base_prob": 55, "bull_prob": 45,
-            "cfo_pat_ratio": 0.5, "rationale": "Standard institutional calibration"
-        }
+    importlib.reload(engine.data_fetcher)
+    importlib.reload(engine.valuation)
+except Exception:
+    pass
+
+from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
+from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
 from engine.forensics import run_forensic_audit
 from engine.reverse_dcf import run_reverse_dcf
 from engine.ai_analyst import generate_ai_analysis
@@ -459,29 +460,43 @@ mcap = data["mcap_cr"]
 ttm_eps = data["ttm_eps"]
 pe = data["pe"]
 
-val_res = calculate_forward_pe_valuation(
-    cmp=cmp,
-    mcap_cr=mcap,
-    ttm_eps=ttm_eps,
-    ttm_sales=data.get("ttm_sales", 0.0),
-    ttm_pat=data.get("ttm_pat", 0.0),
-    shares_cr=data.get("shares_cr", 0.0),
-    base_cagr=base_cagr,
-    bull_cagr=bull_cagr,
-    base_exit_growth=base_exit_g,
-    bull_exit_growth=bull_exit_g,
-    base_peg=base_peg,
-    bull_peg=bull_peg,
-    base_prob=base_prob,
-    bull_prob=bull_prob,
-    base_reason=calibrated.get("base_reason"),
-    bull_reason=calibrated.get("bull_reason"),
-    dilution_pct_annual=calibrated.get("dilution", 0.0),
-    current_margin=calibrated.get("current_margin"),
-    target_margin_yr2=calibrated.get("target_margin_yr2"),
-    regime_override=selected_regime_override,
-    ticker=ticker
-)
+val_params = {
+    "cmp": cmp,
+    "mcap_cr": mcap,
+    "ttm_eps": ttm_eps,
+    "ttm_sales": data.get("ttm_sales", 0.0),
+    "ttm_pat": data.get("ttm_pat", 0.0),
+    "shares_cr": data.get("shares_cr", 0.0),
+    "base_cagr": base_cagr,
+    "bull_cagr": bull_cagr,
+    "base_exit_growth": base_exit_g,
+    "bull_exit_growth": bull_exit_g,
+    "base_peg": base_peg,
+    "bull_peg": bull_peg,
+    "base_prob": base_prob,
+    "bull_prob": bull_prob,
+    "base_reason": calibrated.get("base_reason"),
+    "bull_reason": calibrated.get("bull_reason"),
+    "dilution_pct_annual": calibrated.get("dilution", 0.0),
+    "current_margin": calibrated.get("current_margin"),
+    "target_margin_yr2": calibrated.get("target_margin_yr2"),
+    "regime_override": selected_regime_override,
+    "ticker": ticker
+}
+
+# Defensive signature check to guarantee zero runtime TypeError on hot-reloads
+sig = inspect.signature(calculate_forward_pe_valuation)
+has_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+if not has_var_kw:
+    val_params = {k: v for k, v in val_params.items() if k in sig.parameters}
+
+val_res = calculate_forward_pe_valuation(**val_params)
+
+# Guarantee fallback defaults if older cached version returned
+if "base_reason" not in val_res:
+    val_res["base_reason"] = calibrated.get("base_reason", "Execution friction, delayed milestone delivery, or moderate volume ramp")
+if "bull_reason" not in val_res:
+    val_res["bull_reason"] = calibrated.get("bull_reason", "Flawless execution, market share consolidation, and strong operational leverage")
 
 forensic_res = run_forensic_audit(
     rev_history=data["rev_history"],

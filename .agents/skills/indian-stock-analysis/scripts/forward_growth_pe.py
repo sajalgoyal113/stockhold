@@ -98,7 +98,8 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
                              target_eps_yr2=None, rev_cagr=None,
                              current_margin=None, target_margin_yr2=None,
                              as_of_date=None, half_override=None, fy_override=None,
-                             base_pe=None, bull_pe=None):
+                             base_pe=None, bull_pe=None,
+                             **kwargs):
     """
     Projects EPS for FY+1 and FY+2 across Base and Bull scenarios with dynamic exit multiples.
     """
