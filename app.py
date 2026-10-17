@@ -607,8 +607,8 @@ card_html = f"""
         <div class="metric-box" style="border-color: rgba(0, 245, 160, 0.4); background: rgba(0, 245, 160, 0.04);">
             <div class="metric-title" style="color: #6ee7b7;">Bull Case ({val_res['bull_prob']}% Prob)</div>
             <div class="metric-value color-emerald">₹{val_res['target_bull']:,.2f}</div>
-            <div class="metric-caption color-emerald">
-                +{val_res['return_bull_pct']:.1f}% &bull; Exit P/E: {val_res['bull_exit_pe']:.1f}x
+            <div class="metric-caption {'color-emerald' if val_res['return_bull_pct']>=0 else 'color-rose'}">
+                {'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']:.1f}% &bull; Exit P/E: {val_res['bull_exit_pe']:.1f}x
             </div>
         </div>
     </div>
@@ -817,8 +817,8 @@ with tab_matrix:
             "Exit P/E": f"{val_res['bull_exit_pe']}x",
             f"FY+2 EPS ({val_res['target_yr2_fy']})": f"₹{val_res['eps_bull_yr2']}",
             "Target Price": f"₹{val_res['target_bull']:,.2f}",
-            "Total Return": f"+{val_res['return_bull_pct']}%",
-            "Annualized CAGR": f"+{val_res['cagr_bull']}%"
+            "Total Return": f"{'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']}%",
+            "Annualized CAGR": f"{'+' if val_res['cagr_bull']>=0 else ''}{val_res['cagr_bull']}%"
         }
     ])
     st.table(matrix_df)
@@ -836,7 +836,7 @@ with tab_matrix:
         **Bull Case Flawless Execution:**
         * Flawless operational ramp across key accounts, sustained contract wins, and operating leverage.
         * Exit P/E sustains at **{val_res['bull_exit_pe']}x** driven by continued growth visibility.
-        * Mandated Bull Upside: **+{val_res['return_bull_pct']}%** (Hurdle >= 50% {'✅ PASS' if val_res['pass_upside'] else '❌ FAIL'}).
+        * Mandated Bull Upside: **{'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']}%** (Hurdle >= 50% {'✅ PASS' if val_res['pass_upside'] else '❌ FAIL'}).
         """)
 
     st.markdown("---")
@@ -871,7 +871,7 @@ with tab_matrix:
             <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
                 <b style="color: #6ee7b7;">What is the Bull Case vs Base Case Target?</b>
                 <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
-                    <b>Bull Case:</b> <span class="color-emerald">₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}%)</span> at {val_res['bull_exit_pe']}x exit P/E.<br>
+                    <b>Bull Case:</b> <span class="{'color-emerald' if val_res['return_bull_pct']>=0 else 'color-rose'}">₹{val_res['target_bull']:,.2f} ({'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']:.1f}%)</span> at {val_res['bull_exit_pe']}x exit P/E.<br>
                     <b>Base Case:</b> <span>₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}%)</span> at {val_res['base_exit_pe']}x exit P/E.
                 </p>
             </div>
@@ -1034,7 +1034,7 @@ report_content = f"""```text
 --- UNDERLYING SCENARIO TARGET BREAKDOWN & EXPLANATION ---
 • Base Case Target ({val_res['base_prob']}% Prob):   ₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}%) | Exit P/E: {val_res['base_exit_pe']:.1f}x
   Rationale: Execution friction, milestone delays, or margin compression.
-• Bull Case Target ({val_res['bull_prob']}% Prob):   ₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}%) | Exit P/E: {val_res['bull_exit_pe']:.1f}x
+• Bull Case Target ({val_res['bull_prob']}% Prob):   ₹{val_res['target_bull']:,.2f} ({'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']:.1f}%) | Exit P/E: {val_res['bull_exit_pe']:.1f}x
   Rationale: Flawless execution, market share consolidation, and operating leverage.
 ================================================================================
 ```
@@ -1070,7 +1070,7 @@ report_content = f"""```text
 | Scenario | Horizon Net CAGR | End Growth | Exit P/E | Projected FY+2 EPS ({val_res['target_yr2_fy']}) | Expected Target Price (₹) | Total Return (%) | Annualized CAGR (%) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Base Case ({val_res['base_prob']}%)** | {val_res['base_cagr']*100:.1f}% | {base_exit_g*100:.1f}% | **{val_res['base_exit_pe']}x** | **₹{val_res['eps_base_yr2']}** | **₹{val_res['target_base']:,.2f}** | **{'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']}%** | **{'+' if val_res['cagr_base']>=0 else ''}{val_res['cagr_base']}%** |
-| **Bull Case ({val_res['bull_prob']}%)** | {val_res['bull_cagr']*100:.1f}% | {bull_exit_g*100:.1f}% | **{val_res['bull_exit_pe']}x** | **₹{val_res['eps_bull_yr2']}** | **₹{val_res['target_bull']:,.2f}** | **+{val_res['return_bull_pct']}%** | **+{val_res['cagr_bull']}%** |
+| **Bull Case ({val_res['bull_prob']}%)** | {val_res['bull_cagr']*100:.1f}% | {bull_exit_g*100:.1f}% | **{val_res['bull_exit_pe']}x** | **₹{val_res['eps_bull_yr2']}** | **₹{val_res['target_bull']:,.2f}** | **{'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']}%** | **{'+' if val_res['cagr_bull']>=0 else ''}{val_res['cagr_bull']}%** |
 
 * **Ideal Accumulation Corridor:** **₹{val_res['buy_low']} – ₹{val_res['buy_high']}**
 * **Reverse DCF Implied 10-Yr FCF CAGR:** **{rev_dcf_res['implied_cagr']}% p.a.** (Market Expectation: {rev_dcf_res['assessment']})
