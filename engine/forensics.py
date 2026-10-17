@@ -1,4 +1,27 @@
-import math
+"""
+engine/forensics.py - Bridge to Master Forensic Accounting Engine
+
+MASTER SOURCE OF TRUTH: .agents/skills/indian-stock-analysis/scripts/forensic_audit.py
+This module delegates core forensic calculations (CFO/PAT conversion reality,
+Altman Z''-Score for emerging markets) directly to the institutional skill scripts.
+"""
+
+import os
+import sys
+
+# Resolve path to skill scripts
+_SKILL_SCRIPTS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "indian-stock-analysis", "scripts")
+)
+if _SKILL_SCRIPTS_PATH not in sys.path:
+    sys.path.insert(0, _SKILL_SCRIPTS_PATH)
+
+try:
+    from forensic_audit import compute_cfo_pat_ratio, evaluate_altman_z_em
+except ImportError:
+    compute_cfo_pat_ratio = None
+    evaluate_altman_z_em = None
+
 
 def run_forensic_audit(
     rev_history: list,
@@ -11,20 +34,26 @@ def run_forensic_audit(
     total_assets: float = 0.0,
     ebit: float = 0.0,
     promoter_pledge_pct: float = 0.0
-):
-    # 1. Cash flow conversion
-    cum_cfo = sum(cfo_history) if cfo_history else 0.0
-    cum_pat = sum(pat_history) if pat_history else 0.0
-    cum_cfo_pat_ratio = (cum_cfo / cum_pat) if cum_pat > 0 else 0.0
-    
+) -> dict:
+    # 1. Cash flow conversion via master skill function
+    if compute_cfo_pat_ratio is not None and cfo_history and pat_history:
+        _, cum_cfo_pat_ratio, cum_cfo, cum_pat = compute_cfo_pat_ratio(cfo_history, pat_history)
+    else:
+        cum_cfo = sum(cfo_history) if cfo_history else 0.0
+        cum_pat = sum(pat_history) if pat_history else 0.0
+        cum_cfo_pat_ratio = (cum_cfo / cum_pat) if cum_pat > 0 else 0.0
+
     if cum_cfo_pat_ratio >= 1.0:
         cfo_status = "🟢 PRISTINE (>1.0x)"
         cfo_color = "green"
     elif cum_cfo_pat_ratio >= 0.8:
         cfo_status = "🟢 HEALTHY (0.8x - 1.0x)"
         cfo_color = "green"
+    elif cum_cfo_pat_ratio >= 0.5:
+        cfo_status = "🟡 CAUTION (0.5x - 0.8x)"
+        cfo_color = "orange"
     else:
-        cfo_status = "🔴 STRAINED (<0.8x)"
+        cfo_status = "🔴 STRAINED (<0.5x)"
         cfo_color = "red"
 
     # 2. Receivables growth vs Sales growth
@@ -45,28 +74,36 @@ def run_forensic_audit(
         debt_status = "🔴 LEVERAGED (>0.7x)"
         debt_color = "red"
 
-    # 4. Altman Z''-Score (Emerging Markets)
-    # Z'' = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
-    if total_assets > 0:
-        x1 = max(0.1, min(0.4, (total_assets * 0.2) / total_assets)) # approx WC
-        x2 = max(0.1, min(0.6, (net_worth * 0.8) / total_assets))     # approx Retained Earnings
-        x3 = max(0.05, min(0.3, ebit / total_assets)) if ebit > 0 else 0.1
-        total_liab = max(1.0, total_assets - net_worth) if total_assets > net_worth else total_assets * 0.4
-        x4 = net_worth / total_liab if total_liab > 0 else 1.0
-        
-        altman_z = (6.56 * x1) + (3.26 * x2) + (6.72 * x3) + (1.05 * x4)
+    # 4. Altman Z''-Score (Emerging Markets) via master skill function
+    if evaluate_altman_z_em is not None and total_assets > 0:
+        working_capital = total_assets * 0.20
+        retained_earnings = net_worth * 0.80
+        total_liab = max(1.0, total_assets - net_worth) if total_assets > net_worth else total_assets * 0.40
+        altman_z, zone, z_status = evaluate_altman_z_em(
+            working_capital=working_capital,
+            total_assets=total_assets,
+            retained_earnings=retained_earnings,
+            ebit=ebit,
+            book_equity=net_worth,
+            total_liabilities=total_liab
+        )
+        if altman_z is None:
+            altman_z = 5.5
+            z_status = "🟢 SAFE ZONE (>2.6)"
+            z_color = "green"
+        elif altman_z > 2.6:
+            z_color = "green"
+            z_status = f"🟢 SAFE ZONE ({altman_z:.2f} > 2.6)"
+        elif altman_z >= 1.1:
+            z_color = "orange"
+            z_status = f"🟡 GREY ZONE ({altman_z:.2f})"
+        else:
+            z_color = "red"
+            z_status = f"🔴 DISTRESS ZONE ({altman_z:.2f} < 1.1)"
     else:
         altman_z = 5.5
-
-    if altman_z > 2.6:
         z_status = "🟢 SAFE ZONE (>2.6)"
         z_color = "green"
-    elif altman_z >= 1.1:
-        z_status = "🟡 GREY ZONE (1.1 - 2.6)"
-        z_color = "orange"
-    else:
-        z_status = "🔴 DISTRESS ZONE (<1.1)"
-        z_color = "red"
 
     # 5. Promoter Pledge
     if promoter_pledge_pct == 0.0:

@@ -470,7 +470,8 @@ val_res = calculate_forward_pe_valuation(
     bull_peg=bull_peg,
     base_prob=base_prob,
     bull_prob=bull_prob,
-    regime_override=selected_regime_override
+    regime_override=selected_regime_override,
+    ticker=ticker
 )
 
 forensic_res = run_forensic_audit(

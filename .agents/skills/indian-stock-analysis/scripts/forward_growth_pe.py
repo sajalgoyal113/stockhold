@@ -25,11 +25,13 @@ def determine_fiscal_period(as_of_date=None, half_override=None, fy_override=Non
     """
     if as_of_date is None:
         dt = datetime.now()
+    elif isinstance(as_of_date, datetime):
+        dt = as_of_date
     else:
         try:
-            dt = datetime.strptime(as_of_date, "%Y-%m-%d")
+            dt = datetime.strptime(str(as_of_date), "%Y-%m-%d")
         except ValueError:
-            sys.exit(f"Error: Invalid date format '{as_of_date}'. Use YYYY-MM-DD.")
+            raise ValueError(f"Invalid date format '{as_of_date}'. Use YYYY-MM-DD.")
             
     month = dt.month
     year = dt.year
@@ -42,7 +44,7 @@ def determine_fiscal_period(as_of_date=None, half_override=None, fy_override=Non
     if half_override is not None:
         half = half_override.upper()
         if half not in ["H1", "H2"]:
-            sys.exit(f"Error: Invalid half '{half}'. Must be H1 or H2.")
+            raise ValueError(f"Invalid half '{half}'. Must be H1 or H2.")
         quarter = "Q1/Q2" if half == "H1" else "Q3/Q4"
     else:
         if 4 <= month <= 6:
@@ -106,7 +108,7 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
         current_pe = cmp / current_eps
 
     if current_eps <= 0:
-        sys.exit("Error: Both current_eps and current_pe cannot be <= 0.")
+        raise ValueError("Error: Both current_eps and current_pe cannot be <= 0.")
 
     period = determine_fiscal_period(as_of_date, half_override, fy_override)
     regime_desc = "Regime 1: Steady-State Margin Growth"
@@ -117,12 +119,12 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
         base_net_growth = (eps_base_yr2 / current_eps) ** (1.0 / period["comp_years_yr2"]) - 1.0
         eps_base_yr1 = current_eps * ((1.0 + base_net_growth) ** period["comp_years_yr1"])
         regime_desc = f"Regime 2: Direct Consensus / Line-Item Build (Yr 2 Base EPS ₹{target_eps_yr2:.2f})"
-        bull_net_growth = bull_cagr if bull_cagr is not None else base_net_growth * 1.25
+        bull_net_growth = max(bull_cagr, base_net_growth * 1.25) if bull_cagr is not None else base_net_growth * 1.25
 
     # CASE B: Non-linear Margin Expansion Model (Platform / Early Profitability)
     elif rev_cagr is not None and current_margin is not None and target_margin_yr2 is not None:
         if current_margin <= 0:
-            sys.exit("Error: current_margin must be > 0 for margin expansion model.")
+            raise ValueError("Error: current_margin must be > 0 for margin expansion model.")
         effective_rev_cagr = rev_cagr * historical_guidance_reliability
         rev_multiplier_yr2 = (1.0 + effective_rev_cagr) ** period["comp_years_yr2"]
         margin_multiplier = target_margin_yr2 / current_margin
@@ -131,18 +133,18 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
         base_net_growth = net_pat_cagr - dilution_pct_annual
         eps_base_yr1 = current_eps * ((1.0 + base_net_growth) ** period["comp_years_yr1"])
         eps_base_yr2 = current_eps * ((1.0 + base_net_growth) ** period["comp_years_yr2"])
-        bull_net_growth = bull_cagr if bull_cagr is not None else base_net_growth * 1.20
+        bull_net_growth = max(bull_cagr, base_net_growth * 1.20) if bull_cagr is not None else base_net_growth * 1.20
         regime_desc = (f"Regime 2: Operating Leverage & Margin Expansion "
                        f"({current_margin*100:.2f}% -> {target_margin_yr2*100:.2f}% NPM, Rev CAGR {effective_rev_cagr*100:.1f}%)")
 
     # CASE C: Standard Linear Model
     else:
         if guided_cagr is None:
-            sys.exit("Error: Must specify either --growth, --target-eps-yr2, or (--rev-cagr, --current-margin, --target-margin-yr2).")
+            raise ValueError("Error: Must specify either --growth, --target-eps-yr2, or (--rev-cagr, --current-margin, --target-margin-yr2).")
         base_net_growth = (guided_cagr * historical_guidance_reliability) - dilution_pct_annual + margin_expansion_pct_annual
         eps_base_yr1 = current_eps * ((1.0 + base_net_growth) ** period["comp_years_yr1"])
         eps_base_yr2 = current_eps * ((1.0 + base_net_growth) ** period["comp_years_yr2"])
-        bull_net_growth = bull_cagr if bull_cagr is not None else base_net_growth * 1.25
+        bull_net_growth = max(bull_cagr, base_net_growth) if bull_cagr is not None else base_net_growth * 1.25
 
     # Bull Scenario Projections
     eps_bull_yr1 = current_eps * ((1.0 + bull_net_growth) ** period["comp_years_yr1"])
@@ -279,6 +281,54 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
     print(f"   Rationale: {bull_reason}")
     print("================================================================================\n")
 
+    return {
+        "ticker": ticker.upper(),
+        "cmp": cmp,
+        "mcap": mcap,
+        "regime": f"{period['half']} Roll-Forward Regime",
+        "regime_desc": regime_desc,
+        "regime_model": regime_desc,
+        "base_fy": fy_base_str,
+        "target_yr1_fy": fy_yr1_str,
+        "target_yr2_fy": fy_yr2_str,
+        "comp_years_yr1": period["comp_years_yr1"],
+        "comp_years_yr2": period["comp_years_yr2"],
+        "current_eps": round(current_eps, 2),
+        "current_pe": round(current_pe, 1),
+        "ttm_eps": round(current_eps, 2),
+        "trailing_pe": round(current_pe, 1),
+        "base_cagr": round(base_net_growth, 4),
+        "bull_cagr": round(bull_net_growth, 4),
+        "base_exit_pe": round(base_pe, 1),
+        "bull_exit_pe": round(bull_pe, 1),
+        "eps_base_yr1": round(eps_base_yr1, 2),
+        "eps_base_yr2": round(eps_base_yr2, 2),
+        "eps_bull_yr1": round(eps_bull_yr1, 2),
+        "eps_bull_yr2": round(eps_bull_yr2, 2),
+        "fwd_pe_base": round(fwd_pe_yr2_base, 1),
+        "fwd_pe_bull": round(fwd_pe_yr2_bull, 1),
+        "target_base": round(base_target_price, 2),
+        "target_bull": round(bull_target_price, 2),
+        "return_base_pct": round(base_upside_pct, 1),
+        "return_bull_pct": round(bull_upside_pct, 1),
+        "cagr_base": round(base_annualized_cagr, 1),
+        "cagr_bull": round(bull_annualized_cagr, 1),
+        "base_prob": round(base_prob * 100),
+        "bull_prob": round(bull_prob * 100),
+        "expected_target": round(prob_weighted_target, 2),
+        "total_expected_return_pct": round(prob_weighted_return, 1),
+        "expected_cagr": round(prob_weighted_cagr, 1),
+        "pass_growth": passes_growth_filter,
+        "pass_fwd_pe": passes_pe_filter,
+        "pass_upside": passes_bull_upside_mandate,
+        "verdict": verdict,
+        "verdict_color": "green" if "STRONG" in verdict else ("blue" if "QUALIFIED" in verdict else ("orange" if "ACCUMULATE" in verdict else "red")),
+        "buy_low": round(base_target_price / 1.25, 1),
+        "buy_high": round(base_target_price / 1.10, 1),
+        "base_reason": base_reason,
+        "bull_reason": bull_reason
+    }
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="2-Year Forward Growth & P/E Valuation Engine")
     parser.add_argument("ticker", help="Stock ticker symbol (e.g. DIXON, COFORGE, IXIGO)")
@@ -349,3 +399,68 @@ if __name__ == "__main__":
         base_pe=args.base_pe,
         bull_pe=args.bull_pe
     )
+
+def calibrate_stock_parameters(company_data: dict) -> dict:
+    sales_3yr = company_data.get("sales_growth_3yr")
+    pat_3yr = company_data.get("profit_growth_3yr")
+    roe_3yr = company_data.get("roe_3yr")
+    
+    # 1. Base Case CAGR: Anchor realistically to recent momentum
+    if sales_3yr is not None and sales_3yr > 0:
+        if sales_3yr >= 50.0:
+            base_cagr = min(30, max(22, int(round(sales_3yr * 0.45))))
+        elif sales_3yr >= 30.0:
+            base_cagr = min(26, max(20, int(round(sales_3yr * 0.65))))
+        elif sales_3yr >= 20.0:
+            base_cagr = min(23, max(18, int(round(sales_3yr * 0.85))))
+        else:
+            base_cagr = max(14, min(20, int(round(sales_3yr))))
+    else:
+        rev_hist = company_data.get("rev_history", [])
+        if len(rev_hist) >= 2 and rev_hist[0] > 0 and rev_hist[-1] > rev_hist[0]:
+            n_yrs = len(rev_hist) - 1
+            calc_cagr = (math.pow(rev_hist[-1] / rev_hist[0], 1.0 / n_yrs) - 1.0) * 100
+            base_cagr = max(15, min(28, int(round(calc_cagr * 0.65))))
+        else:
+            base_cagr = 20
+
+    # 2. Bull Case CAGR: typically +6% to +8% over Base Case
+    bull_cagr = min(45, base_cagr + (8 if (sales_3yr or base_cagr) >= 25 else 6))
+
+    # 3. Base Exit Growth: anchored to ROE and terminal reinvestment rate
+    if roe_3yr is not None and roe_3yr > 0:
+        base_exit_g = min(20.0, max(14.0, round(roe_3yr * 0.6, 1)))
+    else:
+        base_exit_g = 16.0
+    bull_exit_g = min(25.0, round(base_exit_g * 1.3, 1))
+
+    # 4. Probability Weighting (calibrated to cash conversion & governance)
+    cum_cfo = sum(company_data.get("cfo_history", []))
+    cum_pat = sum(company_data.get("pat_history", []))
+    cfo_pat_ratio = (cum_cfo / cum_pat) if cum_pat > 0 else 0.5
+
+    if cfo_pat_ratio >= 0.80 and (sales_3yr or base_cagr) >= 22:
+        base_prob = 50
+        rationale = f"Elite execution & cash conversion (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 50/50 balanced weighting"
+    elif cfo_pat_ratio >= 0.50:
+        base_prob = 55
+        rationale = f"Solid operational delivery (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 55/45 institutional standard"
+    elif cfo_pat_ratio < 0.20:
+        base_prob = 65
+        rationale = f"Working capital friction (CFO/PAT {cfo_pat_ratio:.1f}x) $\\implies$ 65/35 margin-of-safety penalty"
+    else:
+        base_prob = 60
+        rationale = "Prudent institutional allocation"
+
+    return {
+        "base_cagr": base_cagr,
+        "bull_cagr": bull_cagr,
+        "base_exit_g": base_exit_g,
+        "bull_exit_g": bull_exit_g,
+        "base_peg": 1.60,
+        "bull_peg": 1.85,
+        "base_prob": base_prob,
+        "bull_prob": 100 - base_prob,
+        "cfo_pat_ratio": round(cfo_pat_ratio, 2),
+        "rationale": rationale
+    }
