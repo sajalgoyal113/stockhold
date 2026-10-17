@@ -26,6 +26,32 @@ COMMON_ALIASES = {
     "M&M": "M&M"
 }
 
+TOP_TRENDING_STOCKS = [
+    {"ticker": "ETERNAL", "display": "ZOMATO", "sector": "Quick-Commerce"},
+    {"ticker": "COFORGE", "display": "COFORGE", "sector": "Enterprise IT"},
+    {"ticker": "DIXON", "display": "DIXON TECH", "sector": "EMS & Mobile PLI"},
+    {"ticker": "KAYNES", "display": "KAYNES TECH", "sector": "OSAT & Defense EMS"},
+    {"ticker": "TRENT", "display": "TRENT", "sector": "Zudio Retail"},
+    {"ticker": "TATAMOTORS", "display": "TATA MOTORS", "sector": "Automotive / JLR"},
+    {"ticker": "POLYCAB", "display": "POLYCAB", "sector": "Cables & Infra"},
+    {"ticker": "HAL", "display": "HAL", "sector": "Defense Aviation"},
+    {"ticker": "BEL", "display": "BEL", "sector": "Defense Electronics"},
+    {"ticker": "CDSL", "display": "CDSL", "sector": "Capital Markets"},
+    {"ticker": "ANGELONE", "display": "ANGEL ONE", "sector": "Fintech Brokerage"},
+    {"ticker": "SUZLON", "display": "SUZLON", "sector": "Wind Energy Turnaround"},
+    {"ticker": "TATAELXSI", "display": "TATA ELXSI", "sector": "Automotive Software"},
+    {"ticker": "KPITTECH", "display": "KPIT TECH", "sector": "Mobility Software"},
+    {"ticker": "PERSISTENT", "display": "PERSISTENT", "sector": "Digital Engineering"},
+    {"ticker": "NETWEB", "display": "NETWEB TECH", "sector": "AI Supercomputing"},
+    {"ticker": "JYOTICNC", "display": "JYOTI CNC", "sector": "Aerospace Machining"},
+    {"ticker": "PRESTIGE", "display": "PRESTIGE", "sector": "Real Estate Growth"},
+    {"ticker": "PAYTM", "display": "PAYTM", "sector": "Merchant Payments"},
+    {"ticker": "POLICYBZR", "display": "POLICYBAZAAR", "sector": "Insurtech Platform"}
+]
+
+def get_top_trending_stocks():
+    return TOP_TRENDING_STOCKS
+
 def resolve_screener_ticker(query: str) -> str:
     cleaned = query.upper().strip()
     if cleaned in COMMON_ALIASES:

@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 
-from engine.data_fetcher import fetch_company_data
+from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
 from engine.valuation import calculate_forward_pe_valuation
 from engine.forensics import run_forensic_audit
 from engine.reverse_dcf import run_reverse_dcf
@@ -311,15 +311,26 @@ ticker_input = st.text_input(
     label_visibility="collapsed"
 )
 
-# Trending Horizontal Pills
-chip_cols = st.columns([1.1, 1, 1, 1, 1, 1])
-chip_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.8rem; color: #64748b; font-weight: 700; letter-spacing: 0.05em;'>TRENDING:</div>", unsafe_allow_html=True)
+# Trending Horizontal Pills & Daily Top 20 Indian Momentum Stocks
+trending_stocks = get_top_trending_stocks()
 selected_chip = None
-if chip_cols[1].button("COFORGE"): selected_chip = "COFORGE"
-if chip_cols[2].button("DIXON"): selected_chip = "DIXON"
-if chip_cols[3].button("KAYNES"): selected_chip = "KAYNES"
-if chip_cols[4].button("TRENT"): selected_chip = "TRENT"
-if chip_cols[5].button("ZOMATO"): selected_chip = "ZOMATO"
+
+chip_cols = st.columns([1.1, 1, 1, 1, 1, 1])
+chip_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.8rem; color: #a5b4fc; font-weight: 700; letter-spacing: 0.05em;'>🔥 TOP 20:</div>", unsafe_allow_html=True)
+if chip_cols[1].button("COFORGE", key="t_coforge"): selected_chip = "COFORGE"
+if chip_cols[2].button("ZOMATO", key="t_zomato"): selected_chip = "ETERNAL"
+if chip_cols[3].button("DIXON", key="t_dixon"): selected_chip = "DIXON"
+if chip_cols[4].button("KAYNES", key="t_kaynes"): selected_chip = "KAYNES"
+if chip_cols[5].button("TRENT", key="t_trent"): selected_chip = "TRENT"
+
+with st.expander("🔥 View All Top 20 Trending Equities in India (7-Day Rolling Volume & Momentum)", expanded=False):
+    st.caption("Active high-velocity compounders across Quick-Commerce, Electronics (EMS), AI Supercomputing, and Defense:")
+    t_rows = [trending_stocks[i:i+4] for i in range(0, len(trending_stocks), 4)]
+    for r in t_rows:
+        cols = st.columns(len(r))
+        for idx, item in enumerate(r):
+            if cols[idx].button(f"{item['display']}", key=f"btn_trend_{item['ticker']}", help=f"Sector: {item['sector']}", use_container_width=True):
+                selected_chip = item["ticker"]
 
 ticker = (selected_chip if selected_chip else ticker_input).upper().strip()
 
@@ -454,21 +465,23 @@ pill_cls = pill_map.get(val_res["verdict_color"], "pill-blue")
 clean_about = data['about'].replace("[1]", "").replace("[2]", "").replace("[3]", "").replace("  ", " ").strip()
 
 # --- PROGRAMMATIC SEO METADATA & SCHEMA.ORG STRUCTURED DATA ---
-seo_desc = f"{data['name']} ({ticker}) 2-Year Target Price ₹{val_res['expected_target']:,.0f} (+{val_res['total_expected_return_pct']:.1f}% Upside). Comprehensive institutional forward P/E valuation, forensic cash conversion, 7 Powers moat audit, and reverse DCF."
+seo_desc = f"{data['name']} ({ticker}) 2-Year Target Price is ₹{val_res['expected_target']:,.2f} ({'+' if val_res['total_expected_return_pct']>=0 else ''}{val_res['total_expected_return_pct']:.1f}% Upside from CMP ₹{cmp:,.2f}). Base Case: ₹{val_res['target_base']:,.2f} | Bull Case: ₹{val_res['target_bull']:,.2f}. Institutional 2-year forward P/E valuation, reverse DCF, and 7 Powers moat audit."
 st.html(f"""
 <head>
-    <title>{data['name']} ({ticker}) Stock Analysis & 2-Yr Target Price | StockHold</title>
+    <title>{data['name']} ({ticker}) Share Price Target 2026-2027 & 2-Yr Valuation | StockHold</title>
     <meta name="description" content="{seo_desc}">
-    <meta name="keywords" content="{ticker} stock analysis, {ticker} share price target, {data['name']} fair value, {ticker} P/E ratio, {ticker} reverse DCF, Indian stock research">
+    <meta name="keywords" content="{ticker} target price, {ticker} share price target, {data['name']} target price, {ticker} 2 year target, {ticker} share target 2026, {ticker} fair value, {ticker} forward PE, {ticker} reverse DCF, Indian stock target price">
+    <link rel="canonical" href="https://stockhold.streamlit.app/?ticker={ticker}">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{data['name']} ({ticker}) Target Price ₹{val_res['expected_target']:,.0f} | StockHold">
+    <meta property="og:title" content="{data['name']} ({ticker}) Share Price Target: ₹{val_res['expected_target']:,.2f} | StockHold">
     <meta property="og:description" content="{seo_desc}">
     <meta property="og:url" content="https://stockhold.streamlit.app/?ticker={ticker}">
+    <!-- 1. Google FinancialProduct Schema -->
     <script type="application/ld+json">
     {{
       "@context": "https://schema.org",
       "@type": "FinancialProduct",
-      "name": "{data['name']} ({ticker}) Equity Research & Target Price",
+      "name": "{data['name']} ({ticker}) Share Price Target & Equity Research",
       "description": "{seo_desc}",
       "category": "Equity Research",
       "provider": {{
@@ -476,6 +489,47 @@ st.html(f"""
         "name": "StockHold",
         "url": "https://stockhold.streamlit.app"
       }}
+    }}
+    </script>
+    <!-- 2. Google FAQPage Schema (For Search Rich Snippets & People Also Ask Cards) -->
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {{
+          "@type": "Question",
+          "name": "What is the 2-Year Target Price for {data['name']} ({ticker})?",
+          "acceptedAnswer": {{
+            "@type": "Answer",
+            "text": "Based on StockHold's institutional forward P/E engine, the probability-weighted 2-year target price for {data['name']} ({ticker}) is ₹{val_res['expected_target']:,.2f}, representing a potential upside of {val_res['total_expected_return_pct']:.1f}% ({val_res['expected_cagr']:.1f}% CAGR) from the current price of ₹{cmp:,.2f}."
+          }}
+        }},
+        {{
+          "@type": "Question",
+          "name": "What is the Bull Case vs Base Case target price for {ticker}?",
+          "acceptedAnswer": {{
+            "@type": "Answer",
+            "text": "In the Bull Case, the target price is ₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}% upside at an exit P/E of {val_res['bull_exit_pe']}x). In the Base Case, the target price is ₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}% at an exit P/E of {val_res['base_exit_pe']}x)."
+          }}
+        }},
+        {{
+          "@type": "Question",
+          "name": "What is the ideal buy or accumulation zone for {ticker}?",
+          "acceptedAnswer": {{
+            "@type": "Answer",
+            "text": "The ideal accumulation corridor for {data['name']} is between ₹{val_res['buy_low']} and ₹{val_res['buy_high']}, which provides downside margin of safety."
+          }}
+        }},
+        {{
+          "@type": "Question",
+          "name": "What growth rate is Dalal Street pricing into {ticker} via Reverse DCF?",
+          "acceptedAnswer": {{
+            "@type": "Answer",
+            "text": "According to the Michael Mauboussin Reverse DCF calculation, the market price implies a 10-year Free Cash Flow CAGR of {rev_dcf_res['implied_cagr']}%. Feasibility rating: {rev_dcf_res['assessment']}."
+          }}
+        }}
+      ]
     }}
     </script>
 </head>
@@ -770,6 +824,40 @@ with tab_matrix:
     ]
     st.table(pd.DataFrame(gate_records))
 
+    st.markdown("---")
+    st.html(f"""
+    <div class="glass-card" style="margin-top: 10px;">
+        <h4 style="margin: 0 0 12px 0; color: #ffffff;">🎯 {data['name']} ({ticker}) Share Price Target & Valuation Insights</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; font-size: 0.88rem;">
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #a5b4fc;">What is the 2-Year Target Price for {ticker}?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    The probability-weighted expected target is <b style="color: #ffffff;">₹{val_res['expected_target']:,.2f}</b>, representing a <b class="color-emerald">{'+' if val_res['total_expected_return_pct']>=0 else ''}{val_res['total_expected_return_pct']:.1f}%</b> upside ({'+' if val_res['expected_cagr']>=0 else ''}{val_res['expected_cagr']:.1f}% CAGR) from CMP ₹{cmp:,.2f}.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #6ee7b7;">What is the Bull Case vs Base Case Target?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    <b>Bull Case:</b> <span class="color-emerald">₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}%)</span> at {val_res['bull_exit_pe']}x exit P/E.<br>
+                    <b>Base Case:</b> <span>₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}%)</span> at {val_res['base_exit_pe']}x exit P/E.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #38bdf8;">What is the Ideal Buy / Accumulation Zone?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    The margin-of-safety accumulation zone is <b class="color-emerald">₹{val_res['buy_low']} – ₹{val_res['buy_high']}</b>, offering asymmetric risk-reward with &lt;10% Base Case downside.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #f472b6;">What Growth is Priced in by Dalal Street?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    Reverse DCF shows the current market price of ₹{cmp:,.2f} implies a 10-Yr FCF CAGR of <b style="color: #ffffff;">{rev_dcf_res['implied_cagr']}%</b>. Expectation feasibility: <b>{rev_dcf_res['assessment']}</b>.
+                </p>
+            </div>
+        </div>
+    </div>
+    """)
+
 with tab_ai:
     ai_output = generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_key)
     st.html(f"""
@@ -964,23 +1052,33 @@ st.download_button(
 # --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
 st.html("""
 <div class="glass-card" style="margin-top: 40px; border-top: 1px solid var(--border-subtle); padding: 24px; text-align: center;">
-    <div style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
-        Institutional Indian Equities Coverage (NSE / BSE)
+    <div style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;">
+        🔥 Top 20 Trending Indian Stocks — Share Price Target Index (NSE / BSE)
     </div>
     <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
-        <a href="/?ticker=COFORGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Coforge Valuation</a>
-        <a href="/?ticker=ETERNAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Zomato / Eternal Target</a>
-        <a href="/?ticker=DIXON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Dixon Technologies Analysis</a>
-        <a href="/?ticker=KAYNES" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Kaynes Technology Target</a>
-        <a href="/?ticker=TRENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Trent Fair Value</a>
-        <a href="/?ticker=TATAMOTORS" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Motors Forecast</a>
-        <a href="/?ticker=POLYCAB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Polycab India Valuation</a>
-        <a href="/?ticker=HAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Hindustan Aeronautics Moat</a>
-        <a href="/?ticker=BEL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Bharat Electronics Target</a>
-        <a href="/?ticker=PERSISTENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Persistent Systems Research</a>
+        <a href="/?ticker=ETERNAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Zomato Share Price Target</a>
+        <a href="/?ticker=COFORGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Coforge Target Price</a>
+        <a href="/?ticker=DIXON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Dixon Technologies Target Price</a>
+        <a href="/?ticker=KAYNES" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Kaynes Technology Target Price</a>
+        <a href="/?ticker=TRENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Trent Share Target Price</a>
+        <a href="/?ticker=TATAMOTORS" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Motors Share Target</a>
+        <a href="/?ticker=POLYCAB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Polycab Target Price</a>
+        <a href="/?ticker=HAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">HAL Share Price Target</a>
+        <a href="/?ticker=BEL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">BEL Target Price</a>
+        <a href="/?ticker=CDSL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">CDSL Share Price Target</a>
+        <a href="/?ticker=ANGELONE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Angel One Target Price</a>
+        <a href="/?ticker=SUZLON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Suzlon Energy Target Price</a>
+        <a href="/?ticker=TATAELXSI" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Elxsi Target Price</a>
+        <a href="/?ticker=KPITTECH" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">KPIT Tech Target Price</a>
+        <a href="/?ticker=PERSISTENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Persistent Systems Target Price</a>
+        <a href="/?ticker=NETWEB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Netweb Technologies Target Price</a>
+        <a href="/?ticker=JYOTICNC" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Jyoti CNC Target Price</a>
+        <a href="/?ticker=PRESTIGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Prestige Estates Target Price</a>
+        <a href="/?ticker=PAYTM" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Paytm Share Target Price</a>
+        <a href="/?ticker=POLICYBZR" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">PolicyBazaar Target Price</a>
     </div>
     <div style="margin-top: 18px; font-size: 0.78rem; color: #64748b;">
-        © 2026 StockHold &bull; Institutional AI Equity Research & Valuation Engine for Indian Equities.
+        © 2026 StockHold &bull; Simplifying stock analysis for investors &bull; Daily NSE / BSE Target Price Index.
     </div>
 </div>
 """)
