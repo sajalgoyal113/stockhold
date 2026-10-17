@@ -370,6 +370,20 @@ with st.sidebar:
         )
 
     st.markdown("---")
+    st.markdown("**🏛️ Valuation Regime Framework**")
+    regime_mode = st.selectbox(
+        "Operating Regime:",
+        ["Auto-Detect (Recommended)", "Regime 1: Steady-State Manufacturing / EMS", "Regime 2: Platform Operating Leverage"],
+        help="Regime 1 compounds steady margins for manufacturing/EMS/industrials. Regime 2 models non-linear margin expansion for hyper-growth platforms with suppressed margins (<2.0%)."
+    )
+    if "Regime 1" in regime_mode:
+        selected_regime_override = "Regime 1 (Steady-State)"
+    elif "Regime 2" in regime_mode:
+        selected_regime_override = "Regime 2 (Platform)"
+    else:
+        selected_regime_override = "Auto"
+
+    st.markdown("---")
     st.markdown("**📈 Compounding Assumptions**")
     base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=35, value=20, step=1) / 100.0
     bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=50, value=25, step=1) / 100.0
@@ -434,7 +448,8 @@ val_res = calculate_forward_pe_valuation(
     base_peg=base_peg,
     bull_peg=bull_peg,
     base_prob=base_prob,
-    bull_prob=bull_prob
+    bull_prob=bull_prob,
+    regime_override=selected_regime_override
 )
 
 forensic_res = run_forensic_audit(
@@ -605,6 +620,11 @@ card_html = f"""
         <div>
             Ideal Accumulation Zone: <b class="color-emerald">₹{val_res['buy_low']} – ₹{val_res['buy_high']}</b>
         </div>
+    </div>
+
+    <div style="margin-top: 14px; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.22); border-radius: 8px; font-size: 0.82rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+        <span style="color: #818cf8; font-weight: 700; white-space: nowrap;">⚡ Valuation Audit:</span>
+        <span>{val_res.get('detection_reason', '')}</span>
     </div>
 </div>
 """

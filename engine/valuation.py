@@ -16,7 +16,8 @@ def calculate_forward_pe_valuation(
     bull_peg: float = 1.85,
     base_prob: float = 0.55,
     bull_prob: float = 0.45,
-    as_of_date: datetime = None
+    as_of_date: datetime = None,
+    regime_override: str = "Auto"
 ):
     if as_of_date is None:
         as_of_date = datetime.now()
@@ -51,8 +52,23 @@ def calculate_forward_pe_valuation(
     npm = (ttm_pat / ttm_sales) if (ttm_sales > 0 and ttm_pat > 0) else 0.10
     trailing_pe = (cmp / ttm_eps) if ttm_eps > 0 else 999.0
     
-    # If P/E > 80x or Net Profit Margin < 2.5%, company is in early-profitability / hyper-expansion phase
-    is_platform_compounder = (trailing_pe > 80.0 or npm < 0.025) and ttm_sales > 0
+    # Rigorous Classification:
+    # Regime 2 (Platform Operating Leverage) applies ONLY when Net Margin is genuinely suppressed (<2.0%)
+    # despite substantial business scale (Sales >= ₹1,000 Cr), creating room for non-linear margin expansion (3x-5x).
+    # Companies with normal/mature margins (e.g. Cyient DLM at 5.8%, Dixon at 3.5%, Kaynes at 8.5%)
+    # belong strictly to Regime 1 (Steady-State Margin Compounders).
+    if regime_override == "Regime 2 (Platform)":
+        is_platform_compounder = True
+        detection_reason = "Manual Override: Forced to Regime 2 (Platform Operating Leverage)"
+    elif regime_override == "Regime 1 (Steady-State)":
+        is_platform_compounder = False
+        detection_reason = "Manual Override: Forced to Regime 1 (Steady-State Margin Compounder)"
+    else:
+        is_platform_compounder = (npm < 0.020) and (ttm_sales >= 1000.0)
+        if is_platform_compounder:
+            detection_reason = f"Auto-Detected: Regime 2 (Platform Operating Leverage). Net Profit Margin is suppressed at {npm*100:.2f}% (<2.0%) at scale (₹{ttm_sales:,.0f} Cr revenue), indicating non-linear operating leverage potential."
+        else:
+            detection_reason = f"Auto-Detected: Regime 1 (Steady-State Margin Compounder). Net Profit Margin of {npm*100:.2f}% (>=2.0%) represents normal operating margins; valuation is driven by top-line volume compounding."
     
     if is_platform_compounder:
         regime_model = "Regime 2: Platform Operating Leverage & Margin Expansion"
@@ -133,7 +149,7 @@ def calculate_forward_pe_valuation(
 
     # Conviction Verdict
     if not pass_upside:
-        verdict = "REJECT / GROWTH HURDLE MISS"
+        verdict = "WATCHLIST / VALUATION TRAP (Bull <50%)"
         verdict_color = "red"
     elif return_base_pct < -5.0:
         verdict = "ACCUMULATE ON DIPS / HIGH STARTING P/E"
@@ -153,6 +169,7 @@ def calculate_forward_pe_valuation(
         "regime": regime_period,
         "regime_model": regime_model,
         "is_platform": is_platform_compounder,
+        "detection_reason": detection_reason,
         "base_fy": f"FY{last_reported_fy % 100}",
         "target_yr1_fy": target_yr1_fy,
         "target_yr2_fy": target_yr2_fy,
