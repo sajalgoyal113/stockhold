@@ -232,24 +232,73 @@ def run_reverse_dcf(
 
 
 if __name__ == "__main__":
+    import os
+    _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    if _SCRIPT_DIR not in sys.path:
+        sys.path.insert(0, _SCRIPT_DIR)
+
     parser = argparse.ArgumentParser(description="Reverse DCF & Probabilistic Valuation Engine")
     parser.add_argument("ticker", help="Stock ticker symbol (e.g., ZOMATO, TRENT)")
-    parser.add_argument("--cmp", type=float, required=True, help="Current Market Price (₹)")
-    parser.add_argument("--mcap", type=float, required=True, help="Market Cap in ₹ Crores")
+    parser.add_argument("--cmp", type=float, default=0.0, help="Current Market Price (₹). If omitted, auto-fetched.")
+    parser.add_argument("--mcap", type=float, default=None, help="Market Cap in ₹ Crores. If omitted, auto-fetched.")
     parser.add_argument("--netdebt", type=float, default=0.0, help="Net Debt (Debt - Cash) in ₹ Crores (negative if net cash)")
-    parser.add_argument("--fcf", type=float, required=True, help="Base Free Cash Flow in ₹ Crores")
+    parser.add_argument("--fcf", type=float, default=0.0, help="Base Free Cash Flow in ₹ Crores. If omitted, auto-derived.")
     parser.add_argument("--wacc", type=float, default=0.115, help="WACC discount rate (default: 0.115 / 11.5%%)")
     parser.add_argument("--terminal-growth", type=float, default=0.05, help="Terminal growth rate (default: 0.05 / 5%%)")
     parser.add_argument("--shares", type=float, default=None, help="Shares count in Crores (optional)")
 
     args = parser.parse_args()
+    clean_tick = args.ticker.upper().replace(" ", "").replace("-", "")
+
+    cmp = args.cmp
+    mcap = args.mcap
+    fcf = args.fcf
+    netdebt = args.netdebt
+    shares = args.shares
+
+    try:
+        from data_fetcher import fetch_company_data
+        live = fetch_company_data(clean_tick)
+        if live:
+            live_cmp = float(live.get("cmp") or 0.0)
+            if live_cmp > 0:
+                if cmp <= 0:
+                    cmp = live_cmp
+                    print(f"[AUTO-FETCHED] Live CMP: ₹{cmp:,.2f} from Screener Consolidated")
+                else:
+                    drift = (cmp - live_cmp) / live_cmp
+                    if abs(drift) > 0.05:
+                        print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from Live Screener CMP (₹{live_cmp:,.2f})!")
+
+            if (mcap is None or mcap <= 0) and live.get("mcap_cr"):
+                mcap = float(live["mcap_cr"])
+                print(f"[AUTO-FETCHED] Market Cap: ₹{mcap:,.1f} Cr")
+            if (shares is None or shares <= 0) and live.get("shares_cr"):
+                shares = float(live["shares_cr"])
+            if netdebt == 0.0 and live.get("latest_debt"):
+                netdebt = float(live["latest_debt"])
+            if fcf <= 0 and live.get("fcf_history"):
+                fcf_hist = [float(x) for x in live["fcf_history"] if x is not None]
+                if fcf_hist:
+                    fcf = fcf_hist[-1]
+                    print(f"[AUTO-FETCHED] Latest Annual FCF: ₹{fcf:,.1f} Cr")
+    except Exception:
+        pass
+
+    if cmp <= 0 or mcap is None or mcap <= 0:
+        print("Error: Could not resolve valid CMP or Market Cap. Please provide --cmp and --mcap.")
+        sys.exit(1)
+    if fcf <= 0:
+        fcf = max(10.0, mcap * 0.015)  # Fallback 1.5% FCF yield
+        print(f"[ESTIMATED] Assuming baseline 1.5% FCF yield: ₹{fcf:,.1f} Cr")
+
     print_reverse_dcf_report(
         ticker=args.ticker,
-        cmp=args.cmp,
-        market_cap_cr=args.mcap,
-        net_debt_cr=args.netdebt,
-        current_fcf_cr=args.fcf,
+        cmp=cmp,
+        market_cap_cr=mcap,
+        net_debt_cr=netdebt,
+        current_fcf_cr=fcf,
         wacc=args.wacc,
         terminal_growth=args.terminal_growth,
-        shares_cr=args.shares
+        shares_cr=shares
     )

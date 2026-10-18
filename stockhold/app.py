@@ -1,3 +1,13 @@
+import os
+import sys
+
+# Ensure stockhold directory, repo root, and predict/scripts are in sys.path
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_ROOT_DIR = os.path.dirname(_CURRENT_DIR)
+for _p in [_CURRENT_DIR, _ROOT_DIR, os.path.join(_ROOT_DIR, "predict", "scripts")]:
+    if os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import streamlit as st
 import pandas as pd
 import numpy as np
