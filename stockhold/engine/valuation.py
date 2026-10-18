@@ -134,6 +134,38 @@ def evaluate_forward_growth(
     Projects EPS for FY+1 and FY+2 across Base and Bull scenarios with dynamic exit multiples.
     Strictly follows GEMINI.md Rule 6.
     """
+    clean_ticker = (ticker or "").upper().replace(" ", "").replace("-", "")
+
+    # Auto-fetch live consolidated quote if CMP/EPS missing or perform sanity drift check
+    try:
+        from .data_fetcher import fetch_company_data
+    except ImportError:
+        try:
+            from data_fetcher import fetch_company_data
+        except ImportError:
+            fetch_company_data = None
+
+    if fetch_company_data:
+        try:
+            live_data = fetch_company_data(clean_ticker)
+            if live_data and live_data.get("cmp") and live_data.get("cmp") > 0:
+                live_cmp = float(live_data["cmp"])
+                if cmp is None or cmp <= 0:
+                    cmp = live_cmp
+                else:
+                    drift = (cmp - live_cmp) / live_cmp
+                    if abs(drift) > 0.05:
+                        print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from Live Screener CMP (₹{live_cmp:,.2f})!")
+                
+                if current_eps <= 0 and live_data.get("ttm_eps"):
+                    current_eps = float(live_data["ttm_eps"])
+                if current_pe <= 0 and live_data.get("pe"):
+                    current_pe = float(live_data["pe"])
+                if mcap is None and live_data.get("mcap_cr"):
+                    mcap = float(live_data["mcap_cr"])
+        except Exception:
+            pass
+
     if current_eps <= 0 and current_pe > 0:
         current_eps = cmp / current_pe
     elif current_pe <= 0 and current_eps > 0:
@@ -143,7 +175,6 @@ def evaluate_forward_growth(
         raise ValueError("Error: Both current_eps and current_pe cannot be <= 0.")
 
     # Check if ticker has a known company profile
-    clean_ticker = (ticker or "").upper().replace(" ", "").replace("-", "")
     if clean_ticker in KNOWN_COMPANY_PROFILES:
         prof = KNOWN_COMPANY_PROFILES[clean_ticker]
         if guided_cagr is None and target_eps_yr2 is None and rev_cagr is None:
