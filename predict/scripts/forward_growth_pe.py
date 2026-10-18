@@ -13,10 +13,15 @@ Implements the institutional growth and valuation framework:
 - Displays Latest Market Cap and generates clean, institutional terminal summary cards.
 """
 
+import os
 import sys
 import argparse
 import math
 from datetime import datetime
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
 
 def determine_fiscal_period(as_of_date=None, half_override=None, fy_override=None):
     """
@@ -421,6 +426,32 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
                              hist_floor_pe=None, peer_pe=None,
                              sector_growth=None,
                              **kwargs):
+    clean_ticker = (ticker or "").upper().replace(" ", "").replace("-", "")
+
+    # Auto-fetch live consolidated quote if CMP/EPS missing or perform sanity drift check
+    try:
+        from data_fetcher import fetch_company_data
+        live_data = fetch_company_data(clean_ticker)
+        if live_data and live_data.get("cmp") and live_data.get("cmp") > 0:
+            live_cmp = float(live_data["cmp"])
+            if cmp <= 0:
+                cmp = live_cmp
+                print(f"[AUTO-FETCHED] Live CMP: ₹{cmp:,.2f} from Screener Consolidated")
+            else:
+                drift = (cmp - live_cmp) / live_cmp
+                if abs(drift) > 0.05:
+                    print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from Live Screener CMP (₹{live_cmp:,.2f})!")
+            
+            if current_eps <= 0 and live_data.get("ttm_eps"):
+                current_eps = float(live_data["ttm_eps"])
+                print(f"[AUTO-FETCHED] Rolling Consolidated TTM EPS: ₹{current_eps:.2f}")
+            if current_pe <= 0 and live_data.get("pe"):
+                current_pe = float(live_data["pe"])
+            if mcap is None and live_data.get("mcap_cr"):
+                mcap = float(live_data["mcap_cr"])
+    except Exception:
+        pass
+
     # Handle pe and eps aliases from kwargs
     if current_pe <= 0 and "pe" in kwargs and kwargs["pe"] is not None:
         current_pe = float(kwargs["pe"])
@@ -436,7 +467,6 @@ def evaluate_forward_growth(ticker, cmp, mcap=None, current_eps=0.0, current_pe=
         raise ValueError("Error: Both current_eps and current_pe cannot be <= 0.")
 
     # Check if ticker has a known company profile and parameters were omitted
-    clean_ticker = (ticker or "").upper().replace(" ", "").replace("-", "")
     if clean_ticker in KNOWN_COMPANY_PROFILES:
         prof = KNOWN_COMPANY_PROFILES[clean_ticker]
         if guided_cagr is None and target_eps_yr2 is None and rev_cagr is None:
@@ -836,7 +866,7 @@ def calculate_forward_pe_valuation(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="2-Year Forward Growth & P/E Valuation Engine")
     parser.add_argument("ticker", help="Stock ticker symbol (e.g. DIXON, COFORGE, IXIGO)")
-    parser.add_argument("--cmp", type=float, required=True, help="Current Market Price (₹)")
+    parser.add_argument("--cmp", type=float, default=0.0, help="Current Market Price (₹). If omitted or 0, automatically fetched from Screener Consolidated.")
     parser.add_argument("--mcap", type=float, default=None, help="Latest Market Cap in ₹ Crores")
     parser.add_argument("--eps", type=float, default=0.0, help="Current Base/TTM EPS (₹)")
     parser.add_argument("--pe", type=float, default=0.0, help="Current Trailing P/E multiple")
