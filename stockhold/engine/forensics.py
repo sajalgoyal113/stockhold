@@ -1,24 +1,37 @@
 """
 engine/forensics.py - Bridge to Master Forensic Accounting Engine
 
-MASTER SOURCE OF TRUTH: .agents/skills/indian-stock-analysis/scripts/forensic_audit.py
+MASTER SOURCE OF TRUTH: predict/scripts/forensic_audit.py
 This module delegates core forensic calculations (CFO/PAT conversion reality,
-Altman Z''-Score for emerging markets) directly to the institutional skill scripts.
+Altman Z''-Score for emerging markets) directly to the predict engines.
 """
 
 import os
 import sys
 
-# Resolve path to skill scripts
-_SKILL_SCRIPTS_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "indian-stock-analysis", "scripts")
-)
-if _SKILL_SCRIPTS_PATH not in sys.path:
-    sys.path.insert(0, _SKILL_SCRIPTS_PATH)
+# Try multiple candidate paths to locate predict/scripts
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_CANDIDATE_PATHS = [
+    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "..", "predict", "scripts")),
+    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "predict", "scripts")),
+    os.path.abspath(os.path.join(_CURRENT_DIR, "predict", "scripts")),
+    os.path.abspath(os.path.join(os.getcwd(), "predict", "scripts")),
+    os.path.abspath(os.path.join(os.getcwd(), "..", "predict", "scripts")),
+]
+
+for p in _CANDIDATE_PATHS:
+    if os.path.isdir(p) and p not in sys.path:
+        sys.path.insert(0, p)
+        break
 
 try:
-    from forensic_audit import compute_cfo_pat_ratio, evaluate_altman_z_em
+    from forensic_audit import (
+        run_forensic_audit as _master_run_forensic_audit,
+        compute_cfo_pat_ratio,
+        evaluate_altman_z_em
+    )
 except ImportError:
+    _master_run_forensic_audit = None
     compute_cfo_pat_ratio = None
     evaluate_altman_z_em = None
 
@@ -35,6 +48,20 @@ def run_forensic_audit(
     ebit: float = 0.0,
     promoter_pledge_pct: float = 0.0
 ) -> dict:
+    if _master_run_forensic_audit is not None:
+        return _master_run_forensic_audit(
+            rev_history=rev_history,
+            pat_history=pat_history,
+            cfo_history=cfo_history,
+            trend_years=trend_years,
+            debtor_days=debtor_days,
+            total_debt=total_debt,
+            net_worth=net_worth,
+            total_assets=total_assets,
+            ebit=ebit,
+            promoter_pledge_pct=promoter_pledge_pct
+        )
+
     # 1. Cash flow conversion via master skill function
     if compute_cfo_pat_ratio is not None and cfo_history and pat_history:
         _, cum_cfo_pat_ratio, cum_cfo, cum_pat = compute_cfo_pat_ratio(cfo_history, pat_history)

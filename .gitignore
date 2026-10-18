@@ -1,8 +1,22 @@
+# Virtual Environments
 venv/
 .venv/
+stockhold/venv/
+predict/venv/
+ENV/
+env/
+
+# Python Bytecode & Caches
 __pycache__/
-*.pyc
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# OS & Temporary Artifacts
 .DS_Store
 *.png
 *.html
 .system_generated/
+.idea/
+.vscode/

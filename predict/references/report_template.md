@@ -102,7 +102,7 @@
 
 ## 4. The 2-Year Forward P/E Valuation Engine
 
-*Run via `python3 scripts/forward_growth_pe.py`:*
+*Run via `python3 predict/scripts/forward_growth_pe.py`:*
 
 ### 4.1 Base Parameters & Trailing Foundation
 * Current Market Price (CMP): **₹[CMP]** | Latest Market Cap: **₹[MCAP] Cr**

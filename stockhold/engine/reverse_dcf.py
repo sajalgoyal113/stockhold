@@ -1,23 +1,35 @@
 """
 engine/reverse_dcf.py - Bridge to Master Expectations Investing & Reverse DCF Engine
 
-MASTER SOURCE OF TRUTH: .agents/skills/indian-stock-analysis/scripts/reverse_dcf.py
-This module delegates core reverse DCF numerical root-finding directly to the institutional skill scripts.
+MASTER SOURCE OF TRUTH: predict/scripts/reverse_dcf.py
+This module delegates core reverse DCF numerical root-finding directly to the predict engines.
 """
 
 import os
 import sys
 
-# Resolve path to skill scripts
-_SKILL_SCRIPTS_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "indian-stock-analysis", "scripts")
-)
-if _SKILL_SCRIPTS_PATH not in sys.path:
-    sys.path.insert(0, _SKILL_SCRIPTS_PATH)
+# Try multiple candidate paths to locate predict/scripts
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_CANDIDATE_PATHS = [
+    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "..", "predict", "scripts")),
+    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "predict", "scripts")),
+    os.path.abspath(os.path.join(_CURRENT_DIR, "predict", "scripts")),
+    os.path.abspath(os.path.join(os.getcwd(), "predict", "scripts")),
+    os.path.abspath(os.path.join(os.getcwd(), "..", "predict", "scripts")),
+]
+
+for p in _CANDIDATE_PATHS:
+    if os.path.isdir(p) and p not in sys.path:
+        sys.path.insert(0, p)
+        break
 
 try:
-    from reverse_dcf import calculate_implied_growth as _skill_calculate_implied_growth
+    from reverse_dcf import (
+        run_reverse_dcf as _master_run_reverse_dcf,
+        calculate_implied_growth as _skill_calculate_implied_growth
+    )
 except ImportError:
+    _master_run_reverse_dcf = None
     _skill_calculate_implied_growth = None
 
 
@@ -29,6 +41,16 @@ def run_reverse_dcf(
     wacc: float = 0.115,
     g_term: float = 0.05
 ) -> dict:
+    if _master_run_reverse_dcf is not None:
+        return _master_run_reverse_dcf(
+            cmp=cmp,
+            mcap_cr=mcap_cr,
+            fcf_0=fcf_0,
+            net_debt=net_debt,
+            wacc=wacc,
+            g_term=g_term
+        )
+
     ev = mcap_cr + net_debt
     base_fcf = max(1.0, fcf_0)
 

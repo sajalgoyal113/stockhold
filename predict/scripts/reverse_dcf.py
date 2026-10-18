@@ -176,6 +176,61 @@ def print_reverse_dcf_report(ticker, cmp, market_cap_cr, net_debt_cr, current_fc
     print(f" MARGIN OF SAFETY:                  {ev_return:.1f}%")
     print(f"================================================================================\n")
 
+
+def run_reverse_dcf(
+    cmp: float,
+    mcap_cr: float,
+    fcf_0: float,
+    net_debt: float = 0.0,
+    wacc: float = 0.115,
+    g_term: float = 0.05
+) -> dict:
+    """
+    Programmatic expectations investing interface.
+    Solves for the implied 10-year Free Cash Flow CAGR priced into EV,
+    assesses feasibility, and computes a sensitivity matrix across discount and terminal rates.
+    """
+    ev = mcap_cr + net_debt
+    base_fcf = max(1.0, fcf_0)
+
+    raw_g = calculate_implied_growth(ev, base_fcf, wacc, g_term, years=10)
+    implied_cagr = (raw_g * 100.0) if raw_g is not None else 0.0
+
+    if implied_cagr < 15.0:
+        assessment = "REALISTIC / MODEST (<15%)"
+        color = "green"
+    elif implied_cagr <= 25.0:
+        assessment = "AGGRESSIVE (15% - 25%)"
+        color = "orange"
+    else:
+        assessment = "HEROIC / PRICED TO PERFECTION (>25%)"
+        color = "red"
+
+    # Sensitivity Matrix across WACCs and Terminal Growths
+    wacc_list = [0.10, 0.115, 0.13]
+    g_term_list = [0.04, 0.05, 0.06]
+
+    matrix = {}
+    for w in wacc_list:
+        w_key = f"{int(w*100)}%" if w != 0.115 else "11.5%"
+        matrix[w_key] = {}
+        for gt in g_term_list:
+            gt_key = f"{int(gt*100)}%"
+            cell_g = calculate_implied_growth(ev, base_fcf, w, gt, years=10)
+            matrix[w_key][gt_key] = round(cell_g * 100.0, 1) if cell_g is not None else 0.0
+
+    return {
+        "ev": round(ev, 1),
+        "fcf_0": round(base_fcf, 1),
+        "wacc_pct": round(wacc * 100, 1),
+        "g_term_pct": round(g_term * 100, 1),
+        "implied_cagr": round(implied_cagr, 1),
+        "assessment": assessment,
+        "color": color,
+        "sensitivity_matrix": matrix
+    }
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reverse DCF & Probabilistic Valuation Engine")
     parser.add_argument("ticker", help="Stock ticker symbol (e.g., ZOMATO, TRENT)")

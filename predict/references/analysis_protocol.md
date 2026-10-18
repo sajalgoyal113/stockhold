@@ -1,14 +1,7 @@
----
-name: indian-stock-analysis
-description: >-
-  Conducts institutional-grade equity research and forensic valuation on Indian stocks (NSE/BSE).
-  Evaluates 30%+ CAGR compounders in sunrise sectors using a 2-year forward P/E < 50 hurdle rate,
-  anti-fragility audit, and deterministic quantitative Python engines.
----
-
 # Indian Stock Analysis Protocol: High-Growth & Anti-Fragility Framework
 
-This skill executes an institutional research protocol to evaluate high-growth (30%+ CAGR) compounders in structural sunrise sectors while eliminating fragile businesses, sunset industries, regulatory traps, middleman aggregators, and valuation bubbles.
+This protocol defines the institutional research framework to evaluate high-growth (30%+ CAGR) compounders in structural sunrise sectors while eliminating fragile businesses, sunset industries, regulatory traps, middleman aggregators, and valuation bubbles.
+
 
 ---
 
@@ -51,17 +44,17 @@ Before performing calculations, gather accurate live and historical metrics:
 
 ### Step 3: Moat & Anti-Disintermediation Audit
 * Test if the company is an asset-light middleman aggregator where upstream suppliers and downstream enterprise clients can connect directly.
-* Assess durability against Hamilton Helmer's 7 Powers (see [references/valuation_models.md](./references/valuation_models.md)).
+* Assess durability against Hamilton Helmer's 7 Powers (see [valuation_models.md](./valuation_models.md)).
 
 ### Step 4: Balance Sheet Hygiene & Forensic Audit
-* Check for Dalal Street accounting red flags (see [references/forensic_checklist.md](./references/forensic_checklist.md)):
+* Check for Dalal Street accounting red flags (see [forensic_checklist.md](./forensic_checklist.md)):
   * Cumulative 3-Yr CFO/PAT $\ge 0.8\times$.
   * Promoter pledging $< 10\%$ (ideally 0%).
   * No excessive CWIP parking or high contingent liabilities relative to net worth.
   * **Management Commentary Check**: When identifying red flags (e.g., debtor days expansion, CFO/PAT divergence), always check and report recent management explanations from concalls/filings (e.g., milestone billing, mix shifts, government collection cycles).
 * *Optional quantitative run*:
   ```bash
-  python3 .agents/skills/indian-stock-analysis/scripts/forensic_audit.py <TICKER> --years FY22 FY23 FY24 FY25 --cfo <CFOs> --pat <PATs> --rev <REVs> --rec <RECs>
+  python3 predict/scripts/forensic_audit.py <TICKER> --years FY22 FY23 FY24 FY25 --cfo <CFOs> --pat <PATs> --rev <REVs> --rec <RECs>
   ```
 
 ### Step 5: Growth & 2-Year Forward P/E Engine (The King Filter)
@@ -76,17 +69,17 @@ Execute the forward compounding engine using the true Rolling TTM EPS base:
 
 **A. For Steady-State / Normalized Margin Compounders** (EMS, CDMO, Industrials):
 ```bash
-python3 .agents/skills/indian-stock-analysis/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --growth <BASE_CAGR> --bull-growth <BULL_CAGR> --base-exit-growth <BASE_G_EXIT> --bull-exit-growth <BULL_G_EXIT>
+python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --growth <BASE_CAGR> --bull-growth <BULL_CAGR> --base-exit-growth <BASE_G_EXIT> --bull-exit-growth <BULL_G_EXIT>
 ```
 
 **B. For Platform / Early-Profitability Compounders with Non-Linear Operating Leverage** (Quick Commerce, Tech, SaaS where current Net Margin is suppressed $<1.5\%$):
 *Do NOT use additive top-line growth. Use the Margin Expansion Model or direct consensus FY+2 EPS:*
 ```bash
 # Via Margin Expansion:
-python3 .agents/skills/indian-stock-analysis/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --rev-cagr <REV_CAGR> --current-margin <NPM_0> --target-margin-yr2 <NPM_2>
+python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --rev-cagr <REV_CAGR> --current-margin <NPM_0> --target-margin-yr2 <NPM_2>
 
 # OR via direct consensus FY+2 EPS:
-python3 .agents/skills/indian-stock-analysis/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --target-eps-yr2 <CONSENSUS_EPS_YR2>
+python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --target-eps-yr2 <CONSENSUS_EPS_YR2>
 ```
 
 *Key Parameters (apply when appropriate)*:
@@ -100,14 +93,14 @@ python3 .agents/skills/indian-stock-analysis/scripts/forward_growth_pe.py <TICKE
 
 *Optional Reverse DCF Engine* (Expectations Investing):
 ```bash
-python3 .agents/skills/indian-stock-analysis/scripts/reverse_dcf.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --fcf <FCF0_CR>
+python3 predict/scripts/reverse_dcf.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --fcf <FCF0_CR>
 ```
 
 ---
 
 ## 4. Output Contract
 
-Always generate the final research report following the layout in [references/report_template.md](./references/report_template.md).
+Always generate the final research report following the layout in [report_template.md](./report_template.md).
 
 **Mandatory Top Card Format**:
 ```text
