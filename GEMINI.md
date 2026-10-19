@@ -68,17 +68,17 @@ Finance/
    - All engines in `predict/scripts/` (`forward_growth_pe.py`, `reverse_dcf.py`) must automatically fetch verified live consolidated quotes directly from Screener (`data_fetcher.py`) by default.
    - If a manual `--cmp` is explicitly passed for limit-order or entry-price stress-testing, the engine automatically checks for price drift against the live market price and triggers a prominent `[PRICE DRIFT WARNING]` if the deviation exceeds 5%.
 
-7. **Strict Root Directory Invariant**:
-   - The root directory (`Finance/`) must strictly and exclusively contain:
+7. **Strict Root Directory Invariant & Cloud Deployment Entrypoints**:
+   - The primary repository logic is strictly organized into:
      ```text
      Finance/
-     ├── predict/
-     ├── stockhold/
-     └── GEMINI.md
+     ├── predict/                       # Quantitative Analysis & Research Reports (MASTER SOURCE OF TRUTH)
+     ├── stockhold/                     # Interactive Web Application & Visual Dashboard
+     └── GEMINI.md                      # Behavioral rules, facts & repo source of truth
      ```
-   - No root-level wrapper scripts (`app.py`, `run_app.sh`), dependency manifests (`requirements.txt`), README files (`README.md`), virtual environments (`venv/`), temporary files, or scratch scripts are permitted in the root folder.
-   - All Streamlit web application components, requirements, launchers, and frontend docs must reside strictly within `stockhold/`.
-   - All quantitative engines, models, valuation references, and research reports must reside strictly within `predict/`.
+   - For Streamlit Community Cloud hosting (`stockhold.streamlit.app`), the root directory maintains thin, pass-through deployment entrypoints (`app.py`, `requirements.txt`, `run_app.sh`, `README.md`) that delegate directly into `stockhold/` while resolving all paths.
+   - No ad-hoc scripts, scratch files, or unversioned temporary files are permitted in the root folder.
+   - All Streamlit web application components, requirements, launchers, and frontend docs reside within `stockhold/`, while all quantitative engines and research reports reside within `predict/`.
 
 ---
 
