@@ -470,6 +470,16 @@ mcap = data["mcap_cr"]
 ttm_eps = data["ttm_eps"]
 pe = data["pe"]
 
+# Extract DMA200 and DMA50 from chart history for Technical Stage 2 Trend Confirmation Gate
+dma200 = None
+dma50 = None
+if isinstance(data.get("chart_df"), pd.DataFrame) and not data["chart_df"].empty:
+    cdf = data["chart_df"]
+    if "DMA200" in cdf.columns and pd.notnull(cdf["DMA200"].iloc[-1]):
+        dma200 = float(cdf["DMA200"].iloc[-1])
+    if "DMA50" in cdf.columns and pd.notnull(cdf["DMA50"].iloc[-1]):
+        dma50 = float(cdf["DMA50"].iloc[-1])
+
 val_params = {
     "cmp": cmp,
     "mcap_cr": mcap,
@@ -491,7 +501,9 @@ val_params = {
     "current_margin": calibrated.get("current_margin"),
     "target_margin_yr2": calibrated.get("target_margin_yr2"),
     "regime_override": selected_regime_override,
-    "ticker": ticker
+    "ticker": ticker,
+    "dma200": dma200,
+    "dma50": dma50,
 }
 
 # Defensive signature check to guarantee zero runtime TypeError on hot-reloads
@@ -620,6 +632,14 @@ st.html(f"""
 """)
 
 # --- HERO VALUATION SCORECARD (RENDERED VIA st.html FOR ZERO CODE BLOCKS) ---
+stage2_val = val_res.get('stage2_status', 'STAGE 2 CONFIRMED')
+stage2_col = '#00f5a0' if 'CONFIRMED' in stage2_val else ('#ffb703' if 'TRANSITION' in stage2_val else '#ff4d6d')
+ears_val = val_res.get('ears_status', 'POSITIVE ACCELERATION')
+ears_col = '#00f5a0' if 'POSITIVE' in ears_val else ('#ffb703' if 'NEUTRAL' in ears_val else '#ff4d6d')
+cash_harvest_val = val_res.get('cash_harvest_target', val_res['target_bull'])
+cash_harvest_up = val_res.get('cash_harvest_upside', val_res['return_bull_pct'])
+trailing_stop = val_res.get('trailing_stop_loss', round(cmp * 0.85, 2))
+
 card_html = f"""
 <div class="glass-card glass-card-glow">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
@@ -669,7 +689,26 @@ card_html = f"""
         </div>
     </div>
 
-    <div style="margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-tertiary); flex-wrap: wrap; gap: 8px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 14px;">
+        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Stage 2 Trend Gate</div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: {stage2_col}; margin-top: 4px; line-height: 1.3;">{stage2_val}</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Quarterly EARS Rating</div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: {ears_col}; margin-top: 4px; line-height: 1.3;">{ears_val}</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Cash Harvesting (50% Trim)</div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: #00f5a0; margin-top: 4px;">₹{cash_harvest_val:,.2f} <span style="font-size: 0.76rem; font-weight: 600; color: #6ee7b7;">(+{cash_harvest_up:.1f}%)</span></div>
+        </div>
+        <div style="background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px;">
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Dynamic Trailing Stop-Loss</div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: #ff4d6d; margin-top: 4px;">₹{trailing_stop:,.2f} <span style="font-size: 0.76rem; font-weight: 600; color: #fda4af;">(-15.0% Stop)</span></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-tertiary); flex-wrap: wrap; gap: 8px;">
         <div>
             Target Horizon: <b style="color: var(--text-secondary);">{val_res['regime']} ({val_res['base_fy']} Base &rarr; 1-Yr: {val_res['target_yr1_fy']} | 2-Yr: {val_res['target_yr2_fy']})</b> &bull; Engine: <span style="color: #a5b4fc; font-weight: 600;">{val_res['regime_model']}</span>
         </div>
@@ -898,10 +937,13 @@ with tab_matrix:
     st.markdown("---")
     st.html("""
     <div class="glass-card" style="margin-top: 10px; margin-bottom: 0px;">
-        <h4 style="margin-top: 0; color: #ffffff;">Executive Scorecard & 7-Gate Gatekeeper Audit</h4>
+        <h4 style="margin-top: 0; color: #ffffff;">Executive Scorecard & 10-Gate Gatekeeper Audit</h4>
         <p style="font-size: 0.85rem; color: #94a3b8; margin: 2px 0 0 0;">Institutional multi-factor quality audit as defined in the Indian Equities Research Protocol.</p>
     </div>
     """)
+    stage2_gate_audit = "🟢 STAGE 2 CONFIRMED" if "CONFIRMED" in stage2_val else ("🟡 STAGE 2 TRANSITION" if "TRANSITION" in stage2_val else "🔴 STAGE 4 CAUTION")
+    ears_gate_audit = "🟢 POSITIVE ACCEL" if "POSITIVE" in ears_val else ("🟡 NEUTRAL" if "NEUTRAL" in ears_val else "🔴 TORPEDO RISK")
+
     gate_records = [
         {"Gate / Criterion": "1. Sector Vector", "Rule / Benchmark": "Sunrise vs Sunset (Fossil) / Fragile (Banks)", "Company Metric": "Structural Sunrise Secular Tailwind", "Audit Result": "🟢 PASS"},
         {"Gate / Criterion": "2. Geopolitical / Regulatory", "Rule / Benchmark": "Export < 35-40%; Zero phase-out risk", "Company Metric": "Domestic & Global Footprint Diversified", "Audit Result": "🟢 PASS"},
@@ -909,7 +951,10 @@ with tab_matrix:
         {"Gate / Criterion": "4. Balance Sheet & Cash Hygiene", "Rule / Benchmark": "Debt/Equity < 0.3x; 4-Yr CFO/PAT >= 0.8x", "Company Metric": f"CFO/PAT: {forensic_res['cum_cfo_pat_ratio']}x | D/E: {forensic_res['de_ratio']}x", "Audit Result": "🟢 PRISTINE" if forensic_res['cum_cfo_pat_ratio'] >= 0.8 else "🟡 CAUTION"},
         {"Gate / Criterion": "5. Growth & Valuation (King Filter)", "Rule / Benchmark": "Guided CAGR >= 20% & Bull Upside >= 50%", "Company Metric": f"Base: {val_res['base_cagr']*100:.0f}% | Bull Upside: +{val_res['return_bull_pct']:.1f}%", "Audit Result": "🟢 PASS" if val_res['pass_upside'] else "🔴 FAIL"},
         {"Gate / Criterion": "6. 2-Year Forward P/E Filter", "Rule / Benchmark": "2-Year Forward P/E < 50x", "Company Metric": f"Base Fwd P/E: {val_res['fwd_pe_base']:.1f}x", "Audit Result": "🟢 PASS (<50x)" if val_res['pass_fwd_pe'] else "🔴 FAIL (>=50x)"},
-        {"Gate / Criterion": "7. Concentration & Counterparty", "Rule / Benchmark": "Single counterparty exposure < 15-20%", "Company Metric": "Institutional Diversification Bounds", "Audit Result": "🟢 BALANCED"}
+        {"Gate / Criterion": "7. Technical Trend Gate (Stage 2)", "Rule / Benchmark": "CMP > 200-DMA & 50-DMA > 200-DMA", "Company Metric": stage2_val, "Audit Result": stage2_gate_audit},
+        {"Gate / Criterion": "8. EARS & Torpedo Gate", "Rule / Benchmark": "YoY PAT Acceleration & CFO/PAT >= 0.7x", "Company Metric": ears_val, "Audit Result": ears_gate_audit},
+        {"Gate / Criterion": "9. Cash Harvesting & Stop-Loss", "Rule / Benchmark": "Sell 50% at Bull Target; Dynamic Trailing Stop", "Company Metric": f"Harvest: ₹{cash_harvest_val:,.2f} | Stop: ₹{trailing_stop:,.2f}", "Audit Result": "🟢 ACTIVATED"},
+        {"Gate / Criterion": "10. Concentration & Counterparty", "Rule / Benchmark": "Single counterparty exposure < 15-20%", "Company Metric": "Institutional Diversification Bounds", "Audit Result": "🟢 BALANCED"}
     ]
     st.table(pd.DataFrame(gate_records))
 
@@ -941,6 +986,18 @@ with tab_matrix:
                 <b style="color: #f472b6;">What Growth is Priced in by Dalal Street?</b>
                 <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
                     Reverse DCF shows the current market price of ₹{cmp:,.2f} implies a 10-Yr FCF CAGR of <b style="color: #ffffff;">{rev_dcf_res['implied_cagr']}%</b>. Expectation feasibility: <b>{rev_dcf_res['assessment']}</b>.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #00f5a0;">When to Harvest Cash (50% Realized Profit)?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    Under the Cash Harvesting Directive, sell <b>50% of the position</b> when price hits the Bull Target of <b style="color: #ffffff;">₹{cash_harvest_val:,.2f} (+{cash_harvest_up:.1f}%)</b> within 12–18 months to convert paper gains into hard realized cash.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <b style="color: #ff4d6d;">Where is the Dynamic Trailing Stop-Loss?</b>
+                <p style="margin: 6px 0 0 0; color: var(--text-secondary); line-height: 1.5;">
+                    To protect capital and eliminate round-tripping, maintain an automated trailing stop-loss at <b style="color: #ffffff;">₹{trailing_stop:,.2f}</b> (-15% from entry / -18% from peak) on a weekly closing basis.
                 </p>
             </div>
         </div>

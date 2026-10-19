@@ -29,7 +29,18 @@ COMMON_ALIASES = {
     "CYIENT_DLM": "CYIENTDLM",
     "IXIGO": "IXIGO",
     "LE TRAVENUES": "IXIGO",
-    "LE TRAVENUES TECHNOLOGY": "IXIGO"
+    "LE TRAVENUES TECHNOLOGY": "IXIGO",
+    "URBAN COMPANY": "URBANCO",
+    "URBANCOMPANY": "URBANCO",
+    "URBAN": "URBANCO",
+    "AMARAJABAT": "ARE&M",
+    "AMARA RAJA": "ARE&M",
+    "AMARA RAJA ENERGY": "ARE&M",
+    "ASSOCHALC": "ASALCBR",
+    "C.E. INFO SYSTEMS": "MAPMYINDIA",
+    "CE INFO SYSTEMS": "MAPMYINDIA",
+    "CEINFOSYST": "MAPMYINDIA",
+    "CEINFOSYSTEMS": "MAPMYINDIA"
 }
 
 TOP_TRENDING_STOCKS = [
@@ -85,8 +96,12 @@ def resolve_screener_ticker(query: str) -> str:
         pass
     return cleaned
 
+_DATA_FETCHER_CACHE = {}
+
 def fetch_company_data(ticker: str):
     ticker = resolve_screener_ticker(ticker)
+    if ticker in _DATA_FETCHER_CACHE:
+        return _DATA_FETCHER_CACHE[ticker]
     
     # Try consolidated and standalone URLs
     urls = [
@@ -96,20 +111,25 @@ def fetch_company_data(ticker: str):
     
     valid_candidates = []
     for u in urls:
-        try:
-            r = requests.get(u, headers=HEADERS, timeout=12)
-            if r.status_code == 200:
-                soup_check = BeautifulSoup(r.text, "html.parser")
-                for li in soup_check.find_all("li", class_="flex"):
-                    name_span = li.find("span", class_="name")
-                    val_span = li.find("span", class_="value")
-                    if name_span and val_span and "Current Price" in name_span.text:
-                        p_val = clean_num(val_span.text)
-                        if p_val > 0:
-                            valid_candidates.append((u, r.text))
-                            break
-        except Exception:
-            continue
+        for attempt in range(2):
+            try:
+                r = requests.get(u, headers=HEADERS, timeout=12)
+                if r.status_code == 200:
+                    soup_check = BeautifulSoup(r.text, "html.parser")
+                    for li in soup_check.find_all("li", class_="flex"):
+                        name_span = li.find("span", class_="name")
+                        val_span = li.find("span", class_="value")
+                        if name_span and val_span and "Current Price" in name_span.text:
+                            p_val = clean_num(val_span.text)
+                            if p_val > 0:
+                                valid_candidates.append((u, r.text))
+                                break
+                    if valid_candidates and valid_candidates[-1][0] == u:
+                        break
+            except Exception:
+                import time
+                time.sleep(1.0)
+                continue
             
     # Prefer consolidated if available with valid price, else standalone
     html = None
@@ -123,6 +143,25 @@ def fetch_company_data(ticker: str):
         final_url, html = valid_candidates[0]
 
     if not html:
+        # Check local fundamentals database snapshot if live network is throttled or offline
+        try:
+            import json, os
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            candidate_paths = [
+                os.path.join(os.path.dirname(cur_dir), "data", "portfolio_fundamentals.json"),
+                os.path.join(os.path.dirname(os.path.dirname(cur_dir)), "predict", "data", "portfolio_fundamentals.json")
+            ]
+            for db_path in candidate_paths:
+                if os.path.exists(db_path):
+                    with open(db_path, "r") as f:
+                        local_db = json.load(f)
+                    if ticker in local_db:
+                        rec = local_db[ticker]
+                        _DATA_FETCHER_CACHE[ticker] = rec
+                        print(f"[OFFLINE/CACHE FALLBACK] Loaded fundamentals snapshot for {ticker}")
+                        return rec
+        except Exception:
+            pass
         raise ValueError(f"Could not fetch valid financial data for ticker: {ticker} from Screener.in")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -239,6 +278,7 @@ def fetch_company_data(ticker: str):
             ttm_sales = sum(sales_arr)
             ttm_eps_sum = sum(eps_arr)
             last_4_quarters = quarters
+            last_4_eps = eps_arr
             
         # Shares count
         if cmp > 0 and mcap_cr > 0:
@@ -307,7 +347,7 @@ def fetch_company_data(ticker: str):
         except Exception:
             pass
 
-    return {
+    res = {
         "ticker": ticker,
         "name": name,
         "about": about_text,
@@ -351,3 +391,5 @@ def fetch_company_data(ticker: str):
         "profit_growth_5yr": growth_ranges.get("profit_growth_5yr"),
         "roe_3yr": growth_ranges.get("roe_3yr")
     }
+    _DATA_FETCHER_CACHE[ticker] = res
+    return res

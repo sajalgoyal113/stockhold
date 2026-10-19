@@ -15,6 +15,10 @@ This protocol defines the institutional research framework to evaluate high-grow
 | **4. Forensic Quality** | Earnings hygiene | Cumulative 3-Yr CFO/PAT $\ge 0.8\times$; Net Debt/Equity $< 0.3\times$ (or Net Cash); receivables growth $\le$ revenue growth. |
 | **5. Growth & Valuation** | The King Filter | Guided 2–3 yr CAGR $\ge 20\%$; Rolling TTM base EPS; **2-Year Forward P/E $< 50$**; **Mandated $\ge 50\%$ 2-Year Upside in Bull Case**. |
 | **6. Client Concentration** | Counterparty Risk | Always disclose Top 5 and Top 10 clients and % revenue concentration; single client ideally $< 15\text{--}20\%$. |
+| **7. Stage 2 Trend Gate** | Technical Timing | **Pass**: $\text{CMP} > \text{200-DMA}$, $\text{50-DMA} > \text{200-DMA}$, $\text{RS} \ge 70$. **Reject**: Stage 4 downtrends below 200-DMA. |
+| **8. EARS & Torpedo** | Quarterly Momentum | $\text{YoY PAT Growth}_{Q_0} > \text{YoY PAT Growth}_{Q_{-1}}$, $\text{CFO}/\text{EBITDA} \ge 0.7\text{x}$; automated exit on $>15\%$ miss. |
+| **9. Normalized Turnaround** | Suppressed Base Bridge | For thin-margin turnarounds (Trent/Zomato), bridge Normalized PAT at 5–8% benchmark NPM (Fwd P/E $< 45\times$). |
+| **10. Cash Harvesting** | Realized Profit Lock | Harvest 50% cash upon early Bull Target hit (12–18m); dynamic trailing stop at $\max(\text{Entry}\times 0.85, \text{Peak}\times 0.82, \text{50-WMA})$. |
 
 ---
 
@@ -72,24 +76,78 @@ Execute the forward compounding engine using the true Rolling TTM EPS base:
 python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --growth <BASE_CAGR> --bull-growth <BULL_CAGR> --base-exit-growth <BASE_G_EXIT> --bull-exit-growth <BULL_G_EXIT>
 ```
 
-**B. For Platform / Early-Profitability Compounders with Non-Linear Operating Leverage** (Quick Commerce, Tech, SaaS where current Net Margin is suppressed $<1.5\%$):
-*Do NOT use additive top-line growth. Use the Margin Expansion Model or direct consensus FY+2 EPS:*
+**B. For Platform / Early-Profitability Compounders with Non-Linear Operating Leverage** (Quick Commerce, Tech, SaaS, Marketplaces where current Net Margin is thin $<3.0\%$):
+*Do NOT use linear EPS compounding. Programmatic guard strictly enforces the Margin Expansion Model or direct line-item consensus:*
 ```bash
-# Via Margin Expansion:
+# Via Margin Expansion (Regime 2 Master):
 python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --rev-cagr <REV_CAGR> --current-margin <NPM_0> --target-margin-yr2 <NPM_2>
 
-# OR via direct consensus FY+2 EPS:
+# OR via direct consensus / line-item FY+2 EPS:
 python3 predict/scripts/forward_growth_pe.py <TICKER> --cmp <CMP> --mcap <MCAP_CR> --eps <TTM_EPS> --target-eps-yr2 <CONSENSUS_EPS_YR2>
 ```
+
+**C. Regime 2 Normalized Margin Bridge for Turnarounds & Suppressed Earnings Compounders** (Turnaround retail like Trent, Capex ramps like Kaynes/Dixon):
+*When trailing base EPS is distorted by rapid dark store/retail footprint expansion, plant commissioning, or post-crisis turnaround:*
+* Compute **Normalized FY+2 PAT**:
+  $$\text{Normalized FY+2 PAT} = \text{Target FY+2 Revenue} \times \text{Steady-State Benchmark NPM (5% to 8\%)}$$
+  $$\text{Normalized 2-Year Forward P/E} = \frac{\text{Market Cap}}{\text{Normalized FY+2 PAT}}$$
+* If Normalized 2-Year Forward P/E $< 45\times$ and Revenue CAGR $\ge 30\%$, it passes the valuation gate, eliminating Type II missed multibagger rejections.
+
+**D. Empirical Growth Derivation Bridge (Zero Unanchored Numbers)**:
+* Every CAGR assumed must be bridged against:
+  1. 3-Year Historical Revenue CAGR
+  2. Last Reported FY / TTM YoY Growth Rate
+  3. Segment-Level Mix Shifts (e.g., core services vs new product ramps)
+  4. Official Management Guidance from recent concalls.
+* Base Case CAGR must reflect conservative normalization or category maturation; Bull Case CAGR must reflect sustained historical velocity and full guidance execution.
+
+**E. Contracted Mega-Cap Duopoly Cash Invariant (The Bharti Airtel Invariant)**:
+* For contracted infrastructure/telecom duopolies ($\text{Mcap} \ge ₹50,000\text{ Cr}$) with massive cash generation ($\text{CFO/PAT} \ge 2.5\times$ or $\text{EBITDA Margin} \ge 40\%$):
+  1. **Depreciation Neutralization**: Evaluate on **EV/EBITDA ($< 15\times$)** or **Cash Forward P/E** ($\frac{\text{CMP}}{\text{Cash EPS}_{t+2}} < 30\times$, where $\text{Cash EPS} = \text{EPS} + \text{Depreciation per share}$) to prevent false negatives from accounting amortizations.
+  2. **Calibrated Bull Upside Hurdle**: Lowered from $\ge 50\%$ to **$\ge 40\%$** (or Expected CAGR $\ge 18\%$).
+
+**F. Cyclical Commodity Margin Peak & Global Dumping Guard (The Chemical Trap Guard)**:
+* For intermediate chemical, metal, and commodity processors:
+  1. **Peak Margin Normalization**: If $\text{TTM OPM} > 1.25 \times \text{5-Year Median OPM}$, projections must NOT compound from peak EPS; anchor base to **Normalized Median OPM EPS**.
+  2. **Dumping & Destocking Gate**: If Gross Margin contracts by $>300\text{ bps}$ YoY for 2 consecutive quarters ($\Delta \text{GM} < -300\text{ bps}$), mark as `CYCLICAL DE-STOCKING TRAP` and disqualify entry.
 
 *Key Parameters (apply when appropriate)*:
 * `--haircut <0.85>`: Apply a 15–20% haircut if management has a history of missing guidance.
 * `--dilution <0.03>`: Factor in 3–5% annual share dilution if capex is funded via recurring QIPs/ESOPs.
 
 *Hurdle Criteria*:
-* **Growth Filter**: Net projected CAGR must be $\ge 20\%$.
-* **Valuation Filter**: **2-Year Forward P/E must be $< 50$** ($\frac{\text{CMP}}{\text{EPS}_{t+2}} < 50$).
-* **Upside Mandate**: **Mandatory $\ge 50\%$ upside from CMP** over 2 years in the Bull Case scenario.
+* **Growth Filter**: Net projected CAGR must be $\ge 20\%$ (or $\ge 16\%$ for contracted mega-cap duopolies).
+* **Valuation Filter**: **2-Year Forward P/E must be $< 50$** ($\frac{\text{CMP}}{\text{EPS}_{t+2}} < 50$, or Cash P/E $< 30\times$).
+* **Upside Mandate**: **Mandatory $\ge 50\%$ upside from CMP** over 2 years in Bull Case ($\ge 40\%$ for contracted mega-cap duopolies).
+
+
+### Step 6: Minervini / CANSLIM Stage 2 Trend Confirmation Gate
+* A fundamentally approved stock must **never be entered in a Stage 4 downtrend**.
+* **Technical Confirmation Criteria**:
+  1. **Price Trend**: $\text{CMP} > \text{200-DMA}$.
+  2. **Trend Momentum**: $\text{50-DMA} > \text{200-DMA}$ with 200-DMA sloping upward or flattening.
+  3. **Relative Strength (RS)**: Outperforming NIFTY 500 over 6–12 months ($\text{RS Rating} \ge 70$).
+* If CMP is below 200-DMA, flag as `STAGE 4 CAUTION / WAIT FOR PULLBACK` to prevent catching falling knives.
+
+### Step 7: Quarterly Earnings Revision & Acceleration Score (EARS)
+* Do not rely solely on annual statements (4-month publishing lag). Audit the last 2 reported quarters:
+  1. **Acceleration Invariant**: $\text{YoY PAT Growth}_{Q_0} > \text{YoY PAT Growth}_{Q_{-1}}$.
+  2. **Cash Reality Check**: Quarterly $\frac{\text{CFO}}{\text{Operating Profit}} \ge 0.70$.
+  3. **March-Quarter Seasonality Normalization Protocol**:
+     * For businesses with lumpy Q4 billing cycles (e.g., Defense PSUs like HAL/BEL, EPC, Capital Goods, and IT solutions where 40–55% of annual PAT is booked in March), sequential QoQ ($Q_0 \text{ vs } Q_{-1}$) causes false panic (e.g., June Q1 dropping 60% sequentially vs March Q4).
+     * **Same-Quarter Year-over-Year Matching**: Growth is always measured relative to the same quarter of the prior year:
+       $$\text{YoY Growth}_{Q_0} = \frac{\text{PAT}_{Q_0} - \text{PAT}_{Q_{-4}}}{\text{PAT}_{Q_{-4}}}, \quad \text{YoY Growth}_{Q_{-1}} = \frac{\text{PAT}_{Q_{-1}} - \text{PAT}_{Q_{-5}}}{\text{PAT}_{Q_{-5}}}$$
+       $$\text{Acceleration Confirmed} \iff \text{YoY Growth}_{Q_0} > \text{YoY Growth}_{Q_{-1}}$$
+     * **Rolling 4-Quarter TTM Base**: TTM PAT is computed over the last 4 quarters ($\sum_{k=0}^{3} \text{PAT}_{t-k}$), ensuring every evaluation base contains exactly one March quarter, removing all seasonal bias.
+     * **Pre-Q4 Execution Indicators**: In Q1–Q3, evaluate Book-to-Bill ratio ($\ge 1.2\times$), order backlog growth, and unearned revenue/customer advances rather than expecting linear quarterly PAT distribution.
+  4. **Earnings Torpedo Rule**: If a company reports a quarterly PAT miss of $>15\%$ against consensus (measured against seasonally adjusted street consensus for that quarter), automatically trigger an **immediate 50% position trim or exit** to prevent catastrophic capital destruction (avoids traps like Tanla).
+
+### Step 8: Dynamic Cash Harvesting & Trailing Stop Protocol (The Cash Earning Engine)
+* Convert paper valuations into realized cash profits:
+  1. **Tranche 1 Profit Take (50% Realized Cash)**: When the market price reaches the **Bull Case Target Price** within 12–18 months, immediately sell **50% of the position** and transfer proceeds into cash / liquid treasuries.
+  2. **Dynamic Trailing Stop-Loss Protection**: Protect remaining capital with a dynamic stop-loss:
+     $$\text{Stop Price} = \max(\text{Entry Price} \times 0.85, \; \text{Peak Price} \times 0.82, \; \text{50-Week EMA})$$
+     If closed below on a weekly basis, liquidate remaining shares to lock in profits and protect downside.
 
 *Optional Reverse DCF Engine* (Expectations Investing):
 ```bash
@@ -114,6 +172,10 @@ Always generate the final research report following the layout in [report_templa
  Total Expected Return:               [+/- XX.X]% from CMP
  Annualized Expected Return (CAGR):   [+/- XX.X]% p.a.
  Dynamic Probability Allocation:      [XX]% Base / [YY]% Bull (Calibrated to execution risk & moat defensibility)
+ Technical Trend Gate (Stage 2):      STAGE 2 CONFIRMED / STAGE 4 CAUTION (CMP vs 200-DMA)
+ Quarterly EARS Rating:               POSITIVE ACCELERATION / NEUTRAL / TORPEDO ALERT
+ Cash Harvesting Target (50% Trim):   ₹[BULL_PRICE] (+[XX.X]%)
+ Dynamic Trailing Stop-Loss:          ₹[STOP_PRICE] (-15% Entry / -18% Peak)
  Final Conviction Verdict:            STRONG BUY / QUALIFIED BUY / WATCHLIST / REJECT
 ================================================================================
 

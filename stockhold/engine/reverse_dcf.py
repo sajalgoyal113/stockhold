@@ -1,36 +1,180 @@
+#!/usr/bin/env python3
 """
-engine/reverse_dcf.py - Bridge to Master Expectations Investing & Reverse DCF Engine
+reverse_dcf.py - Expectations Investing & Reverse DCF Quantitative Engine
+Based on Michael Mauboussin's Expectations Investing framework.
 
-MASTER SOURCE OF TRUTH: predict/scripts/reverse_dcf.py
-This module delegates core reverse DCF numerical root-finding directly to the predict engines.
+Calculates:
+1. Implied 10-year FCF CAGR embedded in current Market Cap / Enterprise Value.
+2. Sensitivity Matrix (WACC vs Terminal Growth Rate).
+3. 4-State Probabilistic Valuation (Disaster, Bear, Base, Bull) with Expected Target Price,
+   Asymmetry Ratio, and Margin of Safety.
 """
 
-import os
 import sys
+import argparse
+import math
 
-# Try multiple candidate paths to locate predict/scripts
-_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-_CANDIDATE_PATHS = [
-    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "..", "predict", "scripts")),
-    os.path.abspath(os.path.join(_CURRENT_DIR, "..", "predict", "scripts")),
-    os.path.abspath(os.path.join(_CURRENT_DIR, "predict", "scripts")),
-    os.path.abspath(os.path.join(os.getcwd(), "predict", "scripts")),
-    os.path.abspath(os.path.join(os.getcwd(), "..", "predict", "scripts")),
-]
+def calculate_implied_growth(enterprise_value, current_fcf, wacc, terminal_growth, years=10):
+    """
+    Finds the compound annual growth rate (g) of FCF over 'years' such that:
+    EV = Sum_{t=1..N} [ FCF_0 * (1+g)^t / (1+wacc)^t ] + Terminal Value discounted.
+    Terminal Value = FCF_N * (1+g_term) / (wacc - g_term) discounted by (1+wacc)^N.
+    """
+    if current_fcf <= 0:
+        return None
 
-for p in _CANDIDATE_PATHS:
-    if os.path.isdir(p) and p not in sys.path:
-        sys.path.insert(0, p)
-        break
+    # Binary search for implied CAGR between -50% and +100%
+    low_g = -0.50
+    high_g = 1.50
+    tolerance = 1e-4
 
-try:
-    from reverse_dcf import (
-        run_reverse_dcf as _master_run_reverse_dcf,
-        calculate_implied_growth as _skill_calculate_implied_growth
-    )
-except ImportError:
-    _master_run_reverse_dcf = None
-    _skill_calculate_implied_growth = None
+    def get_ev(g):
+        pv_fcf = 0.0
+        fcf_t = current_fcf
+        for t in range(1, years + 1):
+            fcf_t *= (1 + g)
+            pv_fcf += fcf_t / ((1 + wacc) ** t)
+        
+        # Terminal value at year N
+        tv = (fcf_t * (1 + terminal_growth)) / (wacc - terminal_growth)
+        pv_tv = tv / ((1 + wacc) ** years)
+        return pv_fcf + pv_tv
+
+    # Check boundaries
+    if get_ev(low_g) > enterprise_value:
+        return low_g
+    if get_ev(high_g) < enterprise_value:
+        return high_g
+
+    for _ in range(100):
+        mid_g = (low_g + high_g) / 2.0
+        est_ev = get_ev(mid_g)
+        if abs(est_ev - enterprise_value) < enterprise_value * tolerance:
+            return mid_g
+        if est_ev < enterprise_value:
+            low_g = mid_g
+        else:
+            high_g = mid_g
+
+    return (low_g + high_g) / 2.0
+
+def dcf_valuation(current_fcf, growth_rate, wacc, terminal_growth, net_debt, shares_count, years=10):
+    """Computes target equity value per share given explicit growth assumptions."""
+    pv_fcf = 0.0
+    fcf_t = current_fcf
+    for t in range(1, years + 1):
+        fcf_t *= (1 + growth_rate)
+        pv_fcf += fcf_t / ((1 + wacc) ** t)
+    
+    tv = (fcf_t * (1 + terminal_growth)) / (wacc - terminal_growth)
+    pv_tv = tv / ((1 + wacc) ** years)
+    ev = pv_fcf + pv_tv
+    equity_val = ev - net_debt
+    target_price = equity_val / shares_count if shares_count > 0 else 0
+    return ev, equity_val, target_price
+
+def print_reverse_dcf_report(ticker, cmp, market_cap_cr, net_debt_cr, current_fcf_cr, wacc=0.115, terminal_growth=0.05, shares_cr=None):
+    """
+    All currency in ₹ Crores (Cr).
+    """
+    ev_cr = market_cap_cr + net_debt_cr
+    if not shares_cr or shares_cr <= 0:
+        shares_cr = market_cap_cr / cmp
+
+    print(f"================================================================================")
+    print(f" EXPECTATIONS INVESTING & REVERSE DCF ENGINE: {ticker.upper()}")
+    print(f"================================================================================")
+    print(f" Current Market Price (CMP):    ₹{cmp:,.2f}")
+    print(f" Market Capitalization:          ₹{market_cap_cr:,.2f} Cr")
+    print(f" Net Debt (Debt - Cash):         ₹{net_debt_cr:,.2f} Cr")
+    print(f" Enterprise Value (EV):          ₹{ev_cr:,.2f} Cr")
+    print(f" Base Free Cash Flow (FCF_0):    ₹{current_fcf_cr:,.2f} Cr")
+    print(f" Cost of Capital (WACC):         {wacc*100:.2f}%")
+    print(f" Terminal Growth Rate (g_term):  {terminal_growth*100:.2f}%")
+    print(f" Implied Shares Count:           {shares_cr:,.2f} Cr shares")
+    print(f"--------------------------------------------------------------------------------")
+
+    implied_g = calculate_implied_growth(ev_cr, current_fcf_cr, wacc, terminal_growth)
+
+    if implied_g is not None:
+        print(f"\n>>> REVERSE DCF CONCLUSION:")
+        print(f"    To justify the current EV of ₹{ev_cr:,.2f} Cr, the company must grow Free Cash Flow")
+        print(f"    at a 10-year CAGR of {implied_g*100:.2f}% annually with a terminal growth of {terminal_growth*100:.1f}%.")
+        
+        # Reality benchmark
+        if implied_g > 0.35:
+            feasibility = "HEROIC / ULTRA-HIGH RISK (Implies >35% compounding for a decade; rare in Indian equity history)"
+        elif implied_g > 0.22:
+            feasibility = "AGGRESSIVE (Requires sustained high-growth moat and minimal reinvestment drag)"
+        elif implied_g > 0.12:
+            feasibility = "REALISTIC / MODERATE (Consistent with quality compounder execution)"
+        elif implied_g > 0.05:
+            feasibility = "CONSERVATIVE / VALUE (Significant pessimism priced in)"
+        else:
+            feasibility = "DISTRESSED / BARGAIN BASEMENT (Priced for secular decay or turnaround)"
+        print(f"    Feasibility Assessment: {feasibility}")
+    else:
+        print("\n>>> Base FCF is negative or zero. Reverse DCF requires normalized steady-state FCF margin.")
+
+    # Sensitivity Table (WACC vs Terminal Growth)
+    print(f"\n--- SENSITIVITY TABLE: Implied 10-Yr FCF CAGR across WACC & Terminal Growth ---")
+    wacc_range = [wacc - 0.015, wacc, wacc + 0.015]
+    tg_range = [terminal_growth - 0.01, terminal_growth, terminal_growth + 0.01]
+    
+    header = f"{'WACC \\ g_term':<15}" + "".join([f"{tg*100:>12.1f}%" for tg in tg_range])
+    print(header)
+    print("-" * len(header))
+    for w in wacc_range:
+        row = f"{w*100:>10.2f}%    "
+        for tg in tg_range:
+            g = calculate_implied_growth(ev_cr, current_fcf_cr, w, tg)
+            if g is not None:
+                row += f"{g*100:>12.2f}%"
+            else:
+                row += f"{'N/A':>12}"
+        print(row)
+
+    # 4-State Probabilistic Valuation Model
+    print(f"\n--- 4-STATE PROBABILISTIC VALUATION MATRIX ---")
+    scenarios = [
+        {"name": "Disaster / Tail-Risk", "prob": 0.10, "growth": -0.05, "wacc_adj": 0.02, "mult_label": "Severe compression / regulatory"},
+        {"name": "Bear Case",            "prob": 0.25, "growth": 0.08,  "wacc_adj": 0.01, "mult_label": "Margin pressure / execution miss"},
+        {"name": "Base Case",            "prob": 0.50, "growth": 0.18,  "wacc_adj": 0.00, "mult_label": "Consensus delivery & moat defense"},
+        {"name": "Bull Case",            "prob": 0.15, "growth": 0.30,  "wacc_adj": -0.01,"mult_label": "TAM expansion & operating leverage"}
+    ]
+
+    expected_price = 0.0
+    scenario_results = []
+    for sc in scenarios:
+        w_sc = wacc + sc["wacc_adj"]
+        ev_sc, eq_sc, pt_sc = dcf_valuation(current_fcf_cr, sc["growth"], w_sc, terminal_growth, net_debt_cr, shares_cr)
+        expected_price += sc["prob"] * pt_sc
+        scenario_results.append({
+            "name": sc["name"],
+            "prob": sc["prob"],
+            "growth": sc["growth"],
+            "target": pt_sc,
+            "return_pct": ((pt_sc - cmp) / cmp) * 100
+        })
+
+    print(f"{'Scenario':<22} | {'Prob':<6} | {'FCF CAGR':<10} | {'Target (₹)':<12} | {'Return (%)':<10}")
+    print("-" * 72)
+    for res in scenario_results:
+        print(f"{res['name']:<22} | {res['prob']*100:>4.0f}% | {res['growth']*100:>8.1f}% | ₹{res['target']:>10.2f} | {res['return_pct']:>8.1f}%")
+    
+    print("-" * 72)
+    ev_return = ((expected_price - cmp) / cmp) * 100
+    bear_pt = scenario_results[1]["target"]
+    bull_pt = scenario_results[3]["target"]
+    
+    downside = max(cmp - bear_pt, 1e-4)
+    upside = max(bull_pt - cmp, 0)
+    asymmetry = upside / downside if downside > 0 else 0
+
+    print(f" EXPECTED VALUE (Weighted Target):  ₹{expected_price:,.2f}  ({ev_return:+.1f}%)")
+    print(f" ASYMMETRY RATIO (Bull / Bear):     {asymmetry:.2f}x (Upside to Bull ₹{bull_pt:.1f} vs Downside to Bear ₹{bear_pt:.1f})")
+    print(f" MARGIN OF SAFETY:                  {ev_return:.1f}%")
+    print(f"================================================================================\n")
 
 
 def run_reverse_dcf(
@@ -41,24 +185,16 @@ def run_reverse_dcf(
     wacc: float = 0.115,
     g_term: float = 0.05
 ) -> dict:
-    if _master_run_reverse_dcf is not None:
-        return _master_run_reverse_dcf(
-            cmp=cmp,
-            mcap_cr=mcap_cr,
-            fcf_0=fcf_0,
-            net_debt=net_debt,
-            wacc=wacc,
-            g_term=g_term
-        )
-
+    """
+    Programmatic expectations investing interface.
+    Solves for the implied 10-year Free Cash Flow CAGR priced into EV,
+    assesses feasibility, and computes a sensitivity matrix across discount and terminal rates.
+    """
     ev = mcap_cr + net_debt
     base_fcf = max(1.0, fcf_0)
 
-    if _skill_calculate_implied_growth is not None:
-        raw_g = _skill_calculate_implied_growth(ev, base_fcf, wacc, g_term, years=10)
-        implied_cagr = (raw_g * 100.0) if raw_g is not None else 0.0
-    else:
-        implied_cagr = 20.0
+    raw_g = calculate_implied_growth(ev, base_fcf, wacc, g_term, years=10)
+    implied_cagr = (raw_g * 100.0) if raw_g is not None else 0.0
 
     if implied_cagr < 15.0:
         assessment = "REALISTIC / MODEST (<15%)"
@@ -80,11 +216,8 @@ def run_reverse_dcf(
         matrix[w_key] = {}
         for gt in g_term_list:
             gt_key = f"{int(gt*100)}%"
-            if _skill_calculate_implied_growth is not None:
-                cell_g = _skill_calculate_implied_growth(ev, base_fcf, w, gt, years=10)
-                matrix[w_key][gt_key] = round(cell_g * 100.0, 1) if cell_g is not None else 0.0
-            else:
-                matrix[w_key][gt_key] = 20.0
+            cell_g = calculate_implied_growth(ev, base_fcf, w, gt, years=10)
+            matrix[w_key][gt_key] = round(cell_g * 100.0, 1) if cell_g is not None else 0.0
 
     return {
         "ev": round(ev, 1),
@@ -96,3 +229,76 @@ def run_reverse_dcf(
         "color": color,
         "sensitivity_matrix": matrix
     }
+
+
+if __name__ == "__main__":
+    import os
+    _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    if _SCRIPT_DIR not in sys.path:
+        sys.path.insert(0, _SCRIPT_DIR)
+
+    parser = argparse.ArgumentParser(description="Reverse DCF & Probabilistic Valuation Engine")
+    parser.add_argument("ticker", help="Stock ticker symbol (e.g., ZOMATO, TRENT)")
+    parser.add_argument("--cmp", type=float, default=0.0, help="Current Market Price (₹). If omitted, auto-fetched.")
+    parser.add_argument("--mcap", type=float, default=None, help="Market Cap in ₹ Crores. If omitted, auto-fetched.")
+    parser.add_argument("--netdebt", type=float, default=0.0, help="Net Debt (Debt - Cash) in ₹ Crores (negative if net cash)")
+    parser.add_argument("--fcf", type=float, default=0.0, help="Base Free Cash Flow in ₹ Crores. If omitted, auto-derived.")
+    parser.add_argument("--wacc", type=float, default=0.115, help="WACC discount rate (default: 0.115 / 11.5%%)")
+    parser.add_argument("--terminal-growth", type=float, default=0.05, help="Terminal growth rate (default: 0.05 / 5%%)")
+    parser.add_argument("--shares", type=float, default=None, help="Shares count in Crores (optional)")
+
+    args = parser.parse_args()
+    clean_tick = args.ticker.upper().replace(" ", "").replace("-", "")
+
+    cmp = args.cmp
+    mcap = args.mcap
+    fcf = args.fcf
+    netdebt = args.netdebt
+    shares = args.shares
+
+    try:
+        from data_fetcher import fetch_company_data
+        live = fetch_company_data(clean_tick)
+        if live:
+            live_cmp = float(live.get("cmp") or 0.0)
+            if live_cmp > 0:
+                if cmp <= 0:
+                    cmp = live_cmp
+                    print(f"[AUTO-FETCHED] Live CMP: ₹{cmp:,.2f} from Screener Consolidated")
+                else:
+                    drift = (cmp - live_cmp) / live_cmp
+                    if abs(drift) > 0.05:
+                        print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from Live Screener CMP (₹{live_cmp:,.2f})!")
+
+            if (mcap is None or mcap <= 0) and live.get("mcap_cr"):
+                mcap = float(live["mcap_cr"])
+                print(f"[AUTO-FETCHED] Market Cap: ₹{mcap:,.1f} Cr")
+            if (shares is None or shares <= 0) and live.get("shares_cr"):
+                shares = float(live["shares_cr"])
+            if netdebt == 0.0 and live.get("latest_debt"):
+                netdebt = float(live["latest_debt"])
+            if fcf <= 0 and live.get("fcf_history"):
+                fcf_hist = [float(x) for x in live["fcf_history"] if x is not None]
+                if fcf_hist:
+                    fcf = fcf_hist[-1]
+                    print(f"[AUTO-FETCHED] Latest Annual FCF: ₹{fcf:,.1f} Cr")
+    except Exception:
+        pass
+
+    if cmp <= 0 or mcap is None or mcap <= 0:
+        print("Error: Could not resolve valid CMP or Market Cap. Please provide --cmp and --mcap.")
+        sys.exit(1)
+    if fcf <= 0:
+        fcf = max(10.0, mcap * 0.015)  # Fallback 1.5% FCF yield
+        print(f"[ESTIMATED] Assuming baseline 1.5% FCF yield: ₹{fcf:,.1f} Cr")
+
+    print_reverse_dcf_report(
+        ticker=args.ticker,
+        cmp=cmp,
+        market_cap_cr=mcap,
+        net_debt_cr=netdebt,
+        current_fcf_cr=fcf,
+        wacc=args.wacc,
+        terminal_growth=args.terminal_growth,
+        shares_cr=shares
+    )

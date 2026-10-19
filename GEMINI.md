@@ -68,6 +68,18 @@ Finance/
    - All engines in `predict/scripts/` (`forward_growth_pe.py`, `reverse_dcf.py`) must automatically fetch verified live consolidated quotes directly from Screener (`data_fetcher.py`) by default.
    - If a manual `--cmp` is explicitly passed for limit-order or entry-price stress-testing, the engine automatically checks for price drift against the live market price and triggers a prominent `[PRICE DRIFT WARNING]` if the deviation exceeds 5%.
 
+7. **Strict Root Directory Invariant**:
+   - The root directory (`Finance/`) must strictly and exclusively contain:
+     ```text
+     Finance/
+     ├── predict/
+     ├── stockhold/
+     └── GEMINI.md
+     ```
+   - No root-level wrapper scripts (`app.py`, `run_app.sh`), dependency manifests (`requirements.txt`), README files (`README.md`), virtual environments (`venv/`), temporary files, or scratch scripts are permitted in the root folder.
+   - All Streamlit web application components, requirements, launchers, and frontend docs must reside strictly within `stockhold/`.
+   - All quantitative engines, models, valuation references, and research reports must reside strictly within `predict/`.
+
 ---
 
 ## 3. Core Valuation Invariants
@@ -101,3 +113,45 @@ Finance/
    - **Structured & Intuitive Report Presentation**: Reports must be visually structured, scannable, and clean—utilizing concise executive cards, clear comparative tables, bulleted thematic drivers, and explicit actionable price trigger ranges (Accumulate / Hold / Trim).
 7. **Management Commentary on Forensic & Working Capital Anomalies**:
    - Whenever identifying red flags or friction points (e.g., expanding debtor days, CFO/PAT divergence, margin compression, write-offs, or slowing top-line growth), always investigate and explicitly incorporate **what management has stated in recent earnings calls, annual reports, or filings** regarding these specific anomalies (e.g., segment mix shifts, milestone-based billing, government payment cycles, or collection remediation).
+8. **Regime Selection & Platform Operating Leverage Invariant (Regime 1 vs Regime 2)**:
+   - **Regime 1 (Steady-State Margin Growth)**: Applied strictly to established compounders with mature, steady margins ($\ge 4\text{--}5\%$, e.g. Dixon, Kaynes, Polycab, HAL) where earnings grow linearly alongside revenue.
+   - **Regime 2 (Non-Linear Operating Leverage & Margin Expansion)**: Mandatory for early-profitability platforms, quick-commerce, SaaS, or turnaround compounders where trailing net margin is thin ($<3\%$) but guided for operational leverage (e.g. Zomato/ETERNAL, Urban Company). Silent fallback to linear Regime 1 is strictly prohibited; models must explicitly specify Revenue CAGR, Current NPM, and Target Horizon NPM.
+9. **Empirical Growth Derivation Bridge (Zero Arbitrary Numbers)**:
+   - Never assume a CAGR out of thin air. Every report must present an explicit 4-point historical growth bridge:
+     1. 3-Year Historical Revenue CAGR
+     2. Last Reported FY / TTM YoY Growth Rate
+     3. Segment Mix Dynamics (e.g., core service stability vs product ramp surges)
+     4. Official Management Guidance from earnings transcripts.
+   - Base Case CAGR must reflect conservative normalization or category maturation; Bull Case CAGR must reflect sustained historical velocity and full guidance execution.
+10. **Minervini / CANSLIM Stage 2 Trend Confirmation Gate**:
+    - A fundamentally approved stock must **never be entered in a Stage 4 downtrend**.
+    - Mandatory Technical Confirmation: $\text{CMP} > \text{200-DMA}$, $\text{50-DMA} > \text{200-DMA}$, and **Relative Strength (RS vs Nifty 500) $\ge 70$**.
+    - If CMP is below the 200-DMA, the stock is marked as `STAGE 4 CAUTION / WAIT FOR PULLBACK` to prevent catching falling knives and enduring 30-50% mark-to-market drawdowns.
+11. **Quarterly Earnings Revision & Acceleration Score (EARS) & Torpedo Rule**:
+    - Never rely solely on annual numbers or unanchored management guidance.
+    - Validate empirical quarterly momentum: $\text{YoY PAT Growth}_{\text{Q}_0} > \text{YoY PAT Growth}_{\text{Q}_{-1}}$ and Quarterly $\text{CFO} / \text{Operating Profit} \ge 0.70$.
+    - **March-Quarter Seasonality Invariant**: For companies with extreme Q4/March seasonality (e.g. Defense PSUs like HAL/BEL, Capital Goods, EPC where 40–55% of annual PAT is booked in March), sequential QoQ ($Q_0 \text{ vs } Q_{-1}$) produces false deceleration alarms (-60% June vs March). EARS mandates **Same-Quarter Year-over-Year Matching** ($\frac{\text{PAT}_{Q_0}-\text{PAT}_{Q_{-4}}}{\text{PAT}_{Q_{-4}}} > \frac{\text{PAT}_{Q_{-1}}-\text{PAT}_{Q_{-5}}}{\text{PAT}_{Q_{-5}}}$) and **Rolling 4-Quarter TTM PAT Compounding**, which completely neutralizes seasonal distortions. Torpedo miss triggers are strictly evaluated against seasonally adjusted consensus.
+    - **Earnings Torpedo Stop**: Automatically trigger a **50% position trim or immediate exit** if a company reports a quarterly PAT miss of $>15\%$ against consensus or debtor days spike by $>30$ days.
+12. **Regime 2 Normalized Margin Bridge for Turnarounds & Suppressed Earnings Compounders**:
+    - Solves the depressed base earnings distortion where trailing P/E appears artificially inflated (300x–500x) due to rapid store rollouts (e.g. Trent), plant commissioning (e.g. Kaynes), or quick-commerce dark store buildouts (e.g. Zomato).
+    - Compute **Normalized Target PAT**:
+      $$\text{Normalized FY+2 PAT} = \text{Target FY+2 Revenue} \times \text{Steady-State Benchmark NPM (5% to 8\%)}$$
+    - If 2-Year Forward Normalized P/E $< 45\times$ and Revenue CAGR $\ge 30\%$, it qualifies as an approved Regime 2 compounder, eliminating Type II missed multibagger errors.
+13. **Dynamic Cash Harvesting Protocol & Trailing Stop-Loss Engine (The Cash Earning Invariant)**:
+    - **Tranche 1 Profit Take (50% Realized Cash)**: When the market price hits the **Bull Case Target Price** within 12–18 months, immediately sell **50% of the position** to convert paper gains into realized cash profits.
+    - **Dynamic Trailing Stop-Loss**: Maintain an automated trailing stop-loss at:
+      $$\text{Stop Price} = \max(\text{Entry Price} \times 0.85, \; \text{Peak Price} \times 0.82, \; \text{50-Week EMA})$$
+      on a weekly closing basis to protect capital, eliminate round-tripping, and maintain portfolio Sharpe ratio $>2.0$.
+14. **Contracted Infrastructure & Mega-Cap Duopoly Cash Invariant (The Bharti Airtel Invariant)**:
+    - Solves the Type II missed multibagger error on mega-cap fortress franchises ($\text{Mcap} \ge ₹50,000\text{ Cr}$) with massive operating cash flow ($\text{CFO/PAT} \ge 2.5\times$ or $\text{EBITDA Margin} \ge 40\%$) where heavy front-loaded capex depreciation artificially inflates trailing accounting P/E.
+    - **Calibrated Hurdles**:
+      - Bull Case Upside hurdle is calibrated from $\ge 50\%$ down to **$\ge 40\%$** (or Expected Value CAGR $\ge 18\%$).
+      - Valuation is verified on **EV/EBITDA ($< 15\times$)** or **Cash Forward P/E** ($\frac{\text{CMP}}{\text{Cash EPS}_{t+2}} < 30\times$, where $\text{Cash EPS} = \text{EPS} + \text{Depreciation per share}$).
+      - Dynamic Probability Allocation defaults to **55% Base / 45% Bull** reflecting duopoly pricing power and zero credit fragility.
+15. **Cyclical Commodity Margin Peak & Global Dumping Guard (The Chemical Trap Guard)**:
+    - Prevents false-positive entries into intermediate chemical/commodity processors (e.g. Deepak Nitrite, Rossari Biotech) where trailing 3-year revenue CAGR appears high due to temporary cyclical margin spikes.
+    - **Margin Normalization Stress-Test**: If a company operates in non-patented chemicals, metals, or commodity intermediates, and $\text{TTM OPM} > 1.25 \times \text{5-Year Median OPM}$, earnings must NOT be projected from peak EPS. Projections must be anchored to **Normalized Median OPM EPS**.
+    - **Global Dumping / Gross Margin Contraction Gate**: If quarterly Gross Margin contracts by $>300\text{ bps}$ YoY for 2 consecutive quarters ($\Delta \text{GM} = \text{GM}_{Q_0} - \text{GM}_{Q_{-4}} < -300\text{ bps}$) due to Chinese dumping or inventory destocking, the stock is marked as **`CYCLICAL DE-STOCKING TRAP`** and disqualified from entry until gross margins expand sequentially for 2 quarters.
+
+
+

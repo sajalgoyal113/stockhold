@@ -11,6 +11,10 @@
  Total Expected Return:               [+/- XX.X]% from CMP
  Annualized Expected Return (CAGR):   [+/- XX.X]% p.a.
  Dynamic Probability Allocation:      [XX]% Base / [YY]% Bull (Calibrated to execution risk & moat defensibility)
+ Technical Trend Gate (Stage 2):      STAGE 2 CONFIRMED / STAGE 4 CAUTION (CMP: ₹[CMP] vs 200-DMA: ₹[DMA200])
+ Quarterly EARS Rating:               POSITIVE ACCELERATION / NEUTRAL / TORPEDO ALERT
+ Cash Harvesting Target (50% Trim):   ₹[BULL_PRICE] (+[XX.X]%)
+ Dynamic Trailing Stop-Loss:          ₹[STOP_PRICE] (-15% Entry / -18% Peak)
  Final Conviction Verdict:            STRONG BUY / QUALIFIED BUY / WATCHLIST / REJECT
 ================================================================================
 
@@ -29,7 +33,7 @@
 **Report Date:** [DATE]  
 **Last Closing Price (CMP):** ₹[CMP] | **Latest Market Cap:** ₹[MCAP] Cr | **Enterprise Value (EV):** ₹[EV] Cr  
 **Target Horizon:** [H1/H2] Roll-Forward Regime ([FY_BASE] Base $\rightarrow$ 1-Yr: [FY_YR1] | 2-Yr: [FY_YR2])  
-**Valuation Regime:** [Regime 1: Steady-State Margin Growth / Regime 2: Operating Leverage & Margin Expansion]  
+**Valuation Regime:** [Regime 1: Steady-State Margin Growth / Regime 2: Operating Leverage & Margin Expansion / Turnaround Normalized Bridge]  
 **Trailing Foundation:** Base TTM EPS ₹[EPS] | Trailing P/E: [PE]x | Net Cash / Debt: ₹[NET_CASH] Cr  
 
 ---
@@ -44,7 +48,10 @@
 | **4. Balance Sheet & Margins** | Net Cash or Debt/Equity < 0.3x; CFO/PAT >= 0.8x | Net Debt: ₹[X] Cr; CFO/PAT: [X.XX]x | [🟢 PRISTINE / 🔴 STRAINED] |
 | **5. Growth & Valuation (King Filter)**| Projected CAGR $\ge 20\%$ & Bull Upside $\ge 50\%$ | Base: [XX]%, Bull: [YY]%; Bull Upside: +[ZZ]% | [🟢 PASS / 🟡 MIXED / 🔴 FAIL] |
 | **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E < 50x at exit speed | Base Fwd P/E: [XX]x; Bull Fwd P/E: [YY]x | [🟢 PASS (<50x) / 🔴 FAIL (>=50x)] |
-| **7. Concentration Risk** | Single counterparty exposure $<15\text{--}20\%$ | Top 5: [XX]%; Single Largest: [YY]% | [🟢 BALANCED / 🔴 CONCENTRATED] |
+| **7. Technical Trend Gate (Stage 2)** | CMP > 200-DMA & 50-DMA > 200-DMA; RS >= 70 | CMP: ₹[CMP] vs 200-DMA: ₹[DMA200]; RS: [XX] | [🟢 STAGE 2 CONFIRMED / 🔴 STAGE 4] |
+| **8. EARS & Torpedo Gate** | YoY PAT Acceleration & CFO/EBITDA >= 0.7x | Q0 YoY: +[XX]%, Q-1 YoY: +[YY]%; Miss: [0%] | [🟢 POSITIVE ACCEL / 🔴 TORPEDO EXIT] |
+| **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: ₹[BULL_P]; Stop: ₹[STOP_P] | [🟢 ACTIVATED] |
+| **10. Concentration Risk** | Single counterparty exposure $<15\text{--}20\%$ | Top 5: [XX]%; Single Largest: [YY]% | [🟢 BALANCED / 🔴 CONCENTRATED] |
 
 **FINAL CONVICTION VERDICT:** **[STRONG BUY / QUALIFIED GROWTH BUY / WATCHLIST FOR DIP / REJECT]**
 
