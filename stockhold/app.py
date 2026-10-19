@@ -438,8 +438,23 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    base_cagr = st.slider("Base Case CAGR (%):", min_value=10, max_value=50, value=calibrated["base_cagr"], step=1, key=f"base_cagr_{ticker}") / 100.0
-    bull_cagr = st.slider("Bull Case CAGR (%):", min_value=15, max_value=60, value=calibrated["bull_cagr"], step=1, key=f"bull_cagr_{ticker}") / 100.0
+    base_cagr = st.slider(
+        "Base Case CAGR (%):",
+        min_value=5.0,
+        max_value=60.0,
+        value=float(max(5.0, min(60.0, float(calibrated["base_cagr"])))),
+        step=0.5,
+        key=f"base_cagr_{ticker}"
+    ) / 100.0
+
+    bull_cagr = st.slider(
+        "Bull Case CAGR (%):",
+        min_value=10.0,
+        max_value=80.0,
+        value=float(max(10.0, min(80.0, float(calibrated["bull_cagr"])))),
+        step=0.5,
+        key=f"bull_cagr_{ticker}"
+    ) / 100.0
 
     col_eg1, col_eg2 = st.columns(2)
     base_exit_g = col_eg1.number_input("Base Exit Growth (%):", value=float(calibrated["base_exit_g"]), step=1.0, key=f"base_eg_{ticker}") / 100.0
@@ -451,7 +466,10 @@ with st.sidebar:
 
     prob_split = st.slider(
         "Base Case Probability Weight (%):",
-        min_value=20, max_value=80, value=calibrated["base_prob"], step=5,
+        min_value=20,
+        max_value=80,
+        value=int(max(20, min(80, int(calibrated["base_prob"])))),
+        step=5,
         help="Calibrated dynamically to founder credibility, cash flow hygiene (CFO/PAT), and guidance track record.",
         key=f"prob_{ticker}"
     )
