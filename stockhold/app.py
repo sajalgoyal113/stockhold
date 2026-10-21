@@ -20,10 +20,12 @@ import inspect
 import engine.data_fetcher
 import engine.valuation
 import engine.html_reporter
+import engine.stock_universe
 try:
     importlib.reload(engine.data_fetcher)
     importlib.reload(engine.valuation)
     importlib.reload(engine.html_reporter)
+    importlib.reload(engine.stock_universe)
 except Exception:
     pass
 
@@ -33,6 +35,7 @@ from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_par
 from engine.forensics import run_forensic_audit
 from engine.reverse_dcf import run_reverse_dcf
 from engine.ai_analyst import generate_ai_analysis
+from engine.stock_universe import get_indexed_stock_options, extract_ticker_from_string
 from engine.html_reporter import (
     generate_html_for_stock,
     find_existing_html_report,
@@ -297,69 +300,250 @@ st.html("""
         color: #ffffff !important;
         border: 1px solid rgba(99, 102, 241, 0.4) !important;
     }
+
+    div[data-baseweb="select"] > div {
+        background: rgba(14, 20, 32, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
+    }
+    div[data-baseweb="select"] * {
+        color: #ffffff !important;
+        font-family: var(--font-main) !important;
+    }
+    div[data-baseweb="popover"] ul {
+        background: #0b0f19 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+    }
+    div[data-baseweb="popover"] li {
+        color: #e2e8f0 !important;
+    }
+    div[data-baseweb="popover"] li:hover {
+        background: rgba(99, 102, 241, 0.25) !important;
+        color: #ffffff !important;
+    }
 </style>
 """)
 
-# --- NAVBAR BRAND HEADER ---
-st.html("""
-<div class="brand-container">
-    <div class="brand-logo">
-        <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #6366f1 0%, #00d2ff 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);">
-            <span style="font-size: 22px;">⚡</span>
+# --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
+def render_footer():
+    st.html("""
+    <div class="glass-card" style="margin-top: 40px; border-top: 1px solid var(--border-subtle); padding: 24px; text-align: center;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;">
+            🔥 Top 20 Trending Indian Stocks — Share Price Target Index (NSE / BSE)
         </div>
-        <div>
-            <h1 class="brand-title">StockHold</h1>
-            <div class="brand-tagline">Simplifying stock analysis for investors.</div>
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
+            <a href="/?ticker=ETERNAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Zomato Share Price Target</a>
+            <a href="/?ticker=COFORGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Coforge Target Price</a>
+            <a href="/?ticker=DIXON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Dixon Technologies Target Price</a>
+            <a href="/?ticker=KAYNES" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Kaynes Technology Target Price</a>
+            <a href="/?ticker=TRENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Trent Share Target Price</a>
+            <a href="/?ticker=TATAMOTORS" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Motors Share Target</a>
+            <a href="/?ticker=POLYCAB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Polycab Target Price</a>
+            <a href="/?ticker=HAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">HAL Share Price Target</a>
+            <a href="/?ticker=BEL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">BEL Target Price</a>
+            <a href="/?ticker=CDSL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">CDSL Share Price Target</a>
+            <a href="/?ticker=ANGELONE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Angel One Target Price</a>
+            <a href="/?ticker=SUZLON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Suzlon Energy Target Price</a>
+            <a href="/?ticker=TATAELXSI" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Elxsi Target Price</a>
+            <a href="/?ticker=KPITTECH" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">KPIT Tech Target Price</a>
+            <a href="/?ticker=PERSISTENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Persistent Systems Target Price</a>
+            <a href="/?ticker=NETWEB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Netweb Technologies Target Price</a>
+            <a href="/?ticker=JYOTICNC" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Jyoti CNC Target Price</a>
+            <a href="/?ticker=PRESTIGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Prestige Estates Target Price</a>
+            <a href="/?ticker=PAYTM" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Paytm Share Target Price</a>
+            <a href="/?ticker=POLICYBZR" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">PolicyBazaar Target Price</a>
+        </div>
+        <div style="margin-top: 18px; font-size: 0.78rem; color: #64748b;">
+            © 2026 StockHold &bull; Simplifying stock analysis for investors &bull; Daily NSE / BSE Target Price Index.
         </div>
     </div>
-    <div class="brand-badge">
-        <div class="live-dot"></div>
-        <span>INSTITUTIONAL AI RESEARCH • v2.6 LIVE</span>
-    </div>
-</div>
-""")
-
-# --- TOP SEARCH BAR & TRENDING CHIPS ---
-st.html("""
-<div style="margin-bottom: 6px;">
-    <span style="font-size: 0.82rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Search Listed Equities (NSE / BSE):</span>
-</div>
-""")
+    """)
 
 # --- URL QUERY PARAMS FOR DIRECT SHAREABLE LINKS & SEO ---
 query_ticker = st.query_params.get("ticker", "").strip().upper()
 if not query_ticker:
     query_ticker = st.query_params.get("stock", "").strip().upper()
 
-default_val = query_ticker if query_ticker else "COFORGE"
+# =========================================================================
+# STATE 1: HOMEPAGE (Rendered when no ticker parameter is present in URL)
+# =========================================================================
+if not query_ticker:
+    st.html("""
+    <div style="text-align: center; padding: 44px 16px 20px 16px; max-width: 820px; margin: 0 auto;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 62px; height: 62px; border-radius: 18px; background: linear-gradient(135deg, #6366f1 0%, #00d2ff 100%); box-shadow: 0 0 32px rgba(99, 102, 241, 0.45); font-size: 30px; margin-bottom: 18px;">
+            ⚡
+        </div>
+        <h1 style="font-size: 3.1rem; font-weight: 800; letter-spacing: -0.04em; background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; line-height: 1.1;">
+            StockHold
+        </h1>
+        <p style="font-size: 1.15rem; color: #94a3b8; font-weight: 500; margin-top: 10px; margin-bottom: 24px; line-height: 1.5;">
+            Simplifying stock analysis for investors.<br>
+            <span style="font-size: 0.92rem; color: #64748b;">Institutional forward valuation models, forensic cash-flow checks, and 7 Powers moat audits.</span>
+        </p>
+    </div>
+    """)
 
-trending_stocks = get_top_trending_stocks()
-selected_chip = None
+    # Autocomplete Search Bar
+    scol1, scol2, scol3 = st.columns([1, 4, 1])
+    with scol2:
+        st.markdown("<div style='font-size: 0.85rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;'>🔍 Search Any Indian Stock (NSE / BSE):</div>", unsafe_allow_html=True)
+        stock_options = get_indexed_stock_options()
+        selected_home = st.selectbox(
+            "Search any Indian Stock:",
+            options=stock_options,
+            index=None,
+            placeholder="Type company name or ticker (e.g. Coforge, Dixon, Trent, Zomato, Tata Motors, Kaynes)...",
+            label_visibility="collapsed",
+            key="home_select_stock"
+        )
+        if selected_home:
+            chosen = extract_ticker_from_string(selected_home)
+            if chosen:
+                st.query_params["ticker"] = chosen
+                st.rerun()
 
-# Compact single-row search input and high-momentum trending chips
-search_col, trend_col = st.columns([1.5, 2.5])
-with search_col:
-    ticker_input = st.text_input(
-        "Search any Indian Stock:",
-        value=default_val,
-        placeholder="Search ticker, e.g. COFORGE, DIXON, KAYNES, TRENT, KPITTECH...",
-        label_visibility="collapsed"
+        with st.expander("⚡ Or search by custom NSE / BSE ticker directly", expanded=False):
+            cin1, cin2 = st.columns([3, 1])
+            custom_t = cin1.text_input("Custom Ticker", placeholder="e.g. MOTHERSON, HAL, BEL, IXIGO...", label_visibility="collapsed", key="hp_custom_ticker")
+            if cin2.button("Analyze Stock", key="btn_hp_custom", use_container_width=True):
+                if custom_t.strip():
+                    st.query_params["ticker"] = custom_t.strip().upper()
+                    st.rerun()
+
+    # Featured Institutional Research Dossiers
+    st.html("""
+    <div style="max-width: 980px; margin: 38px auto 14px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.88rem; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.06em;">
+                📑 Featured Institutional Research Dossiers:
+            </div>
+            <div style="font-size: 0.76rem; color: #00f5a0; font-family: var(--font-mono); font-weight: 600;">
+                ✓ 100% DETERMINISTIC QUANTITATIVE MODELS
+            </div>
+        </div>
+    </div>
+    """)
+
+    feat_cols = st.columns(4)
+    with feat_cols[0]:
+        st.html("""
+        <div class="glass-card" style="padding: 18px 16px; margin-bottom: 8px; border-left: 3px solid #6366f1;">
+            <div style="font-size: 0.72rem; color: #a5b4fc; font-weight: 700; font-family: var(--font-mono);">NSE: KPITTECH</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-top: 4px;">KPIT Tech</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 10px 0;">Autonomous Driving & SDV</div>
+            <div style="font-size: 0.88rem; color: #00f5a0; font-weight: 700; font-family: var(--font-mono);">+108.3% Upside</div>
+        </div>
+        """)
+        if st.button("Open Report →", key="btn_hp_kpittech", use_container_width=True):
+            st.query_params["ticker"] = "KPITTECH"
+            st.rerun()
+
+    with feat_cols[1]:
+        st.html("""
+        <div class="glass-card" style="padding: 18px 16px; margin-bottom: 8px; border-left: 3px solid #00f5a0;">
+            <div style="font-size: 0.72rem; color: #6ee7b7; font-weight: 700; font-family: var(--font-mono);">BSE: ADVAIT</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-top: 4px;">Advait Energy</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 10px 0;">Green Hydrogen & Power EPC</div>
+            <div style="font-size: 0.88rem; color: #00f5a0; font-weight: 700; font-family: var(--font-mono);">+168.0% Upside</div>
+        </div>
+        """)
+        if st.button("Open Report →", key="btn_hp_advait", use_container_width=True):
+            st.query_params["ticker"] = "ADVAIT"
+            st.rerun()
+
+    with feat_cols[2]:
+        st.html("""
+        <div class="glass-card" style="padding: 18px 16px; margin-bottom: 8px; border-left: 3px solid #00d2ff;">
+            <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 700; font-family: var(--font-mono);">NSE: TECHNOE</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-top: 4px;">Techno Electric</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 10px 0;">Data Centers & Smart Grid</div>
+            <div style="font-size: 0.88rem; color: #00f5a0; font-weight: 700; font-family: var(--font-mono);">+55.2% Upside</div>
+        </div>
+        """)
+        if st.button("Open Report →", key="btn_hp_technoe", use_container_width=True):
+            st.query_params["ticker"] = "TECHNOE"
+            st.rerun()
+
+    with feat_cols[3]:
+        st.html("""
+        <div class="glass-card" style="padding: 18px 16px; margin-bottom: 8px; border-left: 3px solid #818cf8;">
+            <div style="font-size: 0.72rem; color: #a5b4fc; font-weight: 700; font-family: var(--font-mono);">NSE: HDFCBANK</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-top: 4px;">HDFC Bank</div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 10px 0;">Banking Franchise & Forensics</div>
+            <div style="font-size: 0.88rem; color: #a5b4fc; font-weight: 700; font-family: var(--font-mono);">Core Valuation</div>
+        </div>
+        """)
+        if st.button("Open Report →", key="btn_hp_hdfcbank", use_container_width=True):
+            st.query_params["ticker"] = "HDFCBANK"
+            st.rerun()
+
+    # Trending Momentum Pills on Homepage
+    st.html("""
+    <div style="max-width: 980px; margin: 28px auto 12px auto;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em;">
+            🔥 Trending Momentum Equities (1-Click Analysis):
+        </div>
+    </div>
+    """)
+    hp_pills = st.columns(6)
+    if hp_pills[0].button("⚡ COFORGE", key="hp_btn_coforge", use_container_width=True):
+        st.query_params["ticker"] = "COFORGE"; st.rerun()
+    if hp_pills[1].button("⚡ ZOMATO", key="hp_btn_zomato", use_container_width=True):
+        st.query_params["ticker"] = "ETERNAL"; st.rerun()
+    if hp_pills[2].button("⚡ DIXON", key="hp_btn_dixon", use_container_width=True):
+        st.query_params["ticker"] = "DIXON"; st.rerun()
+    if hp_pills[3].button("⚡ KAYNES", key="hp_btn_kaynes", use_container_width=True):
+        st.query_params["ticker"] = "KAYNES"; st.rerun()
+    if hp_pills[4].button("⚡ TRENT", key="hp_btn_trent", use_container_width=True):
+        st.query_params["ticker"] = "TRENT"; st.rerun()
+    if hp_pills[5].button("⚡ TATA MOTORS", key="hp_btn_tatamotors", use_container_width=True):
+        st.query_params["ticker"] = "TATAMOTORS"; st.rerun()
+
+    render_footer()
+    st.stop()
+
+
+# =========================================================================
+# STATE 2: STOCK PAGE (When ?ticker=XYZ is provided in URL)
+# =========================================================================
+ticker = query_ticker
+
+# Top Compact Navbar: StockHold Logo on Left, Search on Right, ZERO Trending Stocks
+nav_left, nav_right = st.columns([1.6, 1.4])
+with nav_left:
+    st.html("""
+    <a href="/" target="_top" style="text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 4px 0 10px 0;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #6366f1 0%, #00d2ff 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(99, 102, 241, 0.45); font-size: 19px;">⚡</div>
+        <div>
+            <span style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">StockHold</span>
+            <span style="font-size: 0.76rem; color: #64748b; margin-left: 10px; font-weight: 600;">← HOME</span>
+        </div>
+    </a>
+    """)
+
+with nav_right:
+    stock_opts = get_indexed_stock_options()
+    curr_idx = None
+    for idx, opt in enumerate(stock_opts):
+        if opt.startswith(f"{ticker} —") or opt.startswith(f"{ticker} "):
+            curr_idx = idx
+            break
+    
+    nav_sel = st.selectbox(
+        "Search another Indian Stock:",
+        options=stock_opts,
+        index=curr_idx,
+        placeholder="🔍 Search another stock (e.g. DIXON, TRENT, KPIT)...",
+        label_visibility="collapsed",
+        key=f"nav_stock_search_{ticker}"
     )
-
-with trend_col:
-    chip_cols = st.columns([1.2, 1, 1, 1, 1, 1])
-    chip_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.78rem; color: #a5b4fc; font-weight: 700; letter-spacing: 0.05em;'>🔥 TRENDING:</div>", unsafe_allow_html=True)
-    if chip_cols[1].button("COFORGE", key="t_coforge"): selected_chip = "COFORGE"
-    if chip_cols[2].button("ZOMATO", key="t_zomato"): selected_chip = "ETERNAL"
-    if chip_cols[3].button("DIXON", key="t_dixon"): selected_chip = "DIXON"
-    if chip_cols[4].button("KAYNES", key="t_kaynes"): selected_chip = "KAYNES"
-    if chip_cols[5].button("TRENT", key="t_trent"): selected_chip = "TRENT"
-
-ticker = (selected_chip if selected_chip else ticker_input).upper().strip()
-
-# Sync active ticker to browser URL query param for shareability and Googlebot indexing
-if st.query_params.get("ticker") != ticker:
-    st.query_params["ticker"] = ticker
+    if nav_sel:
+        chosen = extract_ticker_from_string(nav_sel)
+        if chosen and chosen != ticker:
+            st.query_params["ticker"] = chosen
+            st.rerun()
 
 # --- DATA FETCHING & PROCESSING ---
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -491,15 +675,6 @@ with st.sidebar:
             del st.session_state[k]
         st.rerun()
 
-    with st.expander("🔥 Top 20 Trending Equities in India", expanded=False):
-        st.caption("Active high-velocity compounders across Quick-Commerce, Electronics (EMS), AI Supercomputing, and Defense:")
-        t_rows = [trending_stocks[i:i+3] for i in range(0, len(trending_stocks), 3)]
-        for r in t_rows:
-            cols = st.columns(len(r))
-            for idx, item in enumerate(r):
-                if cols[idx].button(f"{item['display']}", key=f"btn_trend_{item['ticker']}", help=f"Sector: {item['sector']}", use_container_width=True):
-                    st.query_params["ticker"] = item["ticker"]
-                    st.rerun()
 
 cmp = data["cmp"]
 mcap = data["mcap_cr"]
@@ -698,35 +873,4 @@ report_height = max(2600, min(6500, int(len(html_report_str) / 26)))
 components.html(html_report_str, height=report_height, scrolling=True)
 
 # --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
-st.html("""
-<div class="glass-card" style="margin-top: 40px; border-top: 1px solid var(--border-subtle); padding: 24px; text-align: center;">
-    <div style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;">
-        🔥 Top 20 Trending Indian Stocks — Share Price Target Index (NSE / BSE)
-    </div>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
-        <a href="/?ticker=ETERNAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Zomato Share Price Target</a>
-        <a href="/?ticker=COFORGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Coforge Target Price</a>
-        <a href="/?ticker=DIXON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Dixon Technologies Target Price</a>
-        <a href="/?ticker=KAYNES" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Kaynes Technology Target Price</a>
-        <a href="/?ticker=TRENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Trent Share Target Price</a>
-        <a href="/?ticker=TATAMOTORS" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Motors Share Target</a>
-        <a href="/?ticker=POLYCAB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Polycab Target Price</a>
-        <a href="/?ticker=HAL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">HAL Share Price Target</a>
-        <a href="/?ticker=BEL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">BEL Target Price</a>
-        <a href="/?ticker=CDSL" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">CDSL Share Price Target</a>
-        <a href="/?ticker=ANGELONE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Angel One Target Price</a>
-        <a href="/?ticker=SUZLON" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Suzlon Energy Target Price</a>
-        <a href="/?ticker=TATAELXSI" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Tata Elxsi Target Price</a>
-        <a href="/?ticker=KPITTECH" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">KPIT Tech Target Price</a>
-        <a href="/?ticker=PERSISTENT" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Persistent Systems Target Price</a>
-        <a href="/?ticker=NETWEB" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Netweb Technologies Target Price</a>
-        <a href="/?ticker=JYOTICNC" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Jyoti CNC Target Price</a>
-        <a href="/?ticker=PRESTIGE" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Prestige Estates Target Price</a>
-        <a href="/?ticker=PAYTM" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">Paytm Share Target Price</a>
-        <a href="/?ticker=POLICYBZR" style="color: #6366f1; text-decoration: none; padding: 4px 10px; background: rgba(99,102,241,0.08); border-radius: 6px;">PolicyBazaar Target Price</a>
-    </div>
-    <div style="margin-top: 18px; font-size: 0.78rem; color: #64748b;">
-        © 2026 StockHold &bull; Simplifying stock analysis for investors &bull; Daily NSE / BSE Target Price Index.
-    </div>
-</div>
-""")
+render_footer()
