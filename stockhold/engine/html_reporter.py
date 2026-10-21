@@ -1025,42 +1025,42 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
         }}
         
         /* Mermaid Diagram Styling */
-        .mermaid-card {
+        .mermaid-card {{
             background: #0B0F19 !important;
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch !important;
             max-width: 100% !important;
-        }
-        .mermaid {
+        }}
+        .mermaid {{
             display: flex !important;
             justify-content: center !important;
             min-width: 600px !important;
-        }
-        @media (min-width: 768px) {
-            .mermaid {
+        }}
+        @media (min-width: 768px) {{
+            .mermaid {{
                 min-width: 800px !important;
-            }
-        }
-        .mermaid svg {
+            }}
+        }}
+        .mermaid svg {{
             max-width: 100% !important;
             height: auto !important;
-        }
+        }}
         
         /* Mobile Touch & Formula Responsiveness */
-        .katex-display {
+        .katex-display {{
             overflow-x: auto !important;
             overflow-y: hidden !important;
             max-width: 100% !important;
             padding: 0.4rem 0 !important;
             -webkit-overflow-scrolling: touch !important;
-        }
-        pre, code {
+        }}
+        pre, code {{
             max-width: 100% !important;
             -webkit-overflow-scrolling: touch !important;
-        }
-        table {
+        }}
+        table {{
             -webkit-overflow-scrolling: touch !important;
-        }
+        }}
         .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon {{
             fill: #1E293B !important;
             stroke: #818CF8 !important;
@@ -1085,10 +1085,6 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
             border-radius: 4px;
             padding: 3px 6px;
             font-size: 12px !important;
-        }}
-            border-radius: 4px;
-            padding: 2px 4px;
-            font-size: 11px !important;
         }}
         @media print {{
             body {{
