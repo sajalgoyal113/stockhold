@@ -53,7 +53,8 @@
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: ₹4,855.76 (+175.7%); Dynamic Stop-Loss: ₹1,496.85 (-15.0% Capital Protection) | 🟢 ACTIVATED |
 | **10. Concentration Risk** | Single counterparty exposure $<15\text{--}20\%$ | Diversified across PGCIL, state electricity boards, and commercial developers | 🟢 BALANCED |
 
-**FINAL CONVICTION VERDICT:** **STRONG HIGH-GROWTH BUY (Staggered Accumulation on Dips / Breakout Tranche on Reclaiming 200-DMA)**
+**FINAL CONVICTION VERDICT:** **STRONG HIGH-GROWTH BUY (Staggered Accumulation on Dips / Breakout Tranche on Reclaiming 200-DMA)**  
+*Rationale*: High-conviction compounder dominating power transmission hardware (OPGW) and green hydrogen infrastructure with >45% PAT CAGR runway; current Stage 4 pullback (-28% from peak) offers prime staggered accumulation entry ahead of 200-DMA breakout.
 
 ---
 

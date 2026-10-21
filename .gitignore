@@ -17,6 +17,7 @@ __pycache__/
 .DS_Store
 *.png
 *.html
+!predict/reports/*.html
 .system_generated/
 .idea/
 .vscode/

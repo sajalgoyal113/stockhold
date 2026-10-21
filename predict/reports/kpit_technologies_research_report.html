@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPIT Technologies Ltd (KPITTECH) - Institutional Research Report</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- KaTeX for crisp LaTeX formula rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ]
+        });"></script>
+
+    <!-- Mermaid.js for architecture diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                fontFamily: 'Inter',
+                darkMode: true,
+                background: '#0B0F19',
+                primaryColor: '#1E1B4B',
+                primaryTextColor: '#F8FAFC',
+                primaryBorderColor: '#6366F1',
+                lineColor: '#818CF8',
+                secondaryColor: '#1E293B',
+                tertiaryColor: '#0F172A',
+                fontSize: '13px'
+            }
+        });
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        }
+        html.dark, html.dark body {
+            background-color: #0A0E17 !important;
+            color: #E2E8F0 !important;
+        }
+        html.dark .glass-card {
+            background: #111827 !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+        }
+        html:not(.dark), html:not(.dark) body {
+            background-color: #F8FAFC !important;
+            color: #0F172A !important;
+        }
+        html:not(.dark) .glass-card {
+            background: #FFFFFF !important;
+            border: 1px solid #E2E8F0 !important;
+            box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+        .dark .glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+        }
+        .dark .glow-indigo {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.25);
+        }
+        
+        /* Institutional Typography & Narrative Hierarchy */
+        .section-content p {
+            margin-top: 0.85rem !important;
+            margin-bottom: 0.85rem !important;
+            line-height: 1.75 !important;
+        }
+        html.dark .section-content p {
+            color: #CBD5E1 !important;
+        }
+        html:not(.dark) .section-content p {
+            color: #334155 !important;
+        }
+        .section-content strong {
+            font-weight: 700 !important;
+        }
+        html.dark .section-content strong {
+            color: #FFFFFF !important;
+        }
+        html:not(.dark) .section-content strong {
+            color: #0F172A !important;
+        }
+        .section-content ul {
+            margin-top: 0.5rem !important;
+            margin-bottom: 1rem !important;
+            padding-left: 1.5rem !important;
+            list-style-type: disc !important;
+        }
+        .section-content ol {
+            margin-top: 0.5rem !important;
+            margin-bottom: 1rem !important;
+            padding-left: 1.5rem !important;
+            list-style-type: decimal !important;
+        }
+        .section-content li {
+            margin-top: 0.4rem !important;
+            margin-bottom: 0.4rem !important;
+            line-height: 1.65 !important;
+        }
+        html.dark .section-content li {
+            color: #CBD5E1 !important;
+        }
+        html:not(.dark) .section-content li {
+            color: #334155 !important;
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+        html.dark code:not(pre code) {
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            color: #A5B4FC !important;
+            padding: 0.15rem 0.4rem !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid rgba(99, 102, 241, 0.25) !important;
+        }
+        html:not(.dark) code:not(pre code) {
+            background-color: #EEF2FF !important;
+            color: #4F46E5 !important;
+            padding: 0.15rem 0.4rem !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid #C7D2FE !important;
+        }
+        
+        /* Mermaid Diagram Styling */
+        .mermaid-card {
+            background: #0B0F19 !important;
+        }
+        .mermaid {
+            display: flex !important;
+            justify-content: center !important;
+        }
+        .mermaid svg {
+            min-width: 850px !important;
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon {
+            fill: #1E293B !important;
+            stroke: #818CF8 !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .node .label {
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
+            font-weight: 700 !important;
+            font-size: 13.5px !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #818CF8 !important;
+            stroke-width: 2.5px !important;
+        }
+        .mermaid .edgeLabel {
+            background-color: #0F172A !important;
+            color: #F1F5F9 !important;
+            font-weight: 600 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 12px !important;
+        }
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 11px !important;
+        }
+        @media print {
+            body {
+                background-color: #FFFFFF !important;
+                color: #000000 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .glass-card {
+                border: 1px solid #CBD5E1 !important;
+                background: #FFFFFF !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+            }
+            table {
+                border: 1px solid #CBD5E1 !important;
+            }
+            th, td {
+                border-color: #E2E8F0 !important;
+                color: #000000 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased bg-[#0A0E17] text-slate-100 dark:bg-[#0A0E17] dark:text-slate-100 selection:bg-indigo-500 selection:text-white pb-20 transition-colors duration-200">
+
+    <!-- Top Sticky Header Navigation -->
+    <header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#0A0E17]/90 backdrop-blur-md transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span class="text-xs uppercase font-mono font-bold tracking-wider">Research Desk</span>
+                </a>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <div class="flex items-center space-x-2">
+                    <span class="px-2 py-0.5 rounded font-mono text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">KPITTECH</span>
+                    <h1 class="text-sm font-semibold text-slate-800 dark:text-slate-200 hidden sm:inline">KPIT Technologies Ltd</h1>
+                </div>
+            </div>
+
+            <!-- Header Quick Stats & Actions -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-6 text-xs font-mono">
+                    
+                    <div>
+                        <span class="text-slate-400 dark:text-slate-500">CMP:</span>
+                        <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">₹544.00</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 dark:text-slate-500">Target:</span>
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400 ml-1">₹1,133.23</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 dark:text-slate-500">Exp. Upside:</span>
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400 ml-1">+108.3% from CMP</span>
+                    </div>
+                    
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="no-print p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700 text-xs flex items-center gap-1.5" title="Print / Export PDF">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Print / PDF</span>
+                    </button>
+                    <button id="themeToggle" class="no-print p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700" title="Toggle Theme">
+                        <i data-lucide="sun" class="w-4 h-4 hidden dark:inline"></i>
+                        <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+
+        <!-- Institutional Header Title Banner -->
+        <div class="relative overflow-hidden rounded-2xl glass-card p-6 md:p-8 border border-slate-200 dark:border-slate-800">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div class="max-w-2xl">
+                    <div class="flex flex-wrap items-center gap-2 mb-3">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">NSE: KPITTECH</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">October 21, 2026</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium border bg-amber-500/10 text-amber-400 border-amber-500/30">STAGE 4 CAUTION</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">POSITIVE ACCELERATION</span>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white font-heading tracking-tight">KPIT Technologies Ltd</h1>
+                    
+                    
+                    <div class="flex flex-wrap gap-y-1 gap-x-4 mt-4 text-xs font-mono text-slate-500 dark:text-slate-400">
+                        <div><span class="text-slate-400 dark:text-slate-500">Valuation Regime:</span> <span class="text-slate-700 dark:text-slate-300">Regime 1: Steady-State High-Margin ER&D & SDV Software Platform Compounder</span></div>
+                        <div><span class="text-slate-400 dark:text-slate-500">Target Horizon:</span> <span class="text-slate-700 dark:text-slate-300">Q3 FY27 H2 Roll-Forward Regime (FY26 Base $\rightarrow$ 1-Yr: FY28</span></div>
+                    </div>
+                </div>
+
+                <!-- Final Conviction Badge & Action Rationale Card -->
+                <div class="lg:text-right shrink-0 lg:max-w-md w-full">
+                    <div class="text-xs uppercase font-mono tracking-wider text-slate-400 dark:text-slate-500 mb-1">Conviction Verdict</div>
+                    <div class="inline-flex items-center px-4 py-2 rounded-xl text-sm md:text-base font-extrabold border bg-sky-500/10 text-sky-400 border-sky-500/30 glow-emerald">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse mr-2.5"></span>
+                        QUALIFIED HIGH-GROWTH BUY
+                    </div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 font-mono">55% Base / 45% Bull (Calibrated to OEM concentration & European macro headwinds)</div>
+
+                    <!-- 1-2 Line Commentary / Core Action Thesis -->
+                    <div class="mt-3.5 p-3.5 rounded-xl bg-sky-50/90 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-500/30 text-left shadow-lg">
+                        <div class="flex items-center gap-1.5 text-sky-700 dark:text-sky-400 font-bold font-mono text-[11px] uppercase tracking-wider mb-1.5">
+                            <i data-lucide="compass" class="w-3.5 h-3.5 shrink-0"></i>
+                            <span>Why Buy (Core Thesis & Staggered Entry Strategy):</span>
+                        </div>
+                        <p class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans font-medium">
+                            Derated by ~70% from peak valuations to 23.9x trailing P/E, KPIT offers massive risk-reward asymmetry (Bull +174.7%, Expected Return +108.3%) backed by pristine 1.64x CFO/PAT conversion and $600M+ recent TCV wins, but Minervini Stage 4 technical headwinds mandate staggered accumulation between ₹480–₹550 with a ₹462 stop-loss.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Navigation Quick Jump Pills -->
+        <nav class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-mono no-print">
+            <a href="#valuation-spectrum" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="gauge" class="w-3.5 h-3.5"></i> Valuation Bridge
+            </a>
+            <a href="#scenarios" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="split" class="w-3.5 h-3.5"></i> Scenarios (Base / Bull)
+            </a>
+            
+            <a href="#moat-matrix" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="crown" class="w-3.5 h-3.5"></i> 7 Powers Moat
+            </a>
+            
+            
+            <a href="#financial-charts" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i> Financial Forensics
+            </a>
+            
+            
+            <a href="#scorecard-audit" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Scorecard Audit
+            </a>
+            
+            
+            <a href="#sec-1" class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1.5">
+                <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+                <span>Moat & Business</span>
+            </a>
+            
+            <a href="#sec-2" class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1.5">
+                <i data-lucide="network" class="w-3.5 h-3.5"></i>
+                <span>Counterparties</span>
+            </a>
+            
+            <a href="#sec-3" class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                <span>Forensics</span>
+            </a>
+            
+            <a href="#sec-4" class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1.5">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                <span>Valuation Engine</span>
+            </a>
+            
+            <a href="#sec-5" class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shrink-0 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1.5">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+                <span>Execution Protocol</span>
+            </a>
+            
+        </nav>
+
+        <!-- Executive KPI Grid Cards (Single Stock) -->
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <!-- CMP Card -->
+            <div class="glass-card rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+                <div class="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider">Current (CMP)</div>
+                <div class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white mt-1">₹544.00</div>
+                <div class="text-xs text-slate-400 font-mono mt-1">Last Traded Price</div>
+            </div>
+
+            <!-- Expected Target Price Card -->
+            <div class="glass-card rounded-xl p-4 border border-indigo-300 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/20 glow-indigo">
+                <div class="text-xs font-mono text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center justify-between">
+                    <span>Expected Target</span>
+                    <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-500"></i>
+                </div>
+                <div class="text-xl md:text-2xl font-extrabold font-heading text-indigo-700 dark:text-indigo-300 mt-1">₹1,133.23</div>
+                <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1 flex items-center gap-1">
+                    <i data-lucide="trending-up" class="w-3 h-3"></i> +108.3% from CMP
+                </div>
+            </div>
+
+            <!-- Annualized CAGR Card -->
+            <div class="glass-card rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+                <div class="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider">Expected CAGR</div>
+                <div class="text-xl md:text-2xl font-bold font-heading text-emerald-600 dark:text-emerald-400 mt-1">+44.3% p.a.</div>
+                <div class="text-xs text-slate-400 font-mono mt-1">2-Year Horizon</div>
+            </div>
+
+            <!-- Latest Market Cap Card -->
+            <div class="glass-card rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+                <div class="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider">Market Cap</div>
+                <div class="text-xl md:text-2xl font-bold font-heading text-slate-800 dark:text-slate-200 mt-1">₹14,913.0 Cr</div>
+                <div class="text-xs text-slate-400 font-mono mt-1">Consolidated</div>
+            </div>
+
+            <!-- Cash Harvesting 50% Trim Card -->
+            <div class="glass-card rounded-xl p-4 border border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/10">
+                <div class="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>50% Profit Trim</span>
+                    <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-amber-500"></i>
+                </div>
+                <div class="text-xl md:text-2xl font-bold font-heading text-amber-700 dark:text-amber-300 mt-1">₹1,494.14</div>
+                <div class="text-xs text-amber-600 dark:text-amber-400/80 font-mono mt-1">Bull Target Trigger</div>
+            </div>
+
+            <!-- Dynamic Stop-Loss Card -->
+            <div class="glass-card rounded-xl p-4 border border-rose-300 dark:border-rose-500/30 bg-rose-50/50 dark:bg-rose-950/10">
+                <div class="text-xs font-mono text-rose-700 dark:text-rose-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>Trailing Stop</span>
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-500"></i>
+                </div>
+                <div class="text-xl md:text-2xl font-bold font-heading text-rose-700 dark:text-rose-400 mt-1">₹462.40</div>
+                <div class="text-xs text-rose-600 dark:text-rose-400/80 font-mono mt-1">Capital Protection</div>
+            </div>
+        </div>
+
+        <!-- Risk-Return Horizon Spectrum Visualizer Bar -->
+        <div id="valuation-spectrum" class="glass-card rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="gauge" class="w-5 h-5 text-indigo-500"></i>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">Valuation & Risk-Reward Spectrum (Asymmetry Bridge)</h3>
+                </div>
+                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">CMP vs Base Target vs Bull Target vs Stop Loss</span>
+            </div>
+
+            <div class="relative py-4">
+                <div class="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                    <div class="h-full bg-rose-500/40" style="width: 15%"></div>
+                    <div class="h-full bg-slate-400/30 dark:bg-slate-700/50" style="width: 15%"></div>
+                    <div class="h-full bg-sky-500/40" style="width: 35%"></div>
+                    <div class="h-full bg-emerald-500/50" style="width: 35%"></div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4 text-center font-mono">
+                    <div class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/40 text-rose-700 dark:text-rose-400">
+                        <div class="text-[10px] uppercase tracking-wider text-rose-600 dark:text-rose-400/80">Stop-Loss (-15%)</div>
+                        <div class="text-sm font-bold mt-0.5">₹462.40</div>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Current (CMP)</div>
+                        <div class="text-sm font-bold mt-0.5">₹544.00</div>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-500/30 text-sky-800 dark:text-sky-300">
+                        <div class="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400/80">Base Target (55% Prob)</div>
+                        <div class="text-sm font-bold mt-0.5">₹837.95 (+54.0%)</div>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-500/50 text-indigo-800 dark:text-indigo-300">
+                        <div class="text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400/80">Expected (Wtd Avg)</div>
+                        <div class="text-sm font-bold mt-0.5">₹1,133.23</div>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-400">
+                        <div class="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400/80">Bull Target (45% Prob)</div>
+                        <div class="text-sm font-bold mt-0.5">₹1,494.14 (+174.7%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Breakdown Comparison Cards (Base vs Bull) -->
+        <div id="scenarios" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Base Case Card -->
+            <div class="glass-card rounded-xl p-6 border border-sky-200 dark:border-sky-500/20 bg-sky-50/30 dark:bg-sky-950/10">
+                <div class="flex items-center justify-between pb-4 border-b border-sky-200 dark:border-sky-500/20">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading">Base Case Scenario</h3>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30">55% Prob Allocation</span>
+                </div>
+                <div class="mt-4 flex items-baseline justify-between">
+                    <div>
+                        <div class="text-2xl font-extrabold text-sky-600 dark:text-sky-400 font-heading">₹837.95 (+54.0%)</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">24.0x on 14.0% end-growth</div>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-slate-900/60 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
+                    <span class="text-sky-600 dark:text-sky-400 font-semibold font-mono text-xs block mb-1">OPERATIONAL THESIS & CATALYST:</span>
+                    Delayed European OEM recovery, customer program reschedulings, and moderate margin normalization (EBITDA ~18-19%)
+                </div>
+            </div>
+
+            <!-- Bull Case Card -->
+            <div class="glass-card rounded-xl p-6 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/10 glow-emerald">
+                <div class="flex items-center justify-between pb-4 border-b border-emerald-200 dark:border-emerald-500/20">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading">Bull Case Scenario</h3>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">45% Prob Allocation</span>
+                </div>
+                <div class="mt-4 flex items-baseline justify-between">
+                    <div>
+                        <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-heading">₹1,494.14 (+174.7%)</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">36.0x on 20.0% end-growth</div>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-slate-900/60 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
+                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold font-mono text-xs block mb-1">OPERATIONAL THESIS & CATALYST:</span>
+                    H2 FY27 sharp rebound, Beacon AI software monetization, rapid redeployment of SDV bench, and EBITDA expansion to 21%+
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- 7 Powers Moat Cards (if single stock) -->
+        
+        <div id="moat-matrix" class="glass-card rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading flex items-center gap-2">
+                        <i data-lucide="crown" class="w-5 h-5 text-amber-500"></i>
+                        Hamilton Helmer's 7 Powers Moat Matrix
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">Structural Defensibility & Competitive Barrier Audit</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 text-indigo-900 dark:text-indigo-300 shadow-sm">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="gem" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Cornered Resource</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-emerald-600 dark:text-emerald-400">Active Moat</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 text-indigo-900 dark:text-indigo-300 shadow-sm">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Switching Costs</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-emerald-600 dark:text-emerald-400">Active Moat</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 text-indigo-900 dark:text-indigo-300 shadow-sm">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Scale Economies</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-emerald-600 dark:text-emerald-400">Active Moat</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800/60 text-slate-400 dark:text-slate-600 opacity-50">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-slate-200 dark:bg-slate-800 text-slate-400">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Network Effects</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-slate-400 dark:text-slate-600">None</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 text-indigo-900 dark:text-indigo-300 shadow-sm">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Counter-Positioning</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-emerald-600 dark:text-emerald-400">Active Moat</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-indigo-50/80 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 text-indigo-900 dark:text-indigo-300 shadow-sm">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="cpu" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Process Power</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-emerald-600 dark:text-emerald-400">Active Moat</span>
+                </div>
+                
+                <div class="p-3 rounded-xl border flex flex-col items-center text-center transition-all bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800/60 text-slate-400 dark:text-slate-600 opacity-50">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 bg-slate-200 dark:bg-slate-800 text-slate-400">
+                        <i data-lucide="award" class="w-4 h-4"></i>
+                    </div>
+                    <span class="text-xs font-bold leading-tight">Branding</span>
+                    <span class="text-[10px] mt-1 font-mono uppercase font-semibold text-slate-400 dark:text-slate-600">None</span>
+                </div>
+                
+            </div>
+        </div>
+        
+
+        <!-- Portfolio Visualization Charts (if portfolio audit) -->
+        
+
+        <!-- Interactive Visual Financial Charts (if chartable data found) -->
+        
+        <div id="financial-charts" class="glass-card rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i>
+                        Financial Compounding & Cash Quality Forensics
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Historical performance trajectory extracted deterministically from report financials</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <h4 class="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Topline vs Profit Compounding (₹ Cr)</h4>
+                    <div class="h-64">
+                        <canvas id="financialChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white/60 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <h4 class="text-xs font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Forensic Cash Reality Check (CFO vs PAT)</h4>
+                    <div class="h-64">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- Interactive Gatekeeper Audit Scorecard -->
+        
+        <div id="scorecard-audit" class="glass-card rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-500"></i>
+                        Executive Scorecard & Gatekeeper Audit
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">10-Point Institutional Investment Mandate & Filter Verification</p>
+                </div>
+                
+                <!-- Filter Pills -->
+                <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-mono">
+                    <button onclick="filterScorecard('all')" class="scorecard-filter active px-3 py-1 rounded bg-indigo-600 text-white font-semibold transition-colors" data-filter="all">All (10)</button>
+                    <button onclick="filterScorecard('pass')" class="scorecard-filter px-3 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors" data-filter="pass">Pass</button>
+                    <button onclick="filterScorecard('caution')" class="scorecard-filter px-3 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors" data-filter="caution">Caution</button>
+                    <button onclick="filterScorecard('fail')" class="scorecard-filter px-3 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors" data-filter="fail">Fail</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="scorecardGrid">
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">1. Sector Vector</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 PASS</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Sunrise vs Sunset / High-leverage Banks</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Pure-play Software-Defined Vehicle (SDV), autonomous driving AI (ADAS), electric powertrain, and connected mobility architectures</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-caution p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">2. Geopolitical / Regulatory Risk</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30">🟡 CAUTION</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Export < 35-40%; Zero phase-out risk</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Exports represent ~95% of revenues (Europe ~45%, Americas ~35%, Asia ~20%); exposed to Western OEM budget cycles and tariff re-alignments</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">3. Moat Test</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 STRONG MOAT</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Anti-Disintermediation; Pricing Power</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">High switching costs with automotive OEMs; proprietary middleware IP (Beacon, Technica, Qorix); ASIL-D safety certification barrier</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">4. Balance Sheet & Margins</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 PRISTINE</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Net Cash or Debt/Equity < 0.3x; CFO/PAT $\ge 0.8\times$</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Net Debt: ~₹238 Cr; Debt/Equity: 0.24x; 4-Year Cumulative CFO/PAT: **1.64x**; Altman Z''-Score: **4.76** (Safe Zone)</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">5. Growth & Valuation (King Filter)</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 PASS</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Guided CAGR $\ge 20\%$ & Bull Upside $\ge 50\%$</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Base EPS CAGR: **18.0%** (+54.0% upside); Bull EPS CAGR: **25.0%** (+174.7% upside); Meets institutional return hurdle</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">6. 2-Year Forward P/E Filter</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 PASS ($\le$ 80x)</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> 2-Year Forward P/E $\le 80$x at exit speed</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Base FY29 Forward P/E: **15.6x**; Bull FY29 Forward P/E: **13.1x** (Bargain multiple vs 40x+ historical median)</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-fail p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">7. Technical Trend Gate (Stage 2)</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-100 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30">🔴 STAGE 4 CAUTION</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> CMP > 200-DMA & 50-DMA > 200-DMA; RS $\ge 70$</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">CMP: ₹544.00 vs 200-DMA: ₹727.94; 50-DMA: ₹549.06; Stage 4 downtrend attempting multi-month basing</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">8. EARS & Torpedo Gate</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 PASS (Normalized)</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> YoY PAT Acceleration & CFO/EBITDA $\ge 0.7$x</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Q1 FY27 PAT (-32.6% YoY) showed trough normalization over Q4 FY26 (-33.5% YoY); CFO/Operating Profit converts at 101%</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-pass p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">9. Cash Harvesting & Stop-Loss</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">🟢 ACTIVATED</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Sell 50% at Bull Target; Dynamic Trailing Stop</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Profit Harvesting: **₹1,494.14** (+174.7%); Trailing Stop-Loss: **₹462.40** (-15.0% below CMP)</div>
+                    </div>
+                </div>
+                
+                <div class="scorecard-item scorecard-fail p-4 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">10. Concentration Risk</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-100 dark:bg-rose-500/10 text-rose-800 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30">🔴 CONCENTRATED</span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-2 font-mono"><span class="text-slate-400 dark:text-slate-500">Benchmark:</span> Single counterparty exposure $< 15\text{--}20\%$</div>
+                        <div class="text-sm text-slate-800 dark:text-slate-200 leading-snug">Top 5 clients account for ~48-52% of revenues; recent Honda & Renault program pauses caused temporary utilization shock</div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+
+        <!-- Research Report Body (Deep-Dive Sections) -->
+        <div id="report-narrative" class="space-y-8">
+            
+        <section id="sec-1" class="glass-card rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 scroll-mt-28">
+            <div class="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                        <i data-lucide="crown" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">SECTION 01</div>
+                        <h2 class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">Business Model & Competitive Moat (Hamilton Helmer's 7 Powers)</h2>
+                    </div>
+                </div>
+                <a href="#top" class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors font-mono flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 no-print">
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Top</span>
+                </a>
+            </div>
+            <div class="section-content text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>1.1 Core Monetization Engines</span></h3>
+<p>KPIT Technologies is India's only listed pure-play Software-Defined Vehicle (SDV) and automotive electronic engineering services provider. Unlike traditional horizontal IT providers, 100% of KPIT's operational focus is centered on software architecture, autonomous driving (ADAS), electric powertrains, and vehicle diagnostics.</p>
+<div class="mermaid-card my-8 rounded-xl bg-[#0b0f19] border border-slate-800 shadow-2xl overflow-hidden">
+    <div class="px-5 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+        <div class="flex items-center gap-2 text-indigo-400 font-semibold">
+            <i data-lucide="git-fork" class="w-4 h-4"></i>
+            <span>Architecture &amp; System Process Flow</span>
+        </div>
+        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Mermaid Flow</span>
+    </div>
+    <div class="p-6 overflow-x-auto flex justify-center">
+        <div class="mermaid min-w-[750px] w-full max-w-4xl flex justify-center text-slate-100">
+flowchart TD
+    subgraph KPIT_Ecosystem["KPIT Autonomous & SDV Engineering Architecture"]
+        direction TB
+        A["OEM Automotive Clients (BMW, Renault, Honda, Stellantis)"] --> B["KPIT Middleware & Platforms"]
+        B --> C1["KPIT Beacon (Mobility Intelligence & Cloud Diagnostics)"]
+        B --> C2["Qorix (Open-Source AUTOSAR Middleware JV)"]
+        B --> C3["Technica Engineering (Vehicle Ethernet & Testing)"]
+        C1 & C2 & C3 --> D1["Electric Powertrain & BMS"]
+        C1 & C2 & C3 --> D2["Autonomous Driving / ADAS (Level 2+ to Level 4)"]
+        C1 & C2 & C3 --> D3["Connected Cockpit & Virtual ECU Simulation"]
+    end
+        </div>
+    </div>
+</div>
+
+<ol>
+<li>
+<p><strong>Autonomous Driving &amp; ADAS (Advanced Driver Assistance Systems)</strong>:</p>
+<ul>
+<li>Contributes ~28-32% of total engineering revenues.</li>
+<li>KPIT develops algorithms for perception systems, sensor fusion (radar, camera, lidar), trajectory planning, and functional safety compliance (ISO 26262 ASIL-D certification).</li>
+<li>Strategic engagements with leading global OEMs to engineer Level 2+ hands-free highway autopilot and urban pilot programs.</li>
+</ul>
+</li>
+<li>
+<p><strong>Electric Powertrain &amp; Battery Management Systems (BMS)</strong>:</p>
+<ul>
+<li>Contributes ~35-38% of total engineering revenues.</li>
+<li>Focuses on motor control units (MCU), battery management algorithms, thermal modeling, onboard chargers (OBC), and vehicle control units (VCU).</li>
+<li>As automotive OEMs balance the pace of battery-electric vehicles (BEVs) with plug-in hybrid electric vehicles (PHEVs), KPIT's dual-architecture competence provides critical software flexibility.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connected Vehicle, Cockpit &amp; Middleware (Products &amp; Solutions)</strong>:</p>
+<ul>
+<li>Contributes ~30-35% of revenues and accounts for ~21% of the forward deal pipeline.</li>
+<li>Anchored by <strong>KPIT Beacon</strong> (cloud-to-vehicle lifecycle management platform), <strong>Technica Engineering</strong> (high-speed automotive Ethernet networking), and <strong>Qorix</strong> (joint venture for standardized open AUTOSAR middleware).</li>
+<li>Shifting from pure time-and-materials billing toward recurring IP licensing and fixed-outcome platform integration.</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>1.2 Structural Moat Analysis (7 Powers Audit)</span></h3>
+<ul>
+<li>
+<p><strong>Switching Costs (Primary Moat - 🟢 Exceptionally Strong)</strong>:</p>
+<ul>
+<li>Automotive software architectures are mission-critical. Once KPIT co-develops an Electronic Control Unit (ECU) stack or AUTOSAR middleware for a vehicle platform, displacing KPIT would require the OEM to re-architect, re-test, and re-certify the entire electronic framework under stringent global automotive safety standards (ISO 26262).</li>
+<li>Typical vehicle production lifecycles span 7 to 10 years, creating annuity-like sticky maintenance and version upgrade revenues.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cornered Resource (🟢 Strong)</strong>:</p>
+<ul>
+<li>Over 13,000 highly specialized automotive software engineers possessing scarce domain expertise across embedded C++, AUTOSAR, functional safety, and automotive Ethernet.</li>
+<li>Traditional IT graduates cannot be redeployed to automotive safety-critical code without 12–18 months of intensive domain specialization.</li>
+</ul>
+</li>
+<li>
+<p><strong>Process Power (🟢 Strong)</strong>:</p>
+<ul>
+<li>More than 25 years of accumulated automotive testing protocols, simulated drive cycles, hardware-in-the-loop (HIL) testing rigs, and automated code generation tools.</li>
+<li>KPIT has pre-built validation frameworks that reduce an OEM’s software testing timeline by 30% to 40%.</li>
+</ul>
+</li>
+<li>
+<p><strong>Scale Economies (🟢 Moderate to High)</strong>:</p>
+<ul>
+<li>Through reusable IP and platforms like KPIT Beacon, KPIT can license pre-validated software blocks to multiple non-competing OEMs and Tier-1 suppliers at incremental gross margins exceeding 60%.</li>
+</ul>
+</li>
+<li>
+<p><strong>Counter-Positioning (🟢 Strong)</strong>:</p>
+<ul>
+<li>In 2019, KPIT executed a historic demerger, divesting its traditional horizontal IT business (merged with Birlasoft) to create a pure-play automotive software company.</li>
+<li>While legacy IT giants (TCS, Infosys, Wipro) manage enterprise ERP, cloud migration, and automotive IT under the same organizational roof, KPIT’s dedicated automotive leadership structure allows it to win deep, strategic C-suite partnerships with automotive CTOs.</li>
+</ul>
+</li>
+</ul>
+<hr />
+            </div>
+        </section>
+        
+
+        <section id="sec-2" class="glass-card rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 scroll-mt-28">
+            <div class="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                        <i data-lucide="network" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">SECTION 02</div>
+                        <h2 class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">Counterparty Concentration & Revenue Visibility</h2>
+                    </div>
+                </div>
+                <a href="#top" class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors font-mono flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 no-print">
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Top</span>
+                </a>
+            </div>
+            <div class="section-content text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>2.1 Client Portfolio Breakdown &amp; Geography Mix</span></h3>
+<ul>
+<li><strong>Top 5 Client Concentration</strong>: <strong>~48% to 52%</strong> of consolidated revenues.</li>
+<li><strong>Top 21 Strategic Accounts (T21)</strong>: Represent <strong>~80% to 83%</strong> of total billings.</li>
+<li><strong>Geographical Distribution</strong>:<ul>
+<li>Europe: <strong>~44%</strong> (Volkswagen Group, BMW, Renault, Stellantis)</li>
+<li>Americas: <strong>~36%</strong> (PACCAR, General Motors, North American pure-play EV &amp; commercial vehicle makers)</li>
+<li>Asia / Rest of World: <strong>~20%</strong> (Honda, Japanese Tier-1 suppliers, domestic Indian OEMs like Tata Motors/M&amp;M)</li>
+</ul>
+</li>
+</ul>
+<div class="mermaid-card my-8 rounded-xl bg-[#0b0f19] border border-slate-800 shadow-2xl overflow-hidden">
+    <div class="px-5 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+        <div class="flex items-center gap-2 text-indigo-400 font-semibold">
+            <i data-lucide="git-fork" class="w-4 h-4"></i>
+            <span>Architecture &amp; System Process Flow</span>
+        </div>
+        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Mermaid Flow</span>
+    </div>
+    <div class="p-6 overflow-x-auto flex justify-center">
+        <div class="mermaid min-w-[750px] w-full max-w-4xl flex justify-center text-slate-100">
+xychart-beta
+    title "Revenue by Geography & Strategic Concentration (%)"
+    x-axis ["Europe", "Americas", "Asia/ROW", "Top 5 Clients", "Top 21 Accounts"]
+    y-axis "Percentage Share (%)" 0 --> 100
+    bar [44, 36, 20, 50, 82]
+        </div>
+    </div>
+</div>
+
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>2.2 Single-Order Revenue Cliff &amp; Order Book Sustainability Audit</span></h3>
+<ul>
+<li>
+<p><strong>The 2026 Headwind: Honda and Renault Program Pauses</strong>:</p>
+<ul>
+<li>In early 2026, two of KPIT's anchor SDV client programs (Honda and Renault) underwent sudden scope adjustments and program pauses. Honda executed a strategic corporate pivot in March 2026, redirecting capital expenditure away from pure BEV software platforms toward conventional ICE and hybrid vehicle lines.</li>
+<li>Because KPIT carried dedicated project engineering capacity for these multi-year engagements, the sudden pause created an immediate utilization mismatch, resulting in the Q1 FY27 margin compression (OPM dropped to 15.0%).</li>
+</ul>
+</li>
+<li>
+<p><strong>Order Book Replenishment &amp; Book-to-Bill Sustainability</strong>:</p>
+<ul>
+<li><strong>Q4 FY26 Total Contract Value (TCV)</strong>: <strong>$349 Million</strong> from new engagements.</li>
+<li><strong>Q1 FY27 Total Contract Value (TCV)</strong>: <strong>$257 Million</strong> from new engagements.</li>
+<li><strong>Book-to-Bill Ratio</strong>: Maintained at <strong>1.15x – 1.25x</strong>, demonstrating healthy forward replacement demand.</li>
+<li><strong>New Growth Vectors</strong>:</li>
+<li>Strategic <strong>$50M+ long-term engagement</strong> with a global off-highway machinery and heavy equipment manufacturer for software-defined industrial platforms.</li>
+<li>Large-scale collaboration with a leading Japanese Tier-1 supplier for next-generation digital cockpits.</li>
+<li>Growing traction in commercial vehicle software architectures across North America and India.</li>
+</ul>
+</li>
+</ul>
+<hr />
+            </div>
+        </section>
+        
+
+        <section id="sec-3" class="glass-card rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 scroll-mt-28">
+            <div class="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">SECTION 03</div>
+                        <h2 class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">Financial Forensics & Balance Sheet Quality</h2>
+                    </div>
+                </div>
+                <a href="#top" class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors font-mono flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 no-print">
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Top</span>
+                </a>
+            </div>
+            <div class="section-content text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>3.1 4-Year Historical Trend Table</span></h3>
+<p><em>Run deterministically via <code>predict/scripts/forensic_audit.py</code>:</em></p>
+<div class="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-[#0c101d] shadow-md"><table class="w-full text-left border-collapse text-sm font-sans">
+<thead class="bg-slate-100 dark:bg-slate-800/90 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+<tr>
+<th style="text-align: left;">Metric</th>
+<th style="text-align: center;">FY23</th>
+<th style="text-align: center;">FY24</th>
+<th style="text-align: center;">FY25</th>
+<th style="text-align: center;">FY26</th>
+<th style="text-align: center;">Benchmark</th>
+<th style="text-align: center;">Institutional Audit Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Consolidated Revenue (₹ Cr)</strong></td>
+<td style="text-align: center;">3,365.0</td>
+<td style="text-align: center;">4,872.0</td>
+<td style="text-align: center;">5,842.0</td>
+<td style="text-align: center;">6,455.0</td>
+<td style="text-align: center;">$\ge 20\%$ CAGR</td>
+<td style="text-align: center;">🟢 <strong>+24.2% 3-Yr CAGR</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Operating Profit / EBITDA (₹ Cr)</strong></td>
+<td style="text-align: center;">633.0</td>
+<td style="text-align: center;">991.0</td>
+<td style="text-align: center;">1,230.0</td>
+<td style="text-align: center;">1,183.0</td>
+<td style="text-align: center;">$\ge 18\%$ Margin</td>
+<td style="text-align: center;">🟢 <strong>18.3% FY26 Margin</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Reported PAT (₹ Cr)</strong></td>
+<td style="text-align: center;">387.0</td>
+<td style="text-align: center;">599.0</td>
+<td style="text-align: center;">840.0</td>
+<td style="text-align: center;">637.0</td>
+<td style="text-align: center;">Net Earnings Trend</td>
+<td style="text-align: center;">🟡 <strong>Trough Normalization</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Operating Cash Flow (CFO ₹ Cr)</strong></td>
+<td style="text-align: center;">462.0</td>
+<td style="text-align: center;">1,002.0</td>
+<td style="text-align: center;">1,390.0</td>
+<td style="text-align: center;">1,195.0</td>
+<td style="text-align: center;">$\ge 0.8\times$ PAT</td>
+<td style="text-align: center;">🟢 <strong>1.88x FY26 Conversion</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Free Cash Flow (FCF ₹ Cr)</strong></td>
+<td style="text-align: center;">335.0</td>
+<td style="text-align: center;">847.0</td>
+<td style="text-align: center;">1,262.0</td>
+<td style="text-align: center;">1,056.0</td>
+<td style="text-align: center;">FCF $&gt; 0$</td>
+<td style="text-align: center;">🟢 <strong>₹1,056 Cr Pristine FCF</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Cumulative 4-Year CFO / PAT</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;"><strong>1.64x</strong></td>
+<td style="text-align: center;">$\ge 1.0\times$ Pristine</td>
+<td style="text-align: center;">🟢 <strong>PRISTINE (₹4,049 Cr CFO)</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Working Capital Days</strong></td>
+<td style="text-align: center;">-28</td>
+<td style="text-align: center;">-26</td>
+<td style="text-align: center;">-32</td>
+<td style="text-align: center;">-74</td>
+<td style="text-align: center;">Working Capital Strain</td>
+<td style="text-align: center;">🟢 <strong>NEGATIVE WORKING CAPITAL</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Debtor Collection Days</strong></td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">56</td>
+<td style="text-align: center;">56</td>
+<td style="text-align: center;">61</td>
+<td style="text-align: center;">$\le 75$ Days</td>
+<td style="text-align: center;">🟢 <strong>HEALTHY COLLECTIONS</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Borrowings / Net Debt (₹ Cr)</strong></td>
+<td style="text-align: center;">287.0</td>
+<td style="text-align: center;">329.0</td>
+<td style="text-align: center;">345.0</td>
+<td style="text-align: center;">838.0</td>
+<td style="text-align: center;">Net Debt / Equity $&lt; 0.3$x</td>
+<td style="text-align: center;">🟢 <strong>0.24x (Conservative)</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Promoter Pledging (%)</strong></td>
+<td style="text-align: center;">0.0%</td>
+<td style="text-align: center;">0.0%</td>
+<td style="text-align: center;">0.0%</td>
+<td style="text-align: center;">0.0%</td>
+<td style="text-align: center;">0.0% Mandate</td>
+<td style="text-align: center;">🟢 <strong>ZERO PLEDGING</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Altman Z''-Score (Emerging Mkts)</strong></td>
+<td style="text-align: center;">4.20</td>
+<td style="text-align: center;">4.85</td>
+<td style="text-align: center;">5.20</td>
+<td style="text-align: center;">4.76</td>
+<td style="text-align: center;">$&gt; 2.60$ Safe Zone</td>
+<td style="text-align: center;">🟢 <strong>4.76 (SAFE ZONE)</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="mermaid-card my-8 rounded-xl bg-[#0b0f19] border border-slate-800 shadow-2xl overflow-hidden">
+    <div class="px-5 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+        <div class="flex items-center gap-2 text-indigo-400 font-semibold">
+            <i data-lucide="git-fork" class="w-4 h-4"></i>
+            <span>Architecture &amp; System Process Flow</span>
+        </div>
+        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Mermaid Flow</span>
+    </div>
+    <div class="p-6 overflow-x-auto flex justify-center">
+        <div class="mermaid min-w-[750px] w-full max-w-4xl flex justify-center text-slate-100">
+xychart-beta
+    title "Cash Flow vs Accounting Profit Quality (₹ Cr)"
+    x-axis ["FY23", "FY24", "FY25", "FY26"]
+    y-axis "₹ Crores" 0 --> 1500
+    bar [462, 1002, 1390, 1195]
+    line [387, 599, 840, 637]
+        </div>
+    </div>
+</div>
+
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>3.2 Management Commentary on Anomalies &amp; Red Flags</span></h3>
+<ul>
+<li>
+<p><strong>Anomaly 1: Surge in Borrowings (₹345 Cr $\rightarrow$ ₹838 Cr) and Fixed Assets Doubling (₹1,972 Cr $\rightarrow$ ₹3,985 Cr)</strong>:</p>
+<ul>
+<li><em>Investigation</em>: Fixed assets and borrowings expanded due to strategic acquisitions (including the integration of Technica Engineering and consolidation of infrastructure) alongside capital investments in proprietary hardware-in-the-loop (HIL) testing facilities and AI compute clusters.</li>
+<li><em>Management Commentary</em>: Management confirmed on recent earnings calls that debt was utilized for accretive asset integration rather than operating losses. Net debt remains comfortably low (~₹238 Cr), with annual free cash flow exceeding ₹1,000 Cr, ensuring rapid deleveraging capability.</li>
+</ul>
+</li>
+<li>
+<p><strong>Anomaly 2: Operating Margin Compression in Q1 FY27 (OPM dropping to 15.0%)</strong>:</p>
+<ul>
+<li><em>Investigation</em>: The sudden pause in Honda and Renault SDV contracts created excess bench capacity and unabsorbed direct payroll expenses in Europe.</li>
+<li><em>Management Commentary</em>: CEO Kishor Patil clarified that KPIT chose not to conduct mass layoffs of specialized automotive engineers because replacing them when new deals ramp in H2 would be significantly more expensive. The company has actively deployed employee redeployment programs into recently won off-highway, commercial vehicle, and North American accounts. Management guided for an EBITDA margin recovery to <strong>20.5% – 21.2% for full-year FY27</strong> and reiterated a medium-term aspiration of <strong>22% to 24% by FY29</strong>.</li>
+</ul>
+</li>
+</ul>
+<hr />
+            </div>
+        </section>
+        
+
+        <section id="sec-4" class="glass-card rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 scroll-mt-28">
+            <div class="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">SECTION 04</div>
+                        <h2 class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">The 2-Year Forward P/E Valuation Engine</h2>
+                    </div>
+                </div>
+                <a href="#top" class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors font-mono flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 no-print">
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Top</span>
+                </a>
+            </div>
+            <div class="section-content text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <p><em>Run deterministically via <code>predict/scripts/forward_growth_pe.py</code>:</em></p>
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>4.1 Management Guidance vs Research Projections Bridge</span></h3>
+<div class="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-[#0c101d] shadow-md"><table class="w-full text-left border-collapse text-sm font-sans">
+<thead class="bg-slate-100 dark:bg-slate-800/90 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+<tr>
+<th style="text-align: left;">Metric / Parameter</th>
+<th style="text-align: left;">Official Management Guidance</th>
+<th style="text-align: left;">Our Proposed Research Projection</th>
+<th style="text-align: left;">Delta &amp; Operational Rationale / Haircut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Revenue Growth</strong></td>
+<td style="text-align: left;">Rebound in H2 FY27; Double-digit CC growth forward</td>
+<td style="text-align: left;">**Base: 14.0%</td>
+<td style="text-align: left;">Bull: 20.0%**</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>EBITDA Margin</strong></td>
+<td style="text-align: left;">Guided <strong>20.5% – 21.2%</strong> for FY27; 22–24% by FY29</td>
+<td style="text-align: left;">**Base: 18.5%</td>
+<td style="text-align: left;">Bull: 21.0%**</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Net EPS CAGR</strong></td>
+<td style="text-align: left;">Strong earnings recovery post-trough FY26/H1 FY27</td>
+<td style="text-align: left;">**Base: 18.0%</td>
+<td style="text-align: left;">Bull: 25.0%**</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Target Horizon</strong></td>
+<td style="text-align: left;">FY27 – FY29 Transformation Roadmap</td>
+<td style="text-align: left;"><strong>Q3 FY27 H2 Roll-Forward $\rightarrow$ FY29 Exit</strong></td>
+<td style="text-align: left;">Captures 3 full compounding periods from the reported FY26 annual financial foundation.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>4.2 Base Parameters &amp; Trailing Foundation</span></h3>
+<ul>
+<li>Current Market Price (CMP): <strong>₹544.00</strong> | Latest Market Cap: <strong>₹14,913.0 Cr</strong></li>
+<li>Current Trailing Base EPS: <strong>₹21.25</strong> | Trailing P/E: <strong>23.9x</strong></li>
+<li>Active Calendar Regime: <strong>Q3 FY27</strong> $\rightarrow$ <strong>H2 Roll-Forward Framework</strong></li>
+<li>Target Horizon: <strong>FY26 Base $\rightarrow$ 1-Yr Target: FY28 (2 yrs comp) | 2-Yr Target: FY29 Exit (3 yrs comp)</strong></li>
+</ul>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>4.3 Scenario Modeling &amp; Dynamic Exit Multiple Derivation</span></h3>
+<h4 class="text-sm md:text-base font-semibold text-indigo-400 font-mono mt-4 mb-2 pl-2 border-l-2 border-indigo-400/50 flex items-center gap-2"><span>A. Base Case Scenario (Delayed European Recovery &amp; Subdued Client Spending):</span></h4>
+<ul>
+<li><strong>Assumed CAGR during Horizon</strong>: <strong>18.0%</strong></li>
+<li><strong>Growth Rate Rationale</strong>: Lingering macro headwinds among German and French OEMs, gradual redeployment of unassigned software engineers, and delayed vehicle program start-of-production (SOP) dates, capping EBITDA margins at ~18.5%.</li>
+<li><strong>Expected Growth at Horizon End</strong>: <strong>14.0%</strong></li>
+<li><strong>Dynamically Derived Exit P/E Multiple</strong>: <strong>24.0x</strong> (Triangulated at ~1.71x PEG on 14.0% terminal growth, aligned with the structural trough multiple for zero-pledge, high-ROCE Indian engineering franchises).</li>
+<li><strong>Projected FY29 EPS</strong>: <strong>₹34.91</strong></li>
+<li><strong>Target Price</strong>: <strong>₹837.95</strong> (<strong>+54.0% Upside</strong> | <strong>+24.1% Annualized CAGR</strong>)</li>
+</ul>
+<h4 class="text-sm md:text-base font-semibold text-indigo-400 font-mono mt-4 mb-2 pl-2 border-l-2 border-indigo-400/50 flex items-center gap-2"><span>B. Bull Case Scenario (H2 FY27 Sharp Rebound &amp; Beacon Platform Scale):</span></h4>
+<ul>
+<li><strong>Assumed CAGR during Horizon</strong>: <strong>25.0%</strong></li>
+<li><strong>Growth Rate Rationale</strong>: Full deployment of $349M (Q4 FY26) + $257M (Q1 FY27) new TCV wins, rapid scale of KPIT Beacon mobility intelligence software, margin recovery to 21.0%+ EBITDA, and market share gains in commercial vehicle and off-highway software.</li>
+<li><strong>Expected Growth at Horizon End</strong>: <strong>20.0%</strong></li>
+<li><strong>Dynamically Derived Exit P/E Multiple</strong>: <strong>36.0x</strong> (Calibrated at 1.80x PEG on 20.0% terminal growth, reflecting scarcity value of an asset-light automotive software leader).</li>
+<li><strong>Projected FY29 EPS</strong>: <strong>₹41.50</strong></li>
+<li><strong>Target Price</strong>: <strong>₹1,494.14</strong> (<strong>+174.7% Upside</strong> | <strong>+65.7% Annualized CAGR</strong>)</li>
+</ul>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>4.4 2-Year Scenario Valuation Matrix (FY29 Exit)</span></h3>
+<div class="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-[#0c101d] shadow-md"><table class="w-full text-left border-collapse text-sm font-sans">
+<thead class="bg-slate-100 dark:bg-slate-800/90 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+<tr>
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: center;">Horizon Net CAGR</th>
+<th style="text-align: center;">End-Period Growth</th>
+<th style="text-align: center;">Dynamically Derived Exit P/E</th>
+<th style="text-align: center;">Projected FY29 EPS</th>
+<th style="text-align: center;">Expected Target Price (₹)</th>
+<th style="text-align: center;">Total Return (%)</th>
+<th style="text-align: center;">Annualized CAGR (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Base Case</strong></td>
+<td style="text-align: center;"><strong>18.0%</strong></td>
+<td style="text-align: center;">14.0%</td>
+<td style="text-align: center;"><strong>24.0x</strong></td>
+<td style="text-align: center;"><strong>₹34.91</strong></td>
+<td style="text-align: center;"><strong>₹837.95</strong></td>
+<td style="text-align: center;"><strong>+54.0%</strong></td>
+<td style="text-align: center;"><strong>+24.1%</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bull Case</strong></td>
+<td style="text-align: center;"><strong>25.0%</strong></td>
+<td style="text-align: center;">20.0%</td>
+<td style="text-align: center;"><strong>36.0x</strong></td>
+<td style="text-align: center;"><strong>₹41.50</strong></td>
+<td style="text-align: center;"><strong>₹1,494.14</strong></td>
+<td style="text-align: center;"><strong>+174.7%</strong></td>
+<td style="text-align: center;"><strong>+65.7%</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="mermaid-card my-8 rounded-xl bg-[#0b0f19] border border-slate-800 shadow-2xl overflow-hidden">
+    <div class="px-5 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+        <div class="flex items-center gap-2 text-indigo-400 font-semibold">
+            <i data-lucide="git-fork" class="w-4 h-4"></i>
+            <span>Architecture &amp; System Process Flow</span>
+        </div>
+        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Mermaid Flow</span>
+    </div>
+    <div class="p-6 overflow-x-auto flex justify-center">
+        <div class="mermaid min-w-[750px] w-full max-w-4xl flex justify-center text-slate-100">
+xychart-beta
+    title "Valuation Matrix: Target Price vs CMP (₹)"
+    x-axis ["Current Price (CMP)", "Base Case Target", "Expected Value (Wtd)", "Bull Case Target"]
+    y-axis "Stock Price (₹)" 0 --> 1600
+    bar [544, 838, 1133, 1494]
+        </div>
+    </div>
+</div>
+
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>4.5 Expectations Investing Check (Michael Mauboussin Reverse DCF)</span></h3>
+<p><em>Run deterministically via <code>predict/scripts/reverse_dcf.py KPITTECH</code>:</em></p>
+<ul>
+<li><strong>Enterprise Value (EV)</strong>: <strong>₹15,250.0 Cr</strong> (Mcap ₹14,913 Cr + Net Debt ₹337 Cr)</li>
+<li><strong>Base Free Cash Flow (FCF$_0$)</strong>: <strong>₹1,056.0 Cr</strong> (Latest reported annual FCF)</li>
+<li><strong>Cost of Capital (WACC)</strong>: <strong>11.50%</strong> | <strong>Terminal Growth ($g_{\text{term}}$)</strong>: <strong>5.00%</strong></li>
+<li><strong>Implied 10-Year FCF CAGR</strong>: <strong>3.93%</strong></li>
+</ul>
+<p>$$\text{EV} = \sum_{t=1}^{10} \frac{\text{FCF}<em _text_implied="\text{implied">0 \times (1 + g</em>}})^t}{(1 + \text{WACC})^t} + \frac{\text{FCF<em _text_term="\text{term">{10} \times (1 + g</em>$$}})}{(\text{WACC} - g_{\text{term}}) \times (1 + \text{WACC})^{10}} \implies g_{\text{implied}} = \mathbf{3.93\%</p>
+<ul>
+<li><strong>Expectations Sensitivity Matrix (Implied 10-Yr FCF CAGR)</strong>:</li>
+</ul>
+<div class="overflow-x-auto my-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-[#0c101d] shadow-md"><table class="w-full text-left border-collapse text-sm font-sans">
+<thead class="bg-slate-100 dark:bg-slate-800/90 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+<tr>
+<th style="text-align: left;">WACC \ Terminal Growth</th>
+<th style="text-align: center;">4.0%</th>
+<th style="text-align: center;">5.0%</th>
+<th style="text-align: center;">6.0%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>10.00%</strong></td>
+<td style="text-align: center;">+2.02%</td>
+<td style="text-align: center;"><strong>+0.61%</strong></td>
+<td style="text-align: center;">-1.14%</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>11.50%</strong></td>
+<td style="text-align: center;">+5.03%</td>
+<td style="text-align: center;"><strong>+3.93%</strong></td>
+<td style="text-align: center;">+2.63%</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>13.00%</strong></td>
+<td style="text-align: center;">+7.73%</td>
+<td style="text-align: center;"><strong>+6.84%</strong></td>
+<td style="text-align: center;">+5.80%</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Feasibility &amp; Asymmetry Assessment</strong>:<ul>
+<li>At ₹544 CMP, the market is pricing in Free Cash Flow compounding of just <strong>3.93% annually</strong>.</li>
+<li>This is an unambiguous <strong>Bargain Basement / Distressed Expectation</strong>. The market is treating KPIT as if its software capabilities will experience terminal stagnation, completely ignoring its structural 24% historical revenue velocity and the non-discretionary nature of automotive SDV architecture migration.</li>
+<li>Downside is heavily protected by cash generation (current FCF yield is an extraordinary <strong>7.1%</strong>).</li>
+</ul>
+</li>
+</ul>
+<hr />
+            </div>
+        </section>
+        
+
+        <section id="sec-5" class="glass-card rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 scroll-mt-28">
+            <div class="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
+                        <i data-lucide="crosshair" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">SECTION 05</div>
+                        <h2 class="text-xl md:text-2xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">Actionable Investment Strategy & Price Triggers</h2>
+                    </div>
+                </div>
+                <a href="#top" class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors font-mono flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 no-print">
+                    <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Top</span>
+                </a>
+            </div>
+            <div class="section-content text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>5.1 Conviction Summary &amp; Dynamic Expected Value</span></h3>
+<ul>
+<li><strong>Dynamic Probability Allocation</strong>: <strong>55% Base / 45% Bull</strong><ul>
+<li><em>Rationale</em>: While management execution credibility is high, European automotive macro fragility and the recent Honda/Renault program transitions justify allocating 55% weight to the conservative Base Case.</li>
+</ul>
+</li>
+<li><strong>Probability-Weighted Expected Value</strong>:
+  $$\text{Expected Target Price} = (0.55 \times ₹837.95) + (0.45 \times ₹1,494.14) = \mathbf{₹1,133.23}$$<ul>
+<li><strong>Total Expected Return</strong>: <strong>+108.3%</strong> from current price of ₹544.00.</li>
+<li><strong>Annualized Expected CAGR</strong>: <strong>+44.3% p.a.</strong> over the 2-year horizon.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>5.2 Actionable Price Levels &amp; Execution Strategy</span></h3>
+<ul>
+<li><strong>Execution Posture</strong>: <strong>QUALIFIED HIGH-GROWTH BUY / STAGGERED ACCUMULATION</strong>.</li>
+<li><strong>Ideal Accumulation Range</strong>: <strong>₹480.00 – ₹550.00</strong><ul>
+<li>The stock is currently trading inside this golden accumulation zone.</li>
+<li>Because the stock is technically in a <strong>Stage 4 downtrend</strong> (below its 200-DMA of ₹727.94), investors should avoid lump-sum deployment and instead implement a <strong>3-tranche accumulation strategy</strong>:</li>
+<li><strong>Tranche 1 (35% Allocation)</strong>: Deploy immediately at CMP ₹544.</li>
+<li><strong>Tranche 2 (35% Allocation)</strong>: Accumulate on any re-test of support between ₹480 and ₹510.</li>
+<li><strong>Tranche 3 (30% Allocation)</strong>: Add aggressively upon technical confirmation when the stock reclaims its 50-DMA and prints a Stage 2 breakout above ₹575.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>5.3 Dynamic Cash Harvesting &amp; Trailing Stop-Loss Engine</span></h3>
+<ul>
+<li><strong>Tranche 1 Cash Harvesting (50% Realized Profit)</strong>:<ul>
+<li>When the market price hits the <strong>Bull Case Target of ₹1,494.14</strong> (+174.7%), execute an automatic sale of <strong>50% of the position</strong> to convert paper gains into hard cash.</li>
+</ul>
+</li>
+<li><strong>Dynamic Trailing Stop-Loss (Capital Protection Invariant)</strong>:<ul>
+<li>Initial Hard Stop: <strong>₹462.40</strong> (-15.0% below current price ₹544).</li>
+<li>Trailing Engine: $\text{Stop Price} = \max(\text{Entry Price} \times 0.85, \; \text{Peak Price} \times 0.82, \; \text{50-Week EMA})$.</li>
+<li>If a weekly close occurs below the trailing stop, exit immediately to eliminate round-tripping and preserve institutional capital.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-white font-heading mt-6 mb-3 pt-2 border-l-4 border-indigo-500 pl-3.5 flex items-center gap-2"><span>5.4 Structural Kill Switches (When to Exit)</span></h3>
+<ol>
+<li><strong>Kill Switch #1 (Client Program Attrition)</strong>: Exit if quarterly constant-currency revenue growth contracts YoY for two consecutive quarters, indicating deeper structural client cancellations beyond Honda and Renault.</li>
+<li><strong>Kill Switch #2 (Margin Floor Breach)</strong>: Exit if consolidated EBITDA margin fails to recover above 17.0% by Q3 FY27, disproving management’s H2 margin clawback thesis.</li>
+<li><strong>Kill Switch #3 (Cash Conversion Deterioration)</strong>: Exit if annual CFO/PAT conversion drops below 0.80x or if working capital days swing from negative to positive (&gt;45 days), signaling unbilled revenue inflation.</li>
+</ol>
+            </div>
+        </section>
+        
+        </div>
+
+        <!-- Institutional Footer Note -->
+        <footer class="pt-8 pb-12 border-t border-slate-200 dark:border-slate-800/80 text-center font-mono text-xs text-slate-500">
+            <p>Generated by <strong>StockHold Predict Quantitative Research Engine</strong> | Institutional High-Growth Indian Equities</p>
+            <p class="mt-1">Master Source of Truth: <code class="text-indigo-600 dark:text-indigo-400 font-bold">predict/reports/kpit_technologies_research_report.md</code></p>
+        </footer>
+
+    </main>
+
+    <!-- Client-side Logic for Charts & Filters -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Safe Theme Storage
+        function getSavedTheme() {
+            try {
+                return localStorage.getItem('theme');
+            } catch (e) {
+                return 'dark';
+            }
+        }
+        function setSavedTheme(t) {
+            try {
+                localStorage.setItem('theme', t);
+            } catch (e) {}
+        }
+
+        // Theme Toggle Handler
+        const themeBtn = document.getElementById('themeToggle');
+        if (getSavedTheme() === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                setSavedTheme(isDark ? 'dark' : 'light');
+            });
+        }
+
+        // Scorecard Filter Logic
+        function filterScorecard(filter) {
+            const items = document.querySelectorAll('.scorecard-item');
+            const btns = document.querySelectorAll('.scorecard-filter');
+            
+            btns.forEach(b => {
+                if (b.dataset.filter === filter) {
+                    b.classList.add('bg-indigo-600', 'text-white', 'font-semibold');
+                    b.classList.remove('text-slate-600', 'dark:text-slate-400');
+                } else {
+                    b.classList.remove('bg-indigo-600', 'text-white', 'font-semibold');
+                    b.classList.add('text-slate-600', 'dark:text-slate-400');
+                }
+            });
+
+            items.forEach(el => {
+                if (filter === 'all' || el.classList.contains('scorecard-' + filter)) {
+                    el.style.display = 'flex';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        // Render Portfolio Charts (if portfolio audit)
+        const portfolioData = {};
+        if (portfolioData && portfolioData.counts) {
+            // 1. Conviction Doughnut Chart
+            const convCtx = document.getElementById('convictionChart');
+            if (convCtx) {
+                new Chart(convCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Strong Buy', 'Qualified Buy', 'Wait / Caution', 'Reject'],
+                        datasets: [{
+                            data: [
+                                portfolioData.counts['STRONG BUY'] || 0,
+                                portfolioData.counts['QUALIFIED BUY'] || 0,
+                                portfolioData.counts['WAIT'] || 0,
+                                portfolioData.counts['REJECT'] || 0,
+                            ],
+                            backgroundColor: ['#10B981', '#38BDF8', '#F59E0B', '#F43F5E'],
+                            borderWidth: 2,
+                            borderColor: document.documentElement.classList.contains('dark') ? '#0F172A' : '#FFFFFF',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Top Multibagger Picks Bar Chart
+            const topCtx = document.getElementById('topPicksChart');
+            if (topCtx && portfolioData.top_stocks) {
+                new Chart(topCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: portfolioData.top_stocks.map(s => s.ticker),
+                        datasets: [{
+                            label: 'Expected 2-Year Return (%)',
+                            data: portfolioData.top_stocks.map(s => s.exp_up),
+                            backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                            borderColor: '#6366F1',
+                            borderWidth: 1.5,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } },
+                            y: { grid: { display: false }, ticks: { color: '#94A3B8' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Render Financial Charts via Chart.js
+        const chartsData = {"labels": ["FY23", "FY24", "FY25", "FY26"], "datasets": {"Consolidated Revenue": [3365.0, 4872.0, 5842.0, 6455.0], "Operating Profit / EBITDA": [633.0, 991.0, 1230.0, 1183.0], "Reported PAT": [387.0, 599.0, 840.0, 637.0], "Operating Cash Flow": [462.0, 1002.0, 1390.0, 1195.0], "Free Cash Flow": [335.0, 847.0, 1262.0, 1056.0], "Cumulative 4-Year CFO / PAT": [null, null, null, null]}};
+        if (chartsData && chartsData.labels) {
+            const labels = chartsData.labels;
+            const ds = chartsData.datasets;
+            
+            // 1. Sales & Profit Compounding Chart
+            const finCtx = document.getElementById('financialChart');
+            if (finCtx) {
+                const finDatasets = [];
+                if (ds['Sales'] || ds['Revenue'] || ds['Gross Sales']) {
+                    finDatasets.push({
+                        label: 'Sales (₹ Cr)',
+                        data: ds['Sales'] || ds['Revenue'] || ds['Gross Sales'],
+                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        borderColor: '#6366F1',
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        type: 'bar',
+                    });
+                }
+                if (ds['Operating Profit']) {
+                    finDatasets.push({
+                        label: 'Operating Profit (₹ Cr)',
+                        data: ds['Operating Profit'],
+                        borderColor: '#38BDF8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        borderWidth: 2,
+                        type: 'line',
+                        tension: 0.3,
+                        pointRadius: 4,
+                    });
+                }
+                if (ds['Net Profit'] || ds['Net Profit (PAT)'] || ds['Reported PAT']) {
+                    finDatasets.push({
+                        label: 'PAT (₹ Cr)',
+                        data: ds['Net Profit'] || ds['Net Profit (PAT)'] || ds['Reported PAT'],
+                        borderColor: '#34D399',
+                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                        borderWidth: 2,
+                        type: 'line',
+                        tension: 0.3,
+                        pointRadius: 4,
+                    });
+                }
+
+                new Chart(finCtx, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: finDatasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#94A3B8', font: { family: 'Inter', size: 11 } } }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } },
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Forensic CFO vs PAT Chart
+            const cashCtx = document.getElementById('cashFlowChart');
+            if (cashCtx && (ds['Operating Cash Flow'] || ds['CFO'])) {
+                const cfoData = ds['Operating Cash Flow'] || ds['CFO'];
+                const patData = ds['Net Profit'] || ds['Net Profit (PAT)'] || ds['Reported PAT'];
+                
+                new Chart(cashCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'CFO (Operating Cash Flow)',
+                                data: cfoData,
+                                backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                                borderColor: '#10B981',
+                                borderWidth: 1.5,
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Reported PAT',
+                                data: patData,
+                                backgroundColor: 'rgba(148, 163, 184, 0.3)',
+                                borderColor: '#94A3B8',
+                                borderWidth: 1.5,
+                                borderRadius: 4,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#94A3B8', font: { family: 'Inter', size: 11 } } }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } },
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

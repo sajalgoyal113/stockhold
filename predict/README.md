@@ -12,6 +12,8 @@ predict/
 │   ├── forward_growth_pe.py      # Master forward growth & dynamic exit P/E engine
 │   ├── forensic_audit.py         # 4-year cumulative CFO/PAT & Altman Z''-score
 │   ├── reverse_dcf.py            # Michael Mauboussin reverse DCF implied CAGR
+│   ├── screen_universe.py        # Unbiased multi-ticker thematic & sector screener
+│   ├── generate_html_report.py   # Institutional interactive HTML dashboard & portal generator
 │   └── evaluate_portfolio.py     # Batch portfolio & watchlist valuation CLI
 │
 ├── references/                   # Institutional templates and audit frameworks
@@ -78,6 +80,19 @@ python3 predict/scripts/reverse_dcf.py <TICKER> \
 ### 5. Batch Portfolio Valuation
 ```bash
 python3 predict/scripts/evaluate_portfolio.py --json <PATH_TO_PORTFOLIO_JSON>
+```
+
+### 6. Interactive HTML Dashboard & Portal Generator
+Convert markdown equity research reports into visual, institutional HTML dashboards with Chart.js compounding charts, forensic CFO/PAT reality check visuals, dynamic risk-return horizon bars, 7 Powers moat matrices, and dark/light modes:
+```bash
+# Convert a single report
+python3 predict/scripts/generate_html_report.py predict/reports/lumax_auto_tech_vehicle_automation_report.md
+
+# Batch convert all reports and build master coverage portal (predict/reports/index.html)
+python3 predict/scripts/generate_html_report.py --all
+
+# Open the Master Research Portal in default browser (macOS)
+open predict/reports/index.html
 ```
 
 ---

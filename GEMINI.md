@@ -27,7 +27,8 @@ Finance/
 │   │   ├── forward_growth_pe.py  # Master forward growth & dynamic P/E compounding engine
 │   │   ├── forensic_audit.py     # 4-year cumulative cash flow & Dalal Street red-flag audit
 │   │   ├── reverse_dcf.py        # Implied 10-year FCF CAGR root-finder & sensitivity
-│   │   └── evaluate_portfolio.py # Batch portfolio & watchlist valuation analyzer
+│   │   ├── evaluate_portfolio.py # Batch portfolio & watchlist valuation analyzer
+│   │   └── generate_html_report.py # Institutional interactive HTML report & portal generator
 │   ├── references/               # Valuation models, templates, protocols & checklists
 │   │   ├── analysis_protocol.md  # 5-step institutional stock analysis protocol
 │   │   ├── report_template.md    # Institutional equity research report template
@@ -54,7 +55,7 @@ Finance/
    - The web app's underlying methods of computing, projecting, and analysing stocks must remain **100% identical and synchronized** with the logic in `predict/`.
 
 3. **Consolidation in `predict/` & Zero Auto-Memory**:
-   - All analytical scripts (`forward_growth_pe.py`, `forensic_audit.py`, `reverse_dcf.py`, `evaluate_portfolio.py`) and reference documentation (`report_template.md`, `forensic_checklist.md`, `valuation_models.md`) are consolidated directly inside `predict/` so that all files are visible, editable, and version-controlled.
+   - All analytical scripts (`forward_growth_pe.py`, `forensic_audit.py`, `reverse_dcf.py`, `evaluate_portfolio.py`, `generate_html_report.py`) and reference documentation (`report_template.md`, `forensic_checklist.md`, `valuation_models.md`) are consolidated directly inside `predict/` so that all files are visible, editable, and version-controlled.
    - **Do NOT store stock analysis facts, learned preferences, or corrections in the auto-memory system.** All new stock-related insights, model updates, company notes, and portfolio evaluations must be recorded directly in `predict/` (for models/reports) or in `GEMINI.md` (for behavioral directives and rules).
 
 4. **Python Runtime Environment**:
@@ -68,17 +69,30 @@ Finance/
    - All engines in `predict/scripts/` (`forward_growth_pe.py`, `reverse_dcf.py`) must automatically fetch verified live consolidated quotes directly from Screener (`data_fetcher.py`) by default.
    - If a manual `--cmp` is explicitly passed for limit-order or entry-price stress-testing, the engine automatically checks for price drift against the live market price and triggers a prominent `[PRICE DRIFT WARNING]` if the deviation exceeds 5%.
 
-7. **Strict Root Directory Invariant & Cloud Deployment Entrypoints**:
-   - The primary repository logic is strictly organized into:
+7. **Strict Root Directory Cleanliness Invariant (Zero Extra Root Files)**:
+   - The root directory `Finance/` MUST ALWAYS contain STRICTLY AND ONLY:
      ```text
      Finance/
+     ├── GEMINI.md                      # Behavioral rules, facts & repo source of truth
      ├── predict/                       # Quantitative Analysis & Research Reports (MASTER SOURCE OF TRUTH)
-     ├── stockhold/                     # Interactive Web Application & Visual Dashboard
-     └── GEMINI.md                      # Behavioral rules, facts & repo source of truth
+     └── stockhold/                     # Interactive Web Application & Visual Dashboard
      ```
-   - For Streamlit Community Cloud hosting (`stockhold.streamlit.app`), the root directory maintains thin, pass-through deployment entrypoints (`app.py`, `requirements.txt`, `run_app.sh`, `README.md`) that delegate directly into `stockhold/` while resolving all paths.
-   - No ad-hoc scripts, scratch files, or unversioned temporary files are permitted in the root folder.
-   - All Streamlit web application components, requirements, launchers, and frontend docs reside within `stockhold/`, while all quantitative engines and research reports reside within `predict/`.
+   - **Absolute Root Invariant**: The agent is STRICTLY FORBIDDEN from creating or placing ANY file directly in the `Finance/` root directory other than `GEMINI.md`.
+   - All Streamlit web application components, launchers, requirements, and documentation (`app.py`, `requirements.txt`, `run_app.sh`, `README.md`) must reside STRICTLY inside `stockhold/`.
+   - All analytical scripts, valuation models, research protocols, and reports must reside STRICTLY inside `predict/`.
+   - Zero root pollution: No pass-through scripts, deployment entrypoints, launchers, scratch files, or unversioned temporary files are ever permitted in `Finance/`.
+
+8. **Mandatory Default Unbiased Screening (Zero Portfolio Anchoring)**:
+   - **Default Operating Invariant**: Unless the user explicitly asks about their existing portfolio or names specific tickers, the agent MUST ALWAYS by default run an unbiased, broad-universe market screen across Large, Mid, Small, and Micro-caps using `predict/scripts/screen_universe.py`.
+   - The agent is STRICTLY FORBIDDEN from defaulting to or prioritizing companies from existing portfolio files (`portfolio_research_report.md` or prior reports in `predict/reports/`).
+
+9. **Mandatory Default HTML Research Report Deliverable (Zero Standalone Markdown)**:
+   - **Default Deliverable Invariant**: When analysing any stock, company, sector theme, or portfolio, the agent must ALWAYS by default generate and deliver an interactive, institutional-grade `.html` report in `predict/reports/` using `predict/scripts/generate_html_report.py` instead of delivering a standalone `.md` markdown file.
+   - The agent must automatically compile the research analysis into HTML, link the generated `.html` file prominently in the final response, and automatically re-index the Research Coverage Portal (`predict/reports/index.html`). Standalone markdown files are never the end deliverable.
+
+10. **Mandatory 1-2 Line Investment Action Commentary (Why Buy or Avoid)**:
+   - **Commentary Invariant**: Every generated equity analysis report and Research Coverage Portal card MUST prominently display a sharp, high-contrast 1-2 line commentary explaining why we are recommending to BUY / ACCUMULATE or AVOID / REJECT the stock (distilling core operational catalysts, structural moat, or disqualifying red flags/valuation risks).
+   - In HTML reports, this commentary must be rendered in a dedicated callout chip directly within the top Hero Banner alongside the Conviction Verdict badge for instant scanning.
 
 ---
 
@@ -86,7 +100,7 @@ Finance/
 
 1. **Trailing EPS Base**: Never use stale annual report numbers when fresh quarterly results exist; compute Rolling TTM EPS from the last 4 reported quarters:
    $$\text{TTM PAT} = \sum_{i=1}^{4} \text{PAT}_{\text{last 4 quarters}}, \quad \text{TTM EPS} = \frac{\text{TTM PAT}}{\text{Shares Outstanding}}$$
-2. **Growth & Valuation Hurdle**: Target companies in sunrise sectors with $\ge 20\%$ guided CAGR where **2-Year Forward P/E $< 50$** and a mandated minimum **$\ge 50\%$ upside from current market price within 2 years in the Bull Case scenario**. Avoid banks/NBFCs (high leverage fragility) and sunset fossil fuels.
+2. **Growth & Valuation Hurdle**: Target companies in sunrise sectors with $\ge 20\%$ guided CAGR where **2-Year Forward P/E $\le 80$** and a mandated minimum **$\ge 50\%$ upside from current market price within 2 years in the Bull Case scenario**. Avoid banks/NBFCs (high leverage fragility) and sunset fossil fuels.
 3. **Executive Summary Card**: Always begin analysis reports with the Valuation & Expected Target Price Summary Card as defined in `predict/references/report_template.md`. The top summary card MUST prominently display the **Probability-Weighted Expected Value** (Expected Target Price, Total Expected Return %, Annualized CAGR, Latest Market Cap, and Dynamic Probability Allocation).
 4. **Client Concentration & Transparency**: Always detail the company's top clients and revenue concentration (Top 5 / Top 10 breakdown and single-client exposure).
 5. **Order Book & Project Visibility**: If the company maintains an order book or program pipeline (auto components, EMS, defense, EPC, capital goods), detail the order book size, top upcoming vehicle/product projects, awarding clients, and multi-year revenue visibility (% of forward revenue covered).
@@ -152,6 +166,23 @@ Finance/
     - Prevents false-positive entries into intermediate chemical/commodity processors (e.g. Deepak Nitrite, Rossari Biotech) where trailing 3-year revenue CAGR appears high due to temporary cyclical margin spikes.
     - **Margin Normalization Stress-Test**: If a company operates in non-patented chemicals, metals, or commodity intermediates, and $\text{TTM OPM} > 1.25 \times \text{5-Year Median OPM}$, earnings must NOT be projected from peak EPS. Projections must be anchored to **Normalized Median OPM EPS**.
     - **Global Dumping / Gross Margin Contraction Gate**: If quarterly Gross Margin contracts by $>300\text{ bps}$ YoY for 2 consecutive quarters ($\Delta \text{GM} = \text{GM}_{Q_0} - \text{GM}_{Q_{-4}} < -300\text{ bps}$) due to Chinese dumping or inventory destocking, the stock is marked as **`CYCLICAL DE-STOCKING TRAP`** and disqualified from entry until gross margins expand sequentially for 2 quarters.
+16. **Unbiased Thematic Discovery & Zero Portfolio Anchoring Invariant**:
+    - **Zero Portfolio Retrospective Bias**: When analyzing an open-ended theme, sector, or emerging technology (e.g., self-driving AI, green hydrogen, robotics, defense electronics), the agent is STRICTLY PROHIBITED from defaulting to or prioritizing tickers from the existing 25-stock portfolio (`portfolio_research_report.md` or prior reports).
+    - **Mandatory Broad-Universe Screening**: The agent must conduct a fresh, unbiased market-wide discovery process evaluating at least 8 to 12 distinct companies spanning Large, Mid, Small, and Micro-caps using `predict/scripts/screen_universe.py`.
+    - **Dual-Tier Archetype Classification**:
+      - **Tier 1 (Established Quality Compounders)**: Proven profitability, $\text{ROCE} \ge 18\%$, $\text{CFO/PAT} \ge 0.80\text{x}$, and $\text{3-Year Growth} \ge 20\%$.
+      - **Tier 2 (Emerging Pure-Play Innovators / R&D Stage)**: Early-stage pure-plays with heavy R&D investment ($>5\%$ of sales) or recent commercialization where trailing accounting ROCE is temporarily suppressed by upfront capex, but thematic exposure is 100%.
+    - **Geographic Reality Disclosure**: If the technology has limited listed pure-play representation on Indian exchanges (e.g., autonomous driving neural networks, advanced EUV semiconductors, foundation AI models), the analysis MUST explicitly disclose the domestic market limitation upfront and present the global technology benchmarks (US/Global leaders) alongside Indian Tier-2 enablers.
+17. **Single-Order Revenue Cliff & Order Book Sustainability Guard (The Single-Order Cliff Guard)**:
+    - In order-driven, EPC, capital goods, defense, EMS, or project-based businesses, always audit whether trailing or forward growth is predominantly reliant on a single large, non-recurring contract.
+    - Evaluate the execution cliff risk: Will company revenue and margins drop precipitously once that anchor order completes?
+    - Mandatory audits: Book-to-Bill ratio ($\ge 1.0\text{--}1.2\times$), client/program diversification across the order backlog, recurring vs one-off milestone billing mix, and new contract intake run-rate. If forward numbers depend on a single non-repeat contract with no visible replacement pipeline, tag as `SINGLE-ORDER CLIFF RISK` and haircut growth or reject.
+18. **Management Guidance vs Proposed Research Projections Bridge (The Guidance Transparency Invariant)**:
+    - Whenever official management guidance is available (from earnings calls, concall transcripts, investor presentations, or annual filings), research reports and models must ALWAYS explicitly present a side-by-side comparison bridge displaying:
+      1. **What Management is Targeting**: Guided Revenue CAGR, PAT/EBITDA margins, capex budget, order inflow targets, and target horizon.
+      2. **What We are Proposing**: Our research model's Base Case and Bull Case projections.
+      3. **Variance & Operational Rationale**: Detailed fundamental reasoning explaining any divergence (e.g. conservative haircut for historical delivery delays, regulatory discounts, or operating leverage upside exceeding management's base guidance).
+
 
 
 

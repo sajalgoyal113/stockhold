@@ -1412,7 +1412,7 @@ def build_stock_section(s, period):
     g3 = "🟢 STRONG MOAT" if "STRONG" in verdict or "QUALIFIED" in verdict else ("🔴 DISINTERMEDIATION / TRAP" if s['ticker'] == 'IXIGO' else "🟡 MODERATE MOAT")
     g4 = "🟢 PRISTINE" if s['altman_z'] > 2.6 and s['cfo_pat'] >= 0.7 else ("🟡 MONITOR" if s['altman_z'] >= 1.1 else "🔴 STRAINED / DISTRESS")
     g5 = "🟢 PASS (CAGR >= 20% & Bull >= 50%)" if (bull_cagr >= 20 and bull_return >= 50.0) else "🔴 FAIL"
-    g6 = "🟢 PASS (< 50x)" if (fwd_pe_base < 50.0 and fwd_pe_base > 0) else ("🔴 FAIL (>= 50x)" if fwd_pe_base >= 50 else "N/A")
+    g6 = "🟢 PASS (<= 80x)" if (fwd_pe_base <= 80.0 and fwd_pe_base > 0) else ("🔴 FAIL (> 80x)" if fwd_pe_base > 80 else "N/A")
     g7 = "🟢 STAGE 2 CONFIRMED" if "STAGE 2" in stage2_status else "🔴 STAGE 4 CAUTION"
     g8 = "🟢 POSITIVE ACCEL" if "POSITIVE" in ears_status or "STEADY" in ears_status else "🔴 MODERATING / TORPEDO"
     g9 = "🟢 ACTIVATED"
@@ -1425,7 +1425,7 @@ def build_stock_section(s, period):
 | **3. Moat Test** | Anti-Disintermediation; Pricing Power intact | {s['powers']} | {g3} |
 | **4. Balance Sheet & Margins** | Net Cash or D/E < 0.3x; CFO/PAT >= 0.8x | Altman Z'' {s['altman_z']:.2f}; CFO/PAT {s['cfo_pat']:.2f}x | {g4} |
 | **5. Growth & Valuation (King Filter)**| Projected CAGR $\\ge 20\\%$ & Bull Upside $\\ge 50\\%$ | Base: {base_cagr:.1f}%, Bull: {bull_cagr:.1f}%; Bull Upside: {format_pct(bull_return)} | {g5} |
-| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E < 50x at exit speed | Base Fwd P/E: {fwd_pe_base:.1f}x; Bull Fwd P/E: {fwd_pe_bull:.1f}x | {g6} |
+| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x at exit speed | Base Fwd P/E: {fwd_pe_base:.1f}x; Bull Fwd P/E: {fwd_pe_bull:.1f}x | {g6} |
 | **7. Technical Trend Gate (Stage 2)** | CMP > 200-DMA & 50-DMA > 200-DMA; RS >= 70 | CMP {format_currency(cmp)} vs 200-DMA ₹{s['dma200']:,.1f}; RS {s['rs']} | {g7} |
 | **8. EARS & Torpedo Gate** | YoY PAT Acceleration & CFO/EBITDA >= 0.7x | Quarterly trajectory audited vs consensus | {g8} |
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: {format_currency(harvest_target)}; Stop: {format_currency(stop_loss)} | {g9} |

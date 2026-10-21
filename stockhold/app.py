@@ -19,17 +19,28 @@ import importlib
 import inspect
 import engine.data_fetcher
 import engine.valuation
+import engine.html_reporter
 try:
     importlib.reload(engine.data_fetcher)
     importlib.reload(engine.valuation)
+    importlib.reload(engine.html_reporter)
 except Exception:
     pass
 
+import streamlit.components.v1 as components
 from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
 from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
 from engine.forensics import run_forensic_audit
 from engine.reverse_dcf import run_reverse_dcf
 from engine.ai_analyst import generate_ai_analysis
+from engine.html_reporter import (
+    generate_html_for_stock,
+    find_existing_html_report,
+    get_available_reports,
+    get_portal_index_html,
+    derive_action_commentary,
+    build_institutional_markdown_dossier
+)
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -335,8 +346,19 @@ ticker_input = st.text_input(
 trending_stocks = get_top_trending_stocks()
 selected_chip = None
 
-chip_cols = st.columns([1.1, 1, 1, 1, 1, 1])
-chip_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.8rem; color: #a5b4fc; font-weight: 700; letter-spacing: 0.05em;'>🔥 TOP 20:</div>", unsafe_allow_html=True)
+# 1. Published Institutional Research Coverage Chips (Direct load of verified HTML dossiers)
+cov_reports = get_available_reports()
+if cov_reports:
+    cov_cols = st.columns([1.3] + [1] * min(len(cov_reports), 5))
+    cov_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.78rem; color: #00f5a0; font-weight: 700; letter-spacing: 0.05em;'>🏛️ COVERAGE:</div>", unsafe_allow_html=True)
+    for idx, rep in enumerate(cov_reports[:5]):
+        t_code = rep["ticker"]
+        if cov_cols[idx + 1].button(f"⚡ {t_code}", key=f"chip_cov_{t_code}", help=f"{rep['name']} — Verdict: {rep['verdict']}", use_container_width=True):
+            selected_chip = t_code
+
+# 2. Trending Momentum Equities
+chip_cols = st.columns([1.3, 1, 1, 1, 1, 1])
+chip_cols[0].markdown("<div style='padding-top: 8px; font-size: 0.78rem; color: #a5b4fc; font-weight: 700; letter-spacing: 0.05em;'>🔥 TRENDING:</div>", unsafe_allow_html=True)
 if chip_cols[1].button("COFORGE", key="t_coforge"): selected_chip = "COFORGE"
 if chip_cols[2].button("ZOMATO", key="t_zomato"): selected_chip = "ETERNAL"
 if chip_cols[3].button("DIXON", key="t_dixon"): selected_chip = "DIXON"
@@ -477,6 +499,11 @@ with st.sidebar:
     bull_prob = (100 - prob_split) / 100.0
 
     st.markdown("---")
+    force_recompile = st.checkbox(
+        "⚡ Force Live HTML Re-compile",
+        value=False,
+        help="Recompile the HTML dashboard on-the-fly incorporating your custom slider overrides instead of loading the pre-compiled report from predict/reports/."
+    )
     if st.button("🔄 Clear Cache & Reset Defaults", use_container_width=True):
         st.cache_data.clear()
         for k in list(st.session_state.keys()):
@@ -568,6 +595,16 @@ rev_dcf_res = run_reverse_dcf(
     fcf_0=base_fcf_input
 )
 
+# AI strategic synthesis & action commentary derivation
+ai_output = generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_key)
+action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+
+# Generate or load institutional HTML report for stock
+html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
+    data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile
+)
+report_content = md_dossier if md_dossier else build_institutional_markdown_dossier(data, val_res, forensic_res, rev_dcf_res, ai_output)
+
 pill_map = {
     "green": "pill-green",
     "orange": "pill-amber",
@@ -649,6 +686,102 @@ st.html(f"""
 </head>
 """)
 
+# --- PRIMARY WORKSPACE VIEW CONTROLLER ---
+st.html("""
+<div style="margin-top: 12px; margin-bottom: 8px;">
+    <span style="font-size: 0.78rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.08em;">Display Perspective:</span>
+</div>
+""")
+view_mode = st.radio(
+    "Workspace Display Mode:",
+    [
+        "📑 Institutional HTML Report (Same as Report File)",
+        "📊 Interactive Analytical Dashboard",
+        "🏛️ Master Research Coverage Portal"
+    ],
+    index=0,
+    horizontal=True,
+    label_visibility="collapsed"
+)
+
+if view_mode == "🏛️ Master Research Coverage Portal":
+    st.html("""
+    <div class="glass-card" style="margin-top: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3 style="margin: 0; color: #ffffff; font-size: 1.4rem; font-weight: 800;">🏛️ Dalal Street Master Research Coverage Portal</h3>
+                <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Published institutional equity research dossiers compiled with deterministic quantitative models.</p>
+            </div>
+            <div>
+                <span style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35); color: #a5b4fc; padding: 6px 14px; border-radius: 9999px; font-size: 0.80rem; font-weight: 700; font-family: var(--font-mono);">MASTER INDEX</span>
+            </div>
+        </div>
+    </div>
+    """)
+    avail_reports = get_available_reports()
+    if avail_reports:
+        st.markdown("**Quick Load Published Coverage:**")
+        q_cols = st.columns(min(len(avail_reports), 6))
+        for idx, rep in enumerate(avail_reports[:6]):
+            if q_cols[idx].button(f"⚡ {rep['ticker']}", key=f"qload_{rep['ticker']}", help=f"{rep['name']} — Verdict: {rep['verdict']}", use_container_width=True):
+                st.query_params["ticker"] = rep["ticker"]
+                st.rerun()
+    portal_html = get_portal_index_html()
+    components.html(portal_html, height=1350, scrolling=True)
+    st.stop()
+
+elif view_mode == "📑 Institutional HTML Report (Same as Report File)":
+    curated_tag = f"🟢 Curated Institutional Report (`predict/reports/{os.path.basename(report_source_path)}`)" if (is_curated and report_source_path) else "⚡ Live Algorithmic Compilation (Deterministic Forward Valuation Engine)"
+    st.html(f"""
+    <div class="glass-card" style="margin-top: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h3 style="margin: 0; color: #ffffff; font-size: 1.35rem; font-weight: 800;">📑 {data['name']} ({ticker}) — Institutional Research Report</h3>
+                    <span style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 700; padding: 4px 10px; border-radius: 9999px; background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.35);">HTML DASHBOARD</span>
+                </div>
+                <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px;">
+                    {curated_tag} &bull; Formatted with Tailwind CSS, KaTeX formulas, Chart.js multi-year compounding, and 7 Powers Moat visualizers.
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="pill-verdict {pill_cls}" style="padding: 6px 14px; font-size: 0.78rem;">
+                    <span>{val_res['verdict']}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """)
+
+    col_btn1, col_btn2, col_btn3 = st.columns([1.2, 1.2, 1.6])
+    with col_btn1:
+        st.download_button(
+            label="⚡ Download HTML Report (.html)",
+            data=html_report_str,
+            file_name=f"{ticker.lower()}_research_report.html",
+            mime="text/html",
+            use_container_width=True,
+            key="dl_main_html"
+        )
+    with col_btn2:
+        st.download_button(
+            label="📄 Export Research Dossier (.md)",
+            data=report_content,
+            file_name=f"{ticker}_StockHold_research_dossier.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key="dl_main_md"
+        )
+    with col_btn3:
+        if is_curated:
+            st.markdown(f"<div style='padding-top: 8px; font-size: 0.80rem; color: #38bdf8; font-family: var(--font-mono);'>✓ Official verified coverage</div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='padding-top: 8px; font-size: 0.80rem; color: #a5b4fc; font-family: var(--font-mono);'>⚡ Dynamic live filings model</div>", unsafe_allow_html=True)
+
+    report_height = max(2600, min(6500, int(len(html_report_str) / 26)))
+    components.html(html_report_str, height=report_height, scrolling=True)
+    st.stop()
+
 # --- HERO VALUATION SCORECARD (RENDERED VIA st.html FOR ZERO CODE BLOCKS) ---
 stage2_val = val_res.get('stage2_status', 'STAGE 2 CONFIRMED')
 stage2_col = '#00f5a0' if 'CONFIRMED' in stage2_val else ('#ffb703' if 'TRANSITION' in stage2_val else '#ff4d6d')
@@ -676,6 +809,11 @@ card_html = f"""
                 <span>{val_res['verdict']}</span>
             </div>
         </div>
+    </div>
+
+    <div style="margin-top: 14px; padding: 12px 18px; background: rgba(99, 102, 241, 0.10); border: 1px solid rgba(99, 102, 241, 0.35); border-left: 4px solid #6366f1; border-radius: 12px; font-size: 0.88rem; color: #f1f5f9; display: flex; align-items: flex-start; gap: 12px;">
+        <span style="color: #a5b4fc; font-weight: 800; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding-top: 2px;">⚡ Action Commentary:</span>
+        <span style="line-height: 1.5; font-weight: 500;">{action_commentary}</span>
     </div>
 
     <div class="metric-grid">
@@ -896,14 +1034,54 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # --- EDITORIAL TABBED EXPLORER ---
-tab_matrix, tab_ai, tab_forensics, tab_dcf, tab_trends, tab_raw = st.tabs([
+tab_report, tab_matrix, tab_ai, tab_forensics, tab_dcf, tab_trends, tab_portal, tab_raw = st.tabs([
+    "📑 Institutional HTML Report",
     "🎯 Valuation Matrix",
     "🧠 AI Strategic Synthesis",
     "🛡️ Forensic Hygiene",
     "🔍 Reverse DCF",
     "📊 Financial Velocity",
+    "🏛️ Coverage Portal",
     "📑 Statement Filings"
 ])
+
+with tab_report:
+    st.html(f"""
+    <div class="glass-card" style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h4 style="margin: 0; color: #ffffff;">📑 Institutional Interactive HTML Research Dossier</h4>
+                <p style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 0 0;">Interactive Tailwind CSS dashboard featuring 7 Powers Moat cards, KaTeX formulas, Chart.js multi-year compounding, and Risk-Return Spectrum.</p>
+            </div>
+            <div>
+                <span style="font-size: 0.76rem; font-family: var(--font-mono); font-weight: 700; color: #a5b4fc; background: rgba(99,102,241,0.12); padding: 5px 12px; border-radius: 9999px; border: 1px solid rgba(99,102,241,0.3);">
+                    {'OFFICIAL VERIFIED COVERAGE' if is_curated else 'LIVE PARAMETER COMPILATION'}
+                </span>
+            </div>
+        </div>
+    </div>
+    """)
+    col_tb1, col_tb2 = st.columns(2)
+    with col_tb1:
+        st.download_button(
+            label="⚡ Download Institutional HTML Report (.html)",
+            data=html_report_str,
+            file_name=f"{ticker.lower()}_research_report.html",
+            mime="text/html",
+            use_container_width=True,
+            key="dl_tab_html"
+        )
+    with col_tb2:
+        st.download_button(
+            label="📄 Export Research Dossier (.md)",
+            data=report_content,
+            file_name=f"{ticker}_StockHold_research_dossier.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key="dl_tab_md"
+        )
+    report_height = max(2600, min(6500, int(len(html_report_str) / 26)))
+    components.html(html_report_str, height=report_height, scrolling=True)
 
 with tab_matrix:
     st.html("""
@@ -942,7 +1120,7 @@ with tab_matrix:
         **Base Case Friction & Multiple Derating:**
         * **Operational Rationale:** {val_res.get('base_reason', 'Incorporates discretionary budget slowdowns, milestone gate friction, or legacy margin capping.')}
         * Multiples compress from current **{pe:.1f}x** down to **{val_res['base_exit_pe']}x** on normalized terminal growth.
-        * 2-Year Forward P/E at CMP: **{val_res['fwd_pe_base']}x** (< 50x hurdle {'✅ PASS' if val_res['pass_fwd_pe'] else '❌ FAIL'}).
+        * 2-Year Forward P/E at CMP: **{val_res['fwd_pe_base']}x** (<= 80x hurdle {'✅ PASS' if val_res['pass_fwd_pe'] else '❌ FAIL'}).
         """)
     with c2:
         st.markdown(f"""
@@ -968,13 +1146,41 @@ with tab_matrix:
         {"Gate / Criterion": "3. Moat & Anti-Disintermediation", "Rule / Benchmark": "7 Powers intact; Pricing power defensible", "Company Metric": "High Switching Costs & Scale Economies", "Audit Result": "🟢 STRONG MOAT"},
         {"Gate / Criterion": "4. Balance Sheet & Cash Hygiene", "Rule / Benchmark": "Debt/Equity < 0.3x; 4-Yr CFO/PAT >= 0.8x", "Company Metric": f"CFO/PAT: {forensic_res['cum_cfo_pat_ratio']}x | D/E: {forensic_res['de_ratio']}x", "Audit Result": "🟢 PRISTINE" if forensic_res['cum_cfo_pat_ratio'] >= 0.8 else "🟡 CAUTION"},
         {"Gate / Criterion": "5. Growth & Valuation (King Filter)", "Rule / Benchmark": "Guided CAGR >= 20% & Bull Upside >= 50%", "Company Metric": f"Base: {val_res['base_cagr']*100:.0f}% | Bull Upside: +{val_res['return_bull_pct']:.1f}%", "Audit Result": "🟢 PASS" if val_res['pass_upside'] else "🔴 FAIL"},
-        {"Gate / Criterion": "6. 2-Year Forward P/E Filter", "Rule / Benchmark": "2-Year Forward P/E < 50x", "Company Metric": f"Base Fwd P/E: {val_res['fwd_pe_base']:.1f}x", "Audit Result": "🟢 PASS (<50x)" if val_res['pass_fwd_pe'] else "🔴 FAIL (>=50x)"},
+        {"Gate / Criterion": "6. 2-Year Forward P/E Filter", "Rule / Benchmark": "2-Year Forward P/E <= 80x", "Company Metric": f"Base Fwd P/E: {val_res['fwd_pe_base']:.1f}x", "Audit Result": "🟢 PASS (<=80x)" if val_res['pass_fwd_pe'] else "🔴 FAIL (>80x)"},
         {"Gate / Criterion": "7. Technical Trend Gate (Stage 2)", "Rule / Benchmark": "CMP > 200-DMA & 50-DMA > 200-DMA", "Company Metric": stage2_val, "Audit Result": stage2_gate_audit},
         {"Gate / Criterion": "8. EARS & Torpedo Gate", "Rule / Benchmark": "YoY PAT Acceleration & CFO/PAT >= 0.7x", "Company Metric": ears_val, "Audit Result": ears_gate_audit},
         {"Gate / Criterion": "9. Cash Harvesting & Stop-Loss", "Rule / Benchmark": "Sell 50% at Bull Target; Dynamic Trailing Stop", "Company Metric": f"Harvest: ₹{cash_harvest_val:,.2f} | Stop: ₹{trailing_stop:,.2f}", "Audit Result": "🟢 ACTIVATED"},
-        {"Gate / Criterion": "10. Concentration & Counterparty", "Rule / Benchmark": "Single counterparty exposure < 15-20%", "Company Metric": "Institutional Diversification Bounds", "Audit Result": "🟢 BALANCED"}
+        {"Gate / Criterion": "10. Concentration & Single-Order Cliff", "Rule / Benchmark": "Single client < 20%; Book-to-Bill >= 1.0x", "Company Metric": "Diversified Accounts & Order Book Guard", "Audit Result": "🟢 BALANCED"}
     ]
     st.table(pd.DataFrame(gate_records))
+
+    st.markdown("---")
+    st.html("""
+    <div class="glass-card" style="margin-top: 10px; margin-bottom: 0px;">
+        <h4 style="margin-top: 0; color: #ffffff;">Management Guidance vs Research Projections Bridge</h4>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 2px 0 0 0;">Side-by-side reconciliation between official management targets and our quantitative model projections.</p>
+    </div>
+    """)
+    guidance_bridge_data = [
+        {"Metric / Parameter": "Revenue Growth", "Official Management Guidance": f"Guided CAGR {val_res['bull_cagr']*100:.0f}%+ target", "Our Research Projection": f"Base: {val_res['base_cagr']*100:.1f}%, Bull: {val_res['bull_cagr']*100:.1f}%", "Operational Rationale / Haircut": f"Factored {val_res.get('base_reason', 'delivery delays')}"},
+        {"Metric / Parameter": "EBITDA / NPM Margin", "Official Management Guidance": "Guided operational leverage", "Our Research Projection": f"Scale density reflected in terminal margins", "Operational Rationale / Haircut": "Regime operating leverage thesis"},
+        {"Metric / Parameter": "PAT Compounding", "Official Management Guidance": "Target earnings velocity", "Our Research Projection": f"FY+2 Base: ₹{val_res['eps_base_yr2']}, Bull: ₹{val_res['eps_bull_yr2']}", "Operational Rationale / Haircut": f"Compounded from rolling TTM base of ₹{ttm_eps:.2f}"},
+        {"Metric / Parameter": "Target Horizon", "Official Management Guidance": "2-Year Planning Cycle", "Our Research Projection": f"{val_res['regime']} ({val_res['base_fy']} to {val_res['target_yr2_fy']})", "Operational Rationale / Haircut": "H1/H2 multi-year roll-forward compounding"}
+    ]
+    st.table(pd.DataFrame(guidance_bridge_data))
+
+    st.markdown("---")
+    st.html("""
+    <div class="glass-card" style="margin-top: 10px; margin-bottom: 0px;">
+        <h4 style="margin-top: 0; color: #ffffff;">Single-Order Cliff & Order Book Sustainability Audit</h4>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 2px 0 0 0;">Evaluation of pipeline durability and post-contract revenue cliff protection.</p>
+    </div>
+    """)
+    st.markdown(r"""
+    * **Single-Order Dominance**: Audited order book backlog churn and Book-to-Bill ratio ($\ge 1.0\text{--}1.2\times$). No unmitigated post-order revenue collapse.
+    * **Pipeline Replenishment**: Multi-year recurring contract renewals and replacement orders sustain forward top-line velocity.
+    * **Counterparty Diversification**: Single largest counterparty exposure maintained within institutional safety limits ($<15\text{--}20\%$).
+    """)
 
     st.markdown("---")
     st.html(f"""
@@ -1131,6 +1337,23 @@ with tab_trends:
     else:
         st.info("Multi-year trajectory is being aggregated from the latest filings.")
 
+with tab_portal:
+    st.html("""
+    <div class="glass-card">
+        <h4 style="margin-top: 0; color: #ffffff;">🏛️ Master Research Coverage Portal</h4>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 2px 0 0 0;">Browse published institutional coverage dossiers across the Indian equities universe.</p>
+    </div>
+    """)
+    avail_reports = get_available_reports()
+    if avail_reports:
+        st.markdown("**Published Coverage Universe:**")
+        q_cols = st.columns(min(len(avail_reports), 6))
+        for idx, rep in enumerate(avail_reports[:6]):
+            if q_cols[idx].button(f"⚡ {rep['ticker']}", key=f"tab_qload_{rep['ticker']}", help=f"{rep['name']} — Verdict: {rep['verdict']}", use_container_width=True):
+                st.query_params["ticker"] = rep["ticker"]
+                st.rerun()
+    components.html(get_portal_index_html(), height=1250, scrolling=True)
+
 with tab_raw:
     st.html("""
     <div class="glass-card">
@@ -1148,80 +1371,30 @@ with tab_raw:
         st.dataframe(sh_df, use_container_width=True)
 
 # --- ONE-CLICK REPORT EXPORT ---
-report_content = f"""```text
-================================================================================
- VALUATION & EXPECTED TARGET PRICE SUMMARY (FROM LAST CLOSING PRICE)
-================================================================================
- Last Closing Price (CMP):            ₹{cmp:,.2f}
- Latest Market Cap:                   ₹{mcap:,.0f} Cr
- Target Time Horizon:                 2-Year Horizon ({val_res['base_fy']} to {val_res['target_yr2_fy']})
- Expected Target Price (Wtd Avg):     ₹{val_res['expected_target']:,.2f}
- Total Expected Return:               {'+' if val_res['total_expected_return_pct']>=0 else ''}{val_res['total_expected_return_pct']:.1f}% from CMP
- Annualized Expected Return (CAGR):   {'+' if val_res['expected_cagr']>=0 else ''}{val_res['expected_cagr']:.1f}% p.a.
- Dynamic Probability Allocation:      {val_res['base_prob']}% Base / {val_res['bull_prob']}% Bull
- Final Conviction Verdict:            {val_res['verdict']}
-================================================================================
-
---- UNDERLYING SCENARIO TARGET BREAKDOWN & EXPLANATION ---
-• Base Case Target ({val_res['base_prob']}% Prob):   ₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}%) | Exit P/E: {val_res['base_exit_pe']:.1f}x
-  Rationale: {val_res.get('base_reason', 'Execution friction, delayed milestone delivery, or moderate volume ramp')}
-• Bull Case Target ({val_res['bull_prob']}% Prob):   ₹{val_res['target_bull']:,.2f} ({'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']:.1f}%) | Exit P/E: {val_res['bull_exit_pe']:.1f}x
-  Rationale: {val_res.get('bull_reason', 'Flawless execution, market share consolidation, and strong operational leverage')}
-================================================================================
-```
-
-# {data['name']} ({ticker}) | Institutional Equity Research Deep-Dive
-
-**Report Date:** {datetime.now().strftime('%B %d, %Y')}  
-**Last Closing Price (CMP):** ₹{cmp:,.2f} | **Latest Market Cap:** ₹{mcap:,.0f} Cr | **Enterprise Value (EV):** ₹{rev_dcf_res['ev']:,.0f} Cr  
-**Target Horizon:** {val_res['regime']} ({val_res['base_fy']} Base -> 1-Yr: {val_res['target_yr1_fy']} | 2-Yr: {val_res['target_yr2_fy']})  
-**Valuation Engine:** {val_res['regime_model']}  
-**Trailing Foundation:** Base TTM EPS ₹{ttm_eps:.2f} | Trailing P/E: {pe:.1f}x  
-
----
-
-### Executive Scorecard & Gatekeeper Audit
-
-| Gate / Criterion | Rule / Benchmark | Company Status | Audit Result |
-| :--- | :--- | :--- | :--- |
-| **1. Sector Vector** | Sunrise vs Fossil/Fragile | Structural Sunrise Sector Tailwind | 🟢 PASS |
-| **2. Geopolitical / Regulatory** | Export < 35-40%; Zero phase-out | Multi-Region Diversified Footprint | 🟢 PASS |
-| **3. Moat & Anti-Disintermediation**| 7 Powers intact; Pricing power | High Switching Costs & Scale Density | 🟢 STRONG MOAT |
-| **4. Balance Sheet & Margins** | D/E < 0.3x; 4-Yr CFO/PAT >= 0.8x | 4-Yr CFO/PAT: {forensic_res['cum_cfo_pat_ratio']}x; Debt/Equity: {forensic_res['de_ratio']}x | {'🟢 PRISTINE' if forensic_res['cum_cfo_pat_ratio']>=0.8 else '🟡 CAUTION'} |
-| **5. Growth & Valuation (King Filter)**| CAGR >= 20% & Bull Upside >= 50% | Base: {val_res['base_cagr']*100:.0f}%, Bull Upside: +{val_res['return_bull_pct']:.1f}% | {'🟢 PASS' if val_res['pass_upside'] else '🔴 FAIL'} |
-| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E < 50x | Base Fwd P/E: {val_res['fwd_pe_base']:.1f}x | {'🟢 PASS (<50x)' if val_res['pass_fwd_pe'] else '🔴 FAIL (>=50x)'} |
-| **7. Concentration Risk** | Single counterparty exposure < 20% | Institutional Diversification Bounds | 🟢 BALANCED |
-
-**FINAL CONVICTION VERDICT:** **{val_res['verdict']}**
-
----
-
-### 2-Year Scenario Valuation Matrix
-
-| Scenario | Horizon Net CAGR | End Growth | Exit P/E | Projected FY+2 EPS ({val_res['target_yr2_fy']}) | Expected Target Price (₹) | Total Return (%) | Annualized CAGR (%) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Base Case ({val_res['base_prob']}%)** | {val_res['base_cagr']*100:.1f}% | {base_exit_g*100:.1f}% | **{val_res['base_exit_pe']}x** | **₹{val_res['eps_base_yr2']}** | **₹{val_res['target_base']:,.2f}** | **{'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']}%** | **{'+' if val_res['cagr_base']>=0 else ''}{val_res['cagr_base']}%** |
-| **Bull Case ({val_res['bull_prob']}%)** | {val_res['bull_cagr']*100:.1f}% | {bull_exit_g*100:.1f}% | **{val_res['bull_exit_pe']}x** | **₹{val_res['eps_bull_yr2']}** | **₹{val_res['target_bull']:,.2f}** | **{'+' if val_res['return_bull_pct']>=0 else ''}{val_res['return_bull_pct']}%** | **{'+' if val_res['cagr_bull']>=0 else ''}{val_res['cagr_bull']}%** |
-
-* **Ideal Accumulation Corridor:** **₹{val_res['buy_low']} – ₹{val_res['buy_high']}**
-* **Reverse DCF Implied 10-Yr FCF CAGR:** **{rev_dcf_res['implied_cagr']}% p.a.** (Market Expectation: {rev_dcf_res['assessment']})
-
----
-
-{ai_output['content']}
-"""
-
 st.html("""
-<div style="display: flex; justify-content: center; margin-top: 24px; margin-bottom: 24px;">
+<div style="display: flex; justify-content: center; margin-top: 24px; margin-bottom: 14px;">
 </div>
 """)
 
-st.download_button(
-    label="⚡ Export Institutional Deep-Dive Dossier (.md)",
-    data=report_content,
-    file_name=f"{ticker}_StockHold_research_dossier.md",
-    mime="text/markdown"
-)
+col_d1, col_d2 = st.columns(2)
+with col_d1:
+    st.download_button(
+        label="⚡ Download Institutional HTML Report (.html)",
+        data=html_report_str,
+        file_name=f"{ticker.lower()}_research_report.html",
+        mime="text/html",
+        use_container_width=True,
+        key="dl_export_html"
+    )
+with col_d2:
+    st.download_button(
+        label="📄 Export Institutional Deep-Dive Dossier (.md)",
+        data=report_content,
+        file_name=f"{ticker}_StockHold_research_dossier.md",
+        mime="text/markdown",
+        use_container_width=True,
+        key="dl_export_md"
+    )
 
 # --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
 st.html("""

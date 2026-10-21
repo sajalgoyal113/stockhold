@@ -53,7 +53,8 @@
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: ₹2,279.78 (+142.3%); Stop-Loss: ₹799.85 (-15.0% Capital Protection) | 🟢 ACTIVATED |
 | **10. Concentration Risk** | Single counterparty exposure $<15\text{--}20\%$ | PGCIL represents ~30-35% of transmission book (Sovereign PSU; Zero credit risk) | 🟢 ACCEPTABLE |
 
-**FINAL CONVICTION VERDICT:** **QUALIFIED HIGH-GROWTH BUY (Staggered Accumulation on Dips / Breakout Tranche on 200-DMA Reclaim)**
+**FINAL CONVICTION VERDICT:** **QUALIFIED HIGH-GROWTH BUY (Staggered Accumulation on Dips / Breakout Tranche on 200-DMA Reclaim)**  
+*Rationale*: High-conviction beneficiary of India's ₹4.75 Lakh Cr power transmission capex and data center power buildout, backed by a ₹10,000+ Cr order book and ₹2,186 Cr net cash; Stage 4 technical consolidation warrants staggered accumulation on dips while waiting for a confirmed 200-DMA reclaim.
 
 ---
 

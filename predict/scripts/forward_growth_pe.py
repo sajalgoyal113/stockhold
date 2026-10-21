@@ -5,7 +5,7 @@ forward_growth_pe.py - High-Growth Stock & 2-Year Forward P/E Valuation Engine
 Implements the institutional growth and valuation framework:
 - H1 (Q1/Q2: Apr 1 - Sep 30) vs H2 (Q3/Q4: Oct 1 - Mar 31) Roll-Forward Framework.
 - Computes FY+1 and FY+2 Target EPS with exact compounding powers from base.
-- Evaluates 2-Year Forward P/E against the < 50x hurdle.
+- Evaluates 2-Year Forward P/E against the <= 80x hurdle.
 - Dynamically derives Base Case and Bull Case exit P/E multiples from expected growth rates at the end of the evaluation period.
 - Requires explicit operational rationales for assumed growth rates.
 - Omits Bear Case scenario; evaluates Base vs Bull upside asymmetry.
@@ -596,7 +596,7 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     bull_upside_threshold = 40.0 if is_duopoly else 50.0
 
     passes_growth_filter = base_net_growth >= growth_hurdle or bull_net_growth >= growth_hurdle
-    passes_pe_filter = fwd_pe_yr2_base < 50.0
+    passes_pe_filter = fwd_pe_yr2_base <= 80.0
     passes_bull_upside_mandate = bull_upside_pct >= bull_upside_threshold
 
     fy_curr_str = f"FY{period['running_fy'] % 100}"
@@ -646,7 +646,7 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     hurdle_str = "16.0% (Duopoly Calibrated)" if is_duopoly else "20.0%"
     upside_str = "+40.0% (Duopoly Calibrated)" if is_duopoly else "+50.0%"
     print(f" 1. 20%+ Projected Growth Filter:          {c1_mark} (Base: {base_net_growth*100:.1f}%, Bull: {bull_net_growth*100:.1f}% vs {hurdle_str} threshold)")
-    print(f" 2. 2-Year Forward P/E < 50x Filter:       {c2_mark} ({fwd_pe_yr2_base:.1f}x Base vs 50.0x threshold)")
+    print(f" 2. 2-Year Forward P/E <= 80x Filter:      {c2_mark} ({fwd_pe_yr2_base:.1f}x Base vs 80.0x threshold)")
     print(f" 3. Mandated 50%+ Bull 2-Yr Upside Filter: {c3_mark} ({bull_upside_pct:+.1f}% vs {upside_str} mandate at {bull_pe:.1f}x Bull exit)")
 
     print(f"\n--- 2-YEAR SCENARIO VALUATION MATRIX ({fy_yr2_str}) ---")
@@ -682,7 +682,7 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     elif not passes_growth_filter:
         verdict = f"REJECT (Projected growth below {growth_hurdle*100:.0f}% hurdle rate)"
     else:
-        verdict = f"REJECT (2-year forward P/E {fwd_pe_yr2_base:.1f}x exceeds 50x hurdle or Bull Upside < {bull_upside_threshold:.0f}%)"
+        verdict = f"REJECT (2-year forward P/E {fwd_pe_yr2_base:.1f}x exceeds 80x hurdle or Bull Upside < {bull_upside_threshold:.0f}%)"
 
     cash_harvest_target = bull_target_price
     cash_harvest_upside = bull_upside_pct

@@ -47,13 +47,14 @@
 | **3. Moat Test** | Anti-Disintermediation; Pricing Power intact | [7 Powers check; Supplier/Customer bypass] | [🟢 STRONG MOAT / 🔴 MIDDLEMAN TRAP] |
 | **4. Balance Sheet & Margins** | Net Cash or Debt/Equity < 0.3x; CFO/PAT >= 0.8x | Net Debt: ₹[X] Cr; CFO/PAT: [X.XX]x | [🟢 PRISTINE / 🔴 STRAINED] |
 | **5. Growth & Valuation (King Filter)**| Projected CAGR $\ge 20\%$ & Bull Upside $\ge 50\%$ | Base: [XX]%, Bull: [YY]%; Bull Upside: +[ZZ]% | [🟢 PASS / 🟡 MIXED / 🔴 FAIL] |
-| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E < 50x at exit speed | Base Fwd P/E: [XX]x; Bull Fwd P/E: [YY]x | [🟢 PASS (<50x) / 🔴 FAIL (>=50x)] |
+| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x at exit speed | Base Fwd P/E: [XX]x; Bull Fwd P/E: [YY]x | [🟢 PASS (<=80x) / 🔴 FAIL (>80x)] |
 | **7. Technical Trend Gate (Stage 2)** | CMP > 200-DMA & 50-DMA > 200-DMA; RS >= 70 | CMP: ₹[CMP] vs 200-DMA: ₹[DMA200]; RS: [XX] | [🟢 STAGE 2 CONFIRMED / 🔴 STAGE 4] |
 | **8. EARS & Torpedo Gate** | YoY PAT Acceleration & CFO/EBITDA >= 0.7x | Q0 YoY: +[XX]%, Q-1 YoY: +[YY]%; Miss: [0%] | [🟢 POSITIVE ACCEL / 🔴 TORPEDO EXIT] |
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: ₹[BULL_P]; Stop: ₹[STOP_P] | [🟢 ACTIVATED] |
 | **10. Concentration Risk** | Single counterparty exposure $<15\text{--}20\%$ | Top 5: [XX]%; Single Largest: [YY]% | [🟢 BALANCED / 🔴 CONCENTRATED] |
 
-**FINAL CONVICTION VERDICT:** **[STRONG BUY / QUALIFIED GROWTH BUY / WATCHLIST FOR DIP / REJECT]**
+**FINAL CONVICTION VERDICT:** **[STRONG BUY / QUALIFIED GROWTH BUY / WATCHLIST FOR DIP / REJECT]**  
+*Rationale / Action Commentary*: [Mandatory 1-2 concise lines explaining WHY we are buying (catalysts, moat, growth runway, asymmetric upside) or avoiding/rejecting (valuation trap, margin collapse, Stage 4 risk, downside drawdown)]. This commentary is prominently rendered in the top Hero Banner of the HTML research dashboard.
 
 ---
 
@@ -75,13 +76,16 @@
 
 ## 2. Counterparty Concentration & Revenue Visibility
 
-* **Client / Supplier Portfolio Breakdown**:
-  * Top 5 Concentration: [XX]% of revenue.
-  * Single Largest Counterparty Exposure: [XX]% (Name entity; assess dependency).
-* **Order Book / Operational Pipeline**:
-  * Confirmed Order Backlog / Annualized GTV Run-Rate: ₹[XXXX] Cr.
-  * Multi-Year Revenue Visibility: [XX]% forward revenue covered by contracted pipeline or recurring GMV.
-  * Key upcoming product ramps / platform milestones: [List 2-3 key upcoming releases].
+### 2.1 Client / Supplier Portfolio Breakdown
+* **Top 5 Concentration**: [XX]% of revenue.
+* **Single Largest Counterparty Exposure**: [XX]% (Name entity; assess dependency).
+
+### 2.2 Single-Order Revenue Cliff & Order Book Sustainability Audit
+* **Single-Order Dominance**: Is recent growth or forward guidance driven primarily by a single large contract? [Yes / No - Details]
+* **Post-Completion Cliff Risk**: Will revenue and plant utilization collapse once this flagship contract concludes? [Assessment]
+* **Order Book Replenishment (Book-to-Bill)**: Confirmed Order Backlog: ₹[XXXX] Cr | Book-to-Bill Ratio: [X.XX]x
+* **Multi-Year Pipeline Replenishment**: [XX]% forward revenue covered by recurring contracts, diversified client programs, or replacement inflows.
+* **Key upcoming vehicle/product project ramps**: [List 2-3 key upcoming releases].
 
 ---
 
@@ -111,7 +115,19 @@
 
 *Run via `python3 predict/scripts/forward_growth_pe.py`:*
 
-### 4.1 Base Parameters & Trailing Foundation
+### 4.1 Management Guidance vs Research Projections Bridge
+
+| Metric / Parameter | Official Management Guidance | Our Proposed Research Projection | Delta & Operational Rationale / Haircut |
+| :--- | :--- | :--- | :--- |
+| **Revenue Growth** | [e.g. 25-30% guided CAGR] | Base: [XX]%, Bull: [YY]% | [e.g. 15% haircut applied in Base for execution delays] |
+| **EBITDA / NPM Margin** | [e.g. 12-14% guided margin] | Base: [XX]%, Bull: [YY]% | [e.g. Raw material inflation / operating leverage thesis] |
+| **PAT Compounding** | [e.g. 30%+ guided PAT growth] | Base: [XX]%, Bull: [YY]% | [e.g. Direct compounding vs margin expansion dynamics] |
+| **Capex & Capacity** | [e.g. ₹500 Cr across 2 years] | [Modeled capex & asset turnover] | [e.g. Factored 3% annual dilution or debt funding] |
+| **Target Horizon** | [e.g. By FY28] | 2-Year Horizon ([FY_START] to [FY_TARGET]) | [H1/H2 roll-forward alignment] |
+
+---
+
+### 4.2 Base Parameters & Trailing Foundation
 * Current Market Price (CMP): **₹[CMP]** | Latest Market Cap: **₹[MCAP] Cr**
 * Current Trailing Base EPS: **₹[EPS]** | Trailing P/E: **[PE]x**
 * Active Calendar Regime: **[Q1-Q4] [FY]** $\rightarrow$ **[H1/H2] Roll-Forward**
@@ -119,7 +135,7 @@
 
 ---
 
-### 4.2 Scenario Modeling & Dynamic Exit Multiple Derivation
+### 4.3 Scenario Modeling & Dynamic Exit Multiple Derivation
 
 #### A. Base Case Scenario (Execution Friction / Delayed Delivery):
 * **Assumed CAGR during Horizon**: **[XX.X]%**
@@ -139,7 +155,7 @@
 
 ---
 
-### 4.3 2-Year Scenario Valuation Matrix
+### 4.4 2-Year Scenario Valuation Matrix
 
 | Scenario | Horizon Net CAGR | End-Period Growth | Dynamically Derived Exit P/E | Projected FY+2 EPS | Expected Target Price (₹) | Total Return (%) | Annualized CAGR (%) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -148,7 +164,7 @@
 
 ---
 
-### 4.4 Expectations Investing Check (Michael Mauboussin Reverse DCF)
+### 4.5 Expectations Investing Check (Michael Mauboussin Reverse DCF)
 * **Enterprise Value (EV)**: ₹[EV] Cr | Base FCF: ₹[FCF] Cr | WACC: 11.5% | Terminal Growth: 5.0%
 * **Implied 10-Year FCF CAGR**: **[XX.X]%**
 * **Feasibility Assessment**: [REALISTIC (<20%) / AGGRESSIVE (20-30%) / HEROIC (>35%)]
