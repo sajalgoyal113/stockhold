@@ -1025,18 +1025,42 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
         }}
         
         /* Mermaid Diagram Styling */
-        .mermaid-card {{
+        .mermaid-card {
             background: #0B0F19 !important;
-        }}
-        .mermaid {{
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            max-width: 100% !important;
+        }
+        .mermaid {
             display: flex !important;
             justify-content: center !important;
-        }}
-        .mermaid svg {{
-            min-width: 850px !important;
+            min-width: 600px !important;
+        }
+        @media (min-width: 768px) {
+            .mermaid {
+                min-width: 800px !important;
+            }
+        }
+        .mermaid svg {
             max-width: 100% !important;
             height: auto !important;
-        }}
+        }
+        
+        /* Mobile Touch & Formula Responsiveness */
+        .katex-display {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            max-width: 100% !important;
+            padding: 0.4rem 0 !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        pre, code {
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        table {
+            -webkit-overflow-scrolling: touch !important;
+        }
         .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon {{
             fill: #1E293B !important;
             stroke: #818CF8 !important;

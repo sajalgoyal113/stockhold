@@ -510,6 +510,67 @@ if not query_ticker:
 # =========================================================================
 ticker = query_ticker
 
+# Strict single-scrollbar viewport lock & mobile-responsive CSS
+st.html("""
+<style>
+/* 1. Eliminate Double Scrollbars: Lock outer Streamlit app viewport to 100vh */
+html, body, [data-testid="stAppViewContainer"], .main {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+.main .block-container {
+    padding: 6px 16px 0 16px !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+div[data-testid="stCustomComponentV1"] {
+    flex: 1 1 auto !important;
+    height: calc(100vh - 60px) !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    border-radius: 12px;
+}
+
+iframe[title="streamlit.components.v1.html"] {
+    height: 100% !important;
+    width: 100% !important;
+    border: none !important;
+}
+
+/* 2. Mobile Responsiveness: Keep top navbar clean and unstacked on mobile */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 4px 8px 0 8px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-bottom: 4px !important;
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:first-child {
+        width: 36% !important;
+        min-width: 100px !important;
+        flex: 0 0 auto !important;
+    }
+    div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:last-child {
+        width: 64% !important;
+        flex: 1 1 auto !important;
+    }
+    div[data-testid="stCustomComponentV1"] {
+        height: calc(100vh - 54px) !important;
+    }
+}
+</style>
+""")
+
 # Top Compact Navbar: StockHold Logo on Left, Search on Right, ZERO Trending Stocks
 nav_left, nav_right = st.columns([1.6, 1.4])
 with nav_left:
