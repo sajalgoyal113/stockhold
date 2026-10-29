@@ -71,18 +71,21 @@ Finance/
    - **Independent Fundamental EPS Anchoring (Zero P/E-Driven EPS Distortion)**: Trailing TTM EPS is an audited fundamental accounting metric ($\sum \text{PAT}_{\text{last 4 quarters}} / \text{Shares}$). When CMP changes, TTM EPS must remain anchored to audited fundamentals while Trailing P/E recalibrates dynamically ($\text{P/E} = \text{CMP} / \text{TTM EPS}$). Calculation engines must NEVER arbitrarily scale down EPS when a stock price falls.
    - **Price Drift Threshold**: If any passed or cached CMP deviates by $>2\%$ from the live trading price, the engine must flag a prominent `[PRICE DRIFT WARNING]` and synchronize to the verified live price.
 
-7. **Strict Root Directory Cleanliness Invariant (Zero Extra Root Files)**:
-   - The root directory `Finance/` MUST ALWAYS contain STRICTLY AND ONLY:
+7. **Streamlit Cloud Deployment Invariant & Root Structure Protection**:
+   - The root directory `Finance/` MUST ALWAYS contain STRICTLY AND ONLY the documented cloud deployment entrypoints and primary workspaces:
      ```text
      Finance/
+     ├── app.py                         # Streamlit Community Cloud root entrypoint (delegates to stockhold/app.py)
+     ├── requirements.txt               # Streamlit Community Cloud root dependencies
+     ├── run_app.sh                     # Root launcher delegating to stockhold/run_app.sh
+     ├── README.md                      # Repository documentation & guide
      ├── GEMINI.md                      # Behavioral rules, facts & repo source of truth
      ├── predict/                       # Quantitative Analysis & Research Reports (MASTER SOURCE OF TRUTH)
      └── stockhold/                     # Interactive Web Application & Visual Dashboard
      ```
-   - **Absolute Root Invariant**: The agent is STRICTLY FORBIDDEN from creating or placing ANY file directly in the `Finance/` root directory other than `GEMINI.md`.
-   - All Streamlit web application components, launchers, requirements, and documentation (`app.py`, `requirements.txt`, `run_app.sh`, `README.md`) must reside STRICTLY inside `stockhold/`.
-   - All analytical scripts, valuation models, research protocols, and reports must reside STRICTLY inside `predict/`.
-   - Zero root pollution: No pass-through scripts, deployment entrypoints, launchers, scratch files, or unversioned temporary files are ever permitted in `Finance/`.
+   - **Root Deployment Invariant**: The files `app.py`, `requirements.txt`, `run_app.sh`, and `README.md` in the root repository are mandatory deployment entrypoints for **Streamlit Community Cloud (`https://stockhold.streamlit.app/`)**. They must NEVER be deleted.
+   - All underlying Streamlit application code, Google Stitch styling, and web components reside in `stockhold/`. Root `app.py` delegates directly to `stockhold/app.py`.
+   - Zero root pollution: No unversioned scratch files, temporary dumps, or extraneous pass-through files outside the documented set above are permitted in `Finance/`.
 
 8. **Mandatory Default Unbiased Screening (Zero Portfolio Anchoring)**:
    - **Default Operating Invariant**: Unless the user explicitly asks about their existing portfolio or names specific tickers, the agent MUST ALWAYS by default run an unbiased, broad-universe market screen across Large, Mid, Small, and Micro-caps using `predict/scripts/screen_universe.py`.
