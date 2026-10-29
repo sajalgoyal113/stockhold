@@ -97,11 +97,38 @@ def resolve_screener_ticker(query: str) -> str:
     return cleaned
 
 _DATA_FETCHER_CACHE = {}
+_DATA_FETCHER_CACHE_TS = {}
+CACHE_TTL_SECONDS = 6 * 3600
+
+
+def _cache_get(key: str):
+    rec = _DATA_FETCHER_CACHE.get(key)
+    if rec is None:
+        return None
+    ts = _DATA_FETCHER_CACHE_TS.get(key, 0.0)
+    import time as _t
+    if _t.time() - ts > CACHE_TTL_SECONDS:
+        _DATA_FETCHER_CACHE.pop(key, None)
+        _DATA_FETCHER_CACHE_TS.pop(key, None)
+        return None
+    return rec
+
+
+def _cache_put(key: str, rec: dict):
+    import time as _t
+    _DATA_FETCHER_CACHE[key] = rec
+    _DATA_FETCHER_CACHE_TS[key] = _t.time()
+
 
 def fetch_company_data(ticker: str):
+    orig_ticker = (ticker or "").strip().upper()
     ticker = resolve_screener_ticker(ticker)
-    if ticker in _DATA_FETCHER_CACHE:
-        return _DATA_FETCHER_CACHE[ticker]
+    hit = _cache_get(ticker)
+    if hit is not None:
+        return hit
+    hit = _cache_get(orig_ticker)
+    if hit is not None:
+        return hit
     
     # Try consolidated and standalone URLs
     urls = [
@@ -155,11 +182,18 @@ def fetch_company_data(ticker: str):
                 if os.path.exists(db_path):
                     with open(db_path, "r") as f:
                         local_db = json.load(f)
-                    if ticker in local_db:
-                        rec = local_db[ticker]
-                        _DATA_FETCHER_CACHE[ticker] = rec
-                        print(f"[OFFLINE/CACHE FALLBACK] Loaded fundamentals snapshot for {ticker}")
-                        return rec
+                    for cand_key in [ticker, orig_ticker]:
+                        if cand_key in local_db:
+                            rec = local_db[cand_key].copy()
+                            rec["is_live"] = False
+                            rec["source_label"] = "Offline Fallback Snapshot (portfolio_fundamentals.json)"
+                            if "eps" in rec:
+                                rec["ttm_eps"] = float(rec["eps"])
+                            rec["snapshot_as_of"] = local_db.get("_as_of", rec.get("snapshot_as_of", "unknown"))
+                            _cache_put(ticker, rec)
+                            _cache_put(orig_ticker, rec)
+                            print(f"⚠️  [OFFLINE/CACHE FALLBACK] Loaded fundamentals snapshot for {cand_key} from local portfolio database. (CMP may be stale - mandatory live quote cross-check required!)")
+                            return rec
         except Exception:
             pass
         raise ValueError(f"Could not fetch valid financial data for ticker: {ticker} from Screener.in")
@@ -350,6 +384,10 @@ def fetch_company_data(ticker: str):
     res = {
         "ticker": ticker,
         "name": name,
+        "fetched_at": datetime.now().isoformat(timespec="seconds"),
+        "chart_window_days": 365,
+        "is_live": True,
+        "source_label": "Screener Consolidated" if "/consolidated/" in final_url else "Screener Standalone",
         "about": about_text,
         "cmp": cmp,
         "mcap_cr": mcap_cr,
@@ -391,5 +429,5 @@ def fetch_company_data(ticker: str):
         "profit_growth_5yr": growth_ranges.get("profit_growth_5yr"),
         "roe_3yr": growth_ranges.get("roe_3yr")
     }
-    _DATA_FETCHER_CACHE[ticker] = res
+    _cache_put(ticker, res)
     return res

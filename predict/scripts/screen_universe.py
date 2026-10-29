@@ -20,67 +20,59 @@ if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 
 from data_fetcher import fetch_company_data
+from forward_growth_pe import evaluate_forward_growth
 
 
 def screen_candidates(tickers: list):
-    print("=" * 105)
-    print(" UNBIASED THEMATIC UNIVERSE SCREENER | MASTER SOURCE OF TRUTH")
+    print("=" * 115)
+    print(" UNBIASED THEMATIC UNIVERSE SCREENER | MASTER SOURCE OF TRUTH (DETERMINISTIC ENGINE)")
     print(f" Total Candidates Evaluated: {len(tickers)}")
-    print("=" * 105)
+    print("=" * 115)
 
     tier1 = []
     tier2 = []
     rejects = []
 
-    print(f"{'Ticker':<12} | {'CMP (₹)':<8} | {'Mcap (Cr)':<10} | {'P/E':<6} | {'ROCE%':<6} | {'Sales 3Y':<8} | {'PAT 3Y':<8} | {'CFO/PAT':<7} | {'Category / Status':<25}")
-    print("-" * 105)
+    print(f"{'Ticker':<12} | {'CMP (₹)':<8} | {'Mcap (Cr)':<10} | {'P/E':<6} | {'2Y Fwd PE':<9} | {'Bull Up%':<8} | {'Exp CAGR':<8} | {'Verdict / Status':<35}")
+    print("-" * 115)
 
     for ticker in tickers:
         clean = ticker.strip().upper()
         if not clean:
             continue
         try:
-            d = fetch_company_data(clean)
-            cmp = d.get("cmp", 0.0) or 0.0
-            mcap = d.get("mcap_cr", 0.0) or 0.0
-            pe = d.get("pe", 0.0) or 0.0
-            roce = d.get("roce", 0.0) or 0.0
-            roe = d.get("roe", 0.0) or 0.0
-            s3 = d.get("sales_growth_3yr", 0.0) or 0.0
-            p3 = d.get("profit_growth_3yr", 0.0) or 0.0
-            ttm_pat = d.get("ttm_pat", 0.0) or 0.0
+            res = evaluate_forward_growth(ticker=clean)
+            cmp = res.get("cmp", 0.0) or 0.0
+            mcap = res.get("mcap", 0.0) or 0.0
+            pe = res.get("trailing_pe", 0.0) or 0.0
+            fwd_pe = res.get("fwd_pe_base", 0.0) or 0.0
+            bull_up = res.get("return_bull_pct", 0.0) or 0.0
+            exp_cagr = res.get("expected_cagr", 0.0) or 0.0
+            verdict = res.get("verdict", "")
             
-            cfo_h = d.get("cfo_history", [])
-            pat_h = d.get("pat_history", [])
-            cfo_pat = (sum(cfo_h[-3:]) / sum(pat_h[-3:])) if (cfo_h and pat_h and sum(pat_h[-3:]) > 0) else 0.8
-
-            # Classification Logic
-            status = ""
-            if p3 < 0 or s3 < 5.0 or roce < 12.0:
-                status = "REJECT (Negative/Weak Growth)"
-                rejects.append((clean, d, "Negative or stagnant earnings growth / weak ROCE"))
-            elif pe > 80.0:
-                status = "REJECT (Extreme Valuation)"
-                rejects.append((clean, d, f"P/E {pe:.1f}x exceeds 80x valuation ceiling"))
-            elif roce >= 18.0 and s3 >= 18.0 and p3 >= 15.0 and cfo_pat >= 0.70:
-                status = "TIER 1: Quality Compounder"
-                tier1.append((clean, d))
+            # Classification Logic directly synchronized with Master Valuation Engine
+            if "STRONG" in verdict:
+                status = f"TIER 1: Strong Buy ({verdict[:22]})"
+                tier1.append((clean, res))
+            elif "WATCHLIST" in verdict or "ACCUMULATE" in verdict or (bull_up >= 50.0 and fwd_pe <= 80.0):
+                status = f"TIER 2: Watchlist / Optionality"
+                tier2.append((clean, res))
             else:
-                status = "TIER 2: Emerging / Optionality"
-                tier2.append((clean, d))
+                status = f"REJECT: {verdict[:25]}"
+                rejects.append((clean, res, verdict))
 
-            print(f"{clean:<12} | {cmp:<8.1f} | {mcap:<10.1f} | {pe:<6.1f} | {roce:<6.1f} | {s3:<8.1f} | {p3:<8.1f} | {cfo_pat:<7.2f} | {status:<25}")
+            print(f"{clean:<12} | {cmp:<8.1f} | {mcap:<10.1f} | {pe:<6.1f} | {fwd_pe:<9.1f} | {bull_up:<+8.1f}% | {exp_cagr:<+8.1f}% | {status:<35}")
 
         except Exception as e:
-            print(f"{clean:<12} | Error fetching data: {e}")
+            print(f"{clean:<12} | Error running deterministic engine: {e}")
 
-    print("\n" + "=" * 105)
-    print(" SUMMARY AUDIT BREAKDOWN")
-    print("=" * 105)
+    print("\n" + "=" * 115)
+    print(" SUMMARY AUDIT BREAKDOWN (DETERMINISTIC SINGLE SOURCE OF TRUTH)")
+    print("=" * 115)
     print(f" • Tier 1 (Established Quality Compounders) [{len(tier1)}]: {[t[0] for t in tier1]}")
-    print(f" • Tier 2 (Emerging Pure-Plays / Turnarounds)   [{len(tier2)}]: {[t[0] for t in tier2]}")
-    print(f" • Disqualified / Filter Rejects             [{len(rejects)}]: {[t[0] for t in rejects]}")
-    print("=" * 105 + "\n")
+    print(f" • Tier 2 (Emerging Pure-Plays / Watchlist)  [{len(tier2)}]: {[t[0] for t in tier2]}")
+    print(f" • Disqualified / Valuation & Growth Rejects [{len(rejects)}]: {[t[0] for t in rejects]}")
+    print("=" * 115 + "\n")
 
 
 if __name__ == "__main__":

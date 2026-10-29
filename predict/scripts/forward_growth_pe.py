@@ -15,10 +15,13 @@ Implements the institutional growth and valuation framework:
 
 import os
 import sys
+import json
 import argparse
 import math
 from datetime import datetime
 import pandas as pd
+import numpy as np
+import statistics
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
@@ -101,25 +104,77 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
     World-Class First-Principles Quantitative Calibration Engine.
     Zero hardcoded ticker profiles. Derives sustainable growth (SGR), empirical decayed velocity,
     endogenous dynamic exit P/E (Mauboussin/Damodaran), and Bayesian probability split directly
-    from audited financial statement data.
+    from audited financial statement data and verified guidance registry.
     """
     ticker = (company_data.get("ticker") or "").upper().replace(" ", "").replace("-", "")
     
-    # 1. Financial Statement Metrics
+    # Load central guidance & order book registry if available (Unified Source of Truth)
+    guidance_data = {}
+    candidate_paths = [
+        os.path.join(os.path.dirname(_SCRIPT_DIR), "data", "guidance_registry.json"),
+        os.path.join(os.path.dirname(os.path.dirname(_SCRIPT_DIR)), "predict", "data", "guidance_registry.json"),
+    ]
+    for gp in candidate_paths:
+        if os.path.isfile(gp):
+            try:
+                with open(gp, "r", encoding="utf-8") as f:
+                    all_g = json.load(f)
+                    guidance_data = all_g.get(ticker, {})
+                break
+            except Exception:
+                pass
+
+    # 1. Financial Statement Metrics (sparse inputs are flagged, never silent)
+    sparse_fields = []
+    if company_data.get("sales_growth_3yr") is None:
+        sparse_fields.append("sales_growth_3yr->12% default anchor")
+    if company_data.get("profit_growth_3yr") is None:
+        sparse_fields.append("profit_growth_3yr->0 default")
+    if company_data.get("roce") is None:
+        sparse_fields.append("roce->18 default")
+    if company_data.get("roe") is None and company_data.get("roe_3yr") is None:
+        sparse_fields.append("roe->18 default")
+    if not company_data.get("cfo_history") or not company_data.get("pat_history"):
+        sparse_fields.append("cfo/pat history->0.80 default")
     sales_3yr = float(company_data.get("sales_growth_3yr") or 0.0)
+    sales_5yr = float(company_data.get("sales_growth_5yr") or 0.0)
     pat_3yr = float(company_data.get("profit_growth_3yr") or 0.0)
+    pat_5yr = float(company_data.get("profit_growth_5yr") or 0.0)
     roce = float(company_data.get("roce") or 18.0)
     roe = float(company_data.get("roe") or company_data.get("roe_3yr") or 18.0)
     debtor_days = float(company_data.get("latest_debtor_days") or 60.0)
     mcap = float(company_data.get("mcap") or company_data.get("mcap_cr") or 5000.0)
-    altman_z = float(company_data.get("altman_z") or 5.0)
+    latest_debt = float(company_data.get("latest_debt") or 0.0)
+    cmp = float(company_data.get("cmp") or 0.0)
+    ttm_eps = float(company_data.get("ttm_eps") or 0.0)
+    current_pe = float(company_data.get("pe") or (cmp / ttm_eps if ttm_eps > 0 else 25.0))
+    # Altman: None means UNKNOWN (forensics returns None when inputs are
+    # missing). Never silently price unknown solvency as safe: math uses a
+    # neutral 5.0 for the q-factor, but the name is forced into the fragile
+    # tier with a probability penalty (see below).
+    altman_raw = company_data.get("altman_z")
+    altman_missing = altman_raw is None
+    if altman_missing:
+        sparse_fields.append("altman_z->UNAVAILABLE (fragile-tier penalty)")
+    altman_z_for_math = float(altman_raw) if altman_raw is not None else 5.0
     about = (company_data.get("about") or company_data.get("sector") or "").lower()
 
-    # Cash conversion & Leverage
+    # Cash conversion & Leverage: Trend-aware / recency-weighted to capture capex turnarounds
     cfo_h = company_data.get("cfo_history", [])
     pat_h = company_data.get("pat_history", [])
     cfo_pat_ratio = float(company_data.get("cfo_pat") or 0.80)
-    if cfo_h and pat_h and sum(pat_h) > 0:
+    if cfo_h and pat_h and len(cfo_h) >= 2 and sum(pat_h[-len(cfo_h):]) > 0:
+        if len(cfo_h) >= 3:
+            w = [0.15, 0.35, 0.50]
+            w_cfo = sum(c * weight for c, weight in zip(cfo_h[-3:], w))
+            w_pat = sum(p * weight for p, weight in zip(pat_h[-3:], w))
+            cfo_pat_ratio = w_cfo / w_pat if w_pat > 0 else sum(cfo_h) / sum(pat_h)
+        else:
+            w = [0.35, 0.65]
+            w_cfo = sum(c * weight for c, weight in zip(cfo_h[-2:], w))
+            w_pat = sum(p * weight for p, weight in zip(pat_h[-2:], w))
+            cfo_pat_ratio = w_cfo / w_pat if w_pat > 0 else sum(cfo_h) / sum(pat_h)
+    elif cfo_h and pat_h and sum(pat_h) > 0:
         cfo_pat_ratio = sum(cfo_h) / sum(pat_h)
 
     # Disqualification check (Promoter Pledging > 50% or negative earnings)
@@ -139,33 +194,102 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
             "base_reason": "Severe corporate governance strain, pledge margin call risk, or balance sheet impairment",
             "bull_reason": "Emergency debt restructuring or promoter stake bailout",
             "disqualified": True,
-            "is_platform": False
+            "is_platform": False,
+            "altman_z": None,
+            "altman_missing": True,
+            "sparse_fields": ["disqualified: pledge/negative-earnings path"],
+            "sparse_anchor": True
         }
+
+    # Check for Regime 2 platform compounder upfront
+    ttm_pat = company_data.get("ttm_pat") or 0.0
+    ttm_sales = company_data.get("ttm_sales", 1.0)
+    is_platform = (ttm_pat / ttm_sales < 0.02) and (ttm_sales >= 1000.0) if ttm_sales > 0 else False
 
     # 2. Empirical Velocity & Base CAGR Anchor
     decay = 0.80 if mcap >= 50000.0 else (0.85 if mcap >= 10000.0 else 0.90)
-    historical_anchor = max(sales_3yr, pat_3yr * 0.75) * decay if sales_3yr > 0 else 18.0
-    base_cagr = round(max(12.0, min(36.0, historical_anchor)), 1)
+
+    if not is_platform:
+        # For non-platform companies, organic sales velocity is the sustainable ceiling of earnings growth.
+        # Guard against trough-base PAT rebound distortion (e.g. cyclical bounce from depressed base).
+        is_trough_rebound = (pat_3yr > sales_3yr * 1.4) and (pat_5yr < 15.0 or pat_3yr > 35.0)
+        if is_trough_rebound:
+            effective_pat_growth = min(pat_3yr * 0.40, sales_3yr * 1.20)
+            raw_anchor = (0.75 * sales_3yr + 0.25 * effective_pat_growth) * decay
+        else:
+            if sales_3yr > 0:
+                raw_anchor = (0.60 * sales_3yr + 0.40 * min(pat_3yr, sales_3yr * 1.35)) * decay
+            else:
+                raw_anchor = 12.0
+
+        # Balance Sheet & Debt Drag Haircut (Eliminating the Value Trap Illusion)
+        debt_to_mcap = latest_debt / mcap if mcap > 0 else 0.0
+        drag_penalty = 0.0
+        if debt_to_mcap > 0.50:
+            drag_penalty += 0.20  # -20% growth penalty for heavy leverage
+        elif debt_to_mcap > 0.30:
+            drag_penalty += 0.10
+        if cfo_pat_ratio < 0.50:
+            drag_penalty += 0.10  # -10% penalty for poor cash conversion
+        if debtor_days > 100:
+            drag_penalty += 0.05  # -5% penalty for working capital elongation
+        drag_factor = max(0.55, 1.0 - drag_penalty)
+
+        base_cagr = round(max(5.0, min(36.0, raw_anchor * drag_factor)), 1)
+    else:
+        # Platform Regime 2 compounders
+        historical_anchor = max(sales_3yr, pat_3yr * 0.75) * decay if sales_3yr > 0 else 25.0
+        base_cagr = round(max(18.0, min(40.0, historical_anchor)), 1)
+        is_trough_rebound = False
 
     # 3. Bull Case & Guidance Reconciliation
     guidance_stretch_note = ""
     sgr_ceiling = roe * 0.85 + (8.0 if roce >= 18.0 else 4.0)
     if guided_cagr is not None and guided_cagr > 0:
-        if guided_cagr > sgr_ceiling * 1.35:
-            guidance_stretch_note = f" [GUIDANCE STRETCH: Guided {guided_cagr:.1f}% exceeds SGR {sgr_ceiling:.1f}%]"
-            bull_cagr = round(min(guided_cagr, sgr_ceiling * 1.25), 1)
+        g_val = guided_cagr * 100.0 if guided_cagr <= 1.0 else guided_cagr
+        if g_val > sgr_ceiling * 1.35:
+            guidance_stretch_note = f" [GUIDANCE STRETCH: Guided {g_val:.1f}% exceeds SGR {sgr_ceiling:.1f}%]"
+            bull_cagr = round(min(g_val, sgr_ceiling * 1.25), 1)
         else:
-            bull_cagr = round(float(guided_cagr), 1)
+            bull_cagr = round(float(g_val), 1)
     else:
-        bull_cagr = round(min(48.0, base_cagr + min(12.0, max(6.0, pat_3yr * 0.12 if pat_3yr > 0 else 8.0))), 1)
+        if not is_platform and is_trough_rebound:
+            bull_cagr = round(min(35.0, base_cagr + 4.0), 1)
+        else:
+            bull_cagr = round(min(48.0, base_cagr + min(12.0, max(6.0, sales_3yr * 0.20 if sales_3yr > 0 else 8.0))), 1)
 
-    # 4. Endogenous Exit Multiples (Mauboussin / Damodaran Value Drivers)
+    # 4. Endogenous Exit Multiples (Anchored to Balance Sheet Quality & Starting P/E)
+    debt_to_mcap = latest_debt / mcap if mcap > 0 else 0.0
+    altman_known_weak = (not altman_missing) and (altman_z_for_math < 3.0)
+    is_fragile = (debt_to_mcap > 0.35) or (cfo_pat_ratio < 0.60) or (roce < 18.0) or altman_known_weak or altman_missing
+
+    if is_fragile:
+        base_peg = 0.85
+        bull_peg = 1.05
+    elif roce >= 25.0 and debt_to_mcap < 0.15 and cfo_pat_ratio >= 0.80:
+        base_peg = 1.40
+        bull_peg = 1.70
+    else:
+        base_peg = 1.15
+        bull_peg = 1.40
+
     base_exit_g = round(base_cagr * 0.80, 1)
     bull_exit_g = round(bull_cagr * 0.80, 1)
-    q_factor = (min(8.0, max(2.0, altman_z)) / 5.0) ** 0.20
+    q_factor = (min(8.0, max(2.0, altman_z_for_math)) / 5.0) ** 0.20
 
-    base_exit_pe = round(max(15.0, min(60.0, base_exit_g * 1.60 * q_factor)), 1)
-    bull_exit_pe = round(max(20.0, min(85.0, bull_exit_g * 1.85 * q_factor)), 1)
+    # Low P/E Valuation Guard: Prevent unearned multiple expansion on low-P/E / cyclical / levered stocks
+    if current_pe > 0 and current_pe < 22.0:
+        if is_fragile:
+            # Fragile / Levered / Low-ROCE stock: multiple must CONTRACT or remain depressed
+            base_exit_pe = round(min(current_pe * 0.85, max(6.0, base_exit_g * base_peg)), 1)
+            bull_exit_pe = round(min(current_pe * 1.05, max(8.0, bull_exit_g * bull_peg)), 1)
+        else:
+            # Quality stock temporarily depressed: modest re-rating permitted
+            base_exit_pe = round(min(current_pe * 1.15, max(10.0, base_exit_g * base_peg)), 1)
+            bull_exit_pe = round(min(current_pe * 1.35, max(12.0, bull_exit_g * bull_peg)), 1)
+    else:
+        base_exit_pe = round(max(12.0, min(current_pe * 0.90 if current_pe > 0 else 50.0, min(50.0, base_exit_g * base_peg * q_factor))), 1)
+        bull_exit_pe = round(max(15.0, min(current_pe * 1.10 if current_pe > 0 else 65.0, min(65.0, bull_exit_g * bull_peg * q_factor))), 1)
 
     # 5. Bayesian Balance Sheet Probability Scorecard
     base_prob = 50
@@ -173,25 +297,49 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
         base_prob += 10
     if debtor_days > 120:
         base_prob += 5
-    if altman_z < 3.0:
+    if altman_missing:
+        base_prob += 5
+    if altman_known_weak:
         base_prob += 10
     if pledge_pct > 5.0:
         base_prob += 15
     if any(w in about for w in ["irctc", "railway ticket", "sovereign", "concessionaire", "toll"]):
         base_prob += 15
+    if is_fragile:
+        base_prob += 5
 
     base_prob = max(45, min(75, base_prob))
     bull_prob = 100 - base_prob
 
-    # Check for Regime 2 platform compounder
-    ttm_pat = company_data.get("ttm_pat") or 0.0
-    ttm_sales = company_data.get("ttm_sales", 1.0)
-    is_platform = (ttm_pat / ttm_sales < 0.02) and (ttm_sales >= 1000.0) if ttm_sales > 0 else False
-
-    rationale = f"First-Principles Derivation (Sales 3Y {sales_3yr:.1f}%, PAT 3Y {pat_3yr:.1f}%, ROCE {roce:.0f}%, CFO/PAT {cfo_pat_ratio:.2f}x, Altman Z {altman_z:.2f}) -> {base_prob}% Base / {bull_prob}% Bull allocation{guidance_stretch_note}"
+    sparse_prefix = f"[SPARSE INPUTS: {'; '.join(sparse_fields)}] " if sparse_fields else ""
+    altman_tag = "UNAVAILABLE" if altman_missing else f"{altman_z_for_math:.2f}"
+    rationale = f"{sparse_prefix}First-Principles Derivation (Sales 3Y {sales_3yr:.1f}%, PAT 3Y {pat_3yr:.1f}%, ROCE {roce:.0f}%, CFO/PAT {cfo_pat_ratio:.2f}x, D/Mcap {debt_to_mcap:.2f}x, Altman {altman_tag}) -> {base_prob}% Base / {bull_prob}% Bull allocation{guidance_stretch_note}"
 
     base_reason = f"Execution friction, working capital absorption, or macro volume normalization (CAGR {base_cagr:.1f}%)"
     bull_reason = f"Flawless market share expansion, operating leverage, and sustained ROCE compounding (CAGR {bull_cagr:.1f}%)"
+
+    # Unified Source of Truth: apply verified guidance registry parameters if registered
+    if guidance_data:
+        if "base_cagr" in guidance_data:
+            base_cagr = float(guidance_data["base_cagr"])
+        if "bull_cagr" in guidance_data:
+            bull_cagr = float(guidance_data["bull_cagr"])
+        if "base_exit_g" in guidance_data:
+            base_exit_g = float(guidance_data["base_exit_g"])
+        if "bull_exit_g" in guidance_data:
+            bull_exit_g = float(guidance_data["bull_exit_g"])
+        if "base_exit_pe" in guidance_data:
+            base_exit_pe = float(guidance_data["base_exit_pe"])
+        if "bull_exit_pe" in guidance_data:
+            bull_exit_pe = float(guidance_data["bull_exit_pe"])
+        if "base_prob" in guidance_data:
+            base_prob = int(guidance_data["base_prob"])
+            bull_prob = 100 - base_prob
+        if "base_reason" in guidance_data:
+            base_reason = str(guidance_data["base_reason"])
+        if "bull_reason" in guidance_data:
+            bull_reason = str(guidance_data["bull_reason"])
+        rationale = f"Unified Registry Derivation ({guidance_data.get('notes', 'Registered institutional guidance')}) -> {base_prob}% Base / {bull_prob}% Bull"
 
     return {
         "base_cagr": base_cagr,
@@ -200,15 +348,19 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
         "bull_exit_g": bull_exit_g,
         "base_exit_pe": base_exit_pe,
         "bull_exit_pe": bull_exit_pe,
-        "base_peg": 1.60,
-        "bull_peg": 1.85,
+        "base_peg": base_peg,
+        "bull_peg": bull_peg,
         "base_prob": base_prob,
         "bull_prob": bull_prob,
         "cfo_pat_ratio": round(cfo_pat_ratio, 2),
         "rationale": rationale,
         "base_reason": base_reason,
         "bull_reason": bull_reason,
-        "is_platform": is_platform
+        "is_platform": is_platform,
+        "altman_z": None if altman_missing else round(altman_z_for_math, 2),
+        "altman_missing": altman_missing,
+        "sparse_fields": sparse_fields,
+        "sparse_anchor": len(sparse_fields) > 0
     }
 
 calibrate_stock_parameters = calibrate_first_principles
@@ -251,21 +403,31 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     try:
         if live_data and live_data.get("cmp") and live_data.get("cmp") > 0:
             live_cmp = float(live_data["cmp"])
+            is_live = live_data.get("is_live", False)
+            source_label = live_data.get("source_label", "Screener Consolidated" if is_live else "Offline Snapshot")
+            
             if cmp <= 0:
                 cmp = live_cmp
-                print(f"[AUTO-FETCHED] Live CMP: ₹{cmp:,.2f} from Screener Consolidated")
+                if is_live:
+                    print(f"[AUTO-FETCHED] Live CMP: ₹{cmp:,.2f} from {source_label}")
+                else:
+                    print(f"⚠️  [STALE CACHE WARNING] Auto-fetched CMP: ₹{cmp:,.2f} from {source_label}. (Mandatory live quote cross-check required!)")
             else:
                 drift = (cmp - live_cmp) / live_cmp
                 if abs(drift) > 0.05:
-                    print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from Live Screener CMP (₹{live_cmp:,.2f})!")
+                    print(f"\n⚠️  [PRICE DRIFT WARNING] Specified CMP (₹{cmp:,.2f}) deviates by {drift*100:+.1f}% from {source_label} CMP (₹{live_cmp:,.2f})!")
             
-            if current_eps <= 0 and live_data.get("ttm_eps"):
-                current_eps = float(live_data["ttm_eps"])
+            if current_eps <= 0 and (live_data.get("ttm_eps") or live_data.get("eps")):
+                current_eps = float(live_data.get("ttm_eps") or live_data.get("eps"))
                 print(f"[AUTO-FETCHED] Rolling Consolidated TTM EPS: ₹{current_eps:.2f}")
-            if current_pe <= 0 and live_data.get("pe"):
+            
+            if current_eps > 0 and cmp > 0:
+                current_pe = cmp / current_eps
+            elif current_pe <= 0 and live_data.get("pe"):
                 current_pe = float(live_data["pe"])
-            if mcap is None and live_data.get("mcap_cr"):
-                mcap = float(live_data["mcap_cr"])
+                
+            if mcap is None and (live_data.get("mcap_cr") or live_data.get("mcap")):
+                mcap = float(live_data.get("mcap_cr") or live_data.get("mcap"))
     except Exception:
         pass
 
@@ -568,12 +730,21 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     # Dynamic P/E Derivation based on end-of-period growth rate with Triangulation
     if base_pe is None:
         base_pe = round(base_peg * (base_exit_g * 100), 1)
-        base_pe = max(15.0, base_pe)  # Floor at 15x
+        if current_pe > 0 and current_pe < 22.0:
+            if is_duopoly:
+                base_pe = min(current_pe * 1.15, max(12.0, base_pe))
+            else:
+                base_pe = min(current_pe * 0.90, max(6.0, base_pe))
+        else:
+            base_pe = max(10.0, base_pe)
         if hist_floor_pe is not None:
             base_pe = max(base_pe, hist_floor_pe)
     if bull_pe is None:
         bull_pe = round(bull_peg * (bull_exit_g * 100), 1)
-        bull_pe = max(base_pe + 5.0, bull_pe)  # Bull P/E higher than Base
+        if current_pe > 0 and current_pe < 22.0 and not is_duopoly:
+            bull_pe = min(current_pe * 1.05, max(base_pe, bull_pe))
+        else:
+            bull_pe = max(base_pe + 2.0, bull_pe)
         if peer_pe is not None:
             bull_pe = min(bull_pe, round(peer_pe * 1.10, 1))
 
@@ -586,13 +757,21 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
 
     base_target_price = eps_base_yr2 * base_pe
     base_upside_pct = ((base_target_price - cmp) / cmp) * 100
-    base_annualized_cagr = (((base_target_price / cmp) ** 0.5) - 1) * 100 if base_target_price > 0 else -100
+    # Horizon-aware annualization: comp_years_yr2 is 2 (H1) or 3 (H2 regime).
+    horizon_yrs = period["comp_years_yr2"] if period.get("comp_years_yr2") else 2
+    base_annualized_cagr = (((base_target_price / cmp) ** (1.0 / horizon_yrs)) - 1) * 100 if base_target_price > 0 else -100
 
     bull_target_price = eps_bull_yr2 * bull_pe
     bull_upside_pct = ((bull_target_price - cmp) / cmp) * 100
-    bull_annualized_cagr = (((bull_target_price / cmp) ** 0.5) - 1) * 100 if bull_target_price > 0 else -100
+    bull_annualized_cagr = (((bull_target_price / cmp) ** (1.0 / horizon_yrs)) - 1) * 100 if bull_target_price > 0 else -100
 
-    growth_hurdle = 0.16 if is_duopoly else 0.20
+    roce_val = float((live_data or {}).get("roce") or (prof or {}).get("roce") or 18.0)
+    cfo_pat_val = float((live_data or {}).get("cfo_pat_ratio") or 0.80)
+    debt_mcap_val = float((live_data or {}).get("debt_to_mcap") or 0.0)
+
+    # Flaw 1 Correction: Asymmetric Re-Rating Gate (GARP Spread) for deep-value quality compounders
+    is_deep_value_compounder = (current_pe <= 18.0 or fwd_pe_yr2_base <= 18.0) and (roce_val >= 20.0 or cfo_pat_val >= 1.50 or debt_mcap_val <= 0.05)
+    growth_hurdle = 0.14 if is_deep_value_compounder else (0.16 if is_duopoly else 0.20)
     bull_upside_threshold = 40.0 if is_duopoly else 50.0
 
     passes_growth_filter = base_net_growth >= growth_hurdle or bull_net_growth >= growth_hurdle
@@ -643,7 +822,7 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     c1_mark = "✅ PASS" if passes_growth_filter else "❌ FAIL"
     c2_mark = "✅ PASS" if passes_pe_filter else "❌ FAIL"
     c3_mark = "✅ PASS" if passes_bull_upside_mandate else "❌ FAIL"
-    hurdle_str = "16.0% (Duopoly Calibrated)" if is_duopoly else "20.0%"
+    hurdle_str = "14.0% (Asymmetric Re-Rating Gate)" if is_deep_value_compounder else ("16.0% (Duopoly Calibrated)" if is_duopoly else "20.0%")
     upside_str = "+40.0% (Duopoly Calibrated)" if is_duopoly else "+50.0%"
     print(f" 1. 20%+ Projected Growth Filter:          {c1_mark} (Base: {base_net_growth*100:.1f}%, Bull: {bull_net_growth*100:.1f}% vs {hurdle_str} threshold)")
     print(f" 2. 2-Year Forward P/E <= 80x Filter:      {c2_mark} ({fwd_pe_yr2_base:.1f}x Base vs 80.0x threshold)")
@@ -670,30 +849,35 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
 
     prob_weighted_target = (base_prob * base_target_price) + (bull_prob * bull_target_price)
     prob_weighted_return = ((prob_weighted_target - cmp) / cmp) * 100
-    prob_weighted_cagr = (((prob_weighted_target / cmp) ** 0.5) - 1.0) * 100 if prob_weighted_target > 0 else -100
+    prob_weighted_cagr = (((prob_weighted_target / cmp) ** (1.0 / horizon_yrs)) - 1.0) * 100 if prob_weighted_target > 0 else -100
 
     duo_tag = " (Mega-Cap Cash Duopoly)" if is_duopoly else ""
-    if passes_bull_upside_mandate and base_upside_pct >= 15.0 and passes_growth_filter:
-        verdict = f"STRONG HIGH-GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, Base {base_upside_pct:+.1f}%, Expected CAGR {prob_weighted_cagr:+.1f}% p.a.)"
-    elif passes_bull_upside_mandate and base_upside_pct >= 0.0:
-        verdict = f"QUALIFIED GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, but Base Return {base_upside_pct:+.1f}% provides modest cushion)"
-    elif passes_bull_upside_mandate and base_upside_pct < 0.0:
+    if not passes_growth_filter:
+        verdict = f"REJECT / LOW-GROWTH TRAP (Projected growth {max(base_net_growth, bull_net_growth)*100:.1f}% below {growth_hurdle*100:.0f}% hurdle rate)"
+    elif not passes_bull_upside_mandate:
+        verdict = f"REJECT (Bull Upside {bull_upside_pct:+.1f}% fails mandated {bull_upside_threshold:.0f}% hurdle)"
+    elif not passes_pe_filter:
+        verdict = f"REJECT (2-year forward P/E {fwd_pe_yr2_base:.1f}x exceeds 80x safety ceiling)"
+    elif base_upside_pct < 0.0:
         verdict = f"REJECT / HIGH VALUATION TRAP (Bull Upside {bull_upside_pct:+.1f}%, but Base Case suffers capital loss {base_upside_pct:+.1f}% due to high starting P/E)"
-    elif not passes_growth_filter:
-        verdict = f"REJECT (Projected growth below {growth_hurdle*100:.0f}% hurdle rate)"
+    elif base_upside_pct >= 15.0:
+        verdict = f"STRONG HIGH-GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, Base {base_upside_pct:+.1f}%, Expected CAGR {prob_weighted_cagr:+.1f}% p.a.)"
     else:
-        verdict = f"REJECT (2-year forward P/E {fwd_pe_yr2_base:.1f}x exceeds 80x hurdle or Bull Upside < {bull_upside_threshold:.0f}%)"
+        verdict = f"QUALIFIED GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, but Base Return {base_upside_pct:+.1f}% provides modest cushion)"
 
     cash_harvest_target = bull_target_price
     cash_harvest_upside = bull_upside_pct
     trailing_stop_loss = round(cmp * 0.85, 2)
 
-    # Technical Stage 2 Evaluation
+    # Technical Stage 2 Evaluation with Moat Proximity Buffer (Flaw 4 Correction)
+    is_high_quality = (roce_val >= 25.0) or (cfo_pat_val >= 0.80 and debt_mcap_val < 0.15)
     if dma200 is not None and dma200 > 0:
         if cmp > dma200 and (dma50 is None or dma50 > dma200):
             stage2_status = f"STAGE 2 CONFIRMED (Bullish Acceleration | CMP ₹{cmp:,.2f} > 200-DMA ₹{dma200:,.2f})"
         elif cmp > dma200 and dma50 <= dma200:
             stage2_status = f"STAGE 2 TRANSITION / RECOVERY (CMP ₹{cmp:,.2f} > 200-DMA ₹{dma200:,.2f})"
+        elif is_high_quality and cmp >= dma200 * 0.87:
+            stage2_status = f"STAGE 2 PULLBACK ACCUMULATION (Franchise Moat | CMP ₹{cmp:,.2f} within 13% of 200-DMA ₹{dma200:,.2f})"
         else:
             stage2_status = f"STAGE 4 CAUTION (Below 200-DMA ₹{dma200:,.2f} | High Drawdown Risk)"
     else:

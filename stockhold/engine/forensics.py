@@ -199,6 +199,9 @@ def run_forensic_audit(
         debt_color = "red"
 
     # 4. Altman Z''-Score (Emerging Markets)
+    # NOTE: working capital / retained earnings / liabilities are estimated
+    # from aggregates (not full balance-sheet line items), so the score is
+    # indicative. Never fabricate a SAFE score when inputs are missing.
     if total_assets > 0:
         working_capital = total_assets * 0.20
         retained_earnings = net_worth * 0.80
@@ -212,9 +215,9 @@ def run_forensic_audit(
             total_liabilities=total_liab
         )
         if altman_z is None:
-            altman_z = 5.5
-            z_status = "🟢 SAFE ZONE (>2.6)"
-            z_color = "green"
+            altman_z = None
+            z_status = "⚪ UNAVAILABLE (insufficient balance-sheet inputs)"
+            z_color = "grey"
         elif altman_z > 2.6:
             z_color = "green"
             z_status = f"🟢 SAFE ZONE ({altman_z:.2f} > 2.6)"
@@ -225,9 +228,9 @@ def run_forensic_audit(
             z_color = "red"
             z_status = f"🔴 DISTRESS ZONE ({altman_z:.2f} < 1.1)"
     else:
-        altman_z = 5.5
-        z_status = "🟢 SAFE ZONE (>2.6)"
-        z_color = "green"
+        altman_z = None
+        z_status = "⚪ UNAVAILABLE (no balance-sheet inputs)"
+        z_color = "grey"
 
     # 5. Promoter Pledge
     if promoter_pledge_pct == 0.0:
@@ -251,7 +254,7 @@ def run_forensic_audit(
         "de_ratio": round(de_ratio, 2),
         "debt_status": debt_status,
         "debt_color": debt_color,
-        "altman_z": round(altman_z, 2),
+        "altman_z": round(altman_z, 2) if altman_z is not None else None,
         "z_status": z_status,
         "z_color": z_color,
         "promoter_pledge_pct": promoter_pledge_pct,

@@ -99,6 +99,6 @@ open predict/reports/index.html
 
 ## 📋 Core Research Directives & Invariants
 - **Calendar Roll-Forward**: H1 (Apr 1 – Sep 30: FY$_t$ / FY$_{t+1}$) vs H2 (Oct 1 – Mar 31: FY$_{t+1}$ / FY$_{t+2}$).
-- **The King Filter**: Guided CAGR $\ge 20\%$, 2-Year Forward P/E $< 50\times$, and mandated $\ge 50\%$ upside in Bull Case.
+- **The King Filter**: Guided CAGR $\ge 20\%$, 2-Year Forward P/E $\le 80\times$, and mandated $\ge 50\%$ upside in Bull Case.
 - **Dynamic Multiples**: Exit P/E derived dynamically from end-period growth rate (no arbitrary fixed multiples).
 - **Execution Credibility Weighting**: Probability distribution between Base and Bull calibrated to founder track record.

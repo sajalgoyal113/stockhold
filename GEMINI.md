@@ -64,10 +64,12 @@ Finance/
 5. **Deterministic Math Invariant**:
    - Financial ratios, exit multiples, compounded EPS, and implied growth rates must ALWAYS be calculated deterministically via Python engines (`predict/scripts/`). Never hallucinate numerical projections.
 
-6. **Zero Manual Quote Entry & Live Consolidated Verification**:
+6. **Zero Manual Quote Entry & Dual-Source Live Quote Verification**:
    - Never manually pass or hardcode stock prices (CMP), Market Cap, or TTM EPS from memory or unverified notes.
-   - All engines in `predict/scripts/` (`forward_growth_pe.py`, `reverse_dcf.py`) must automatically fetch verified live consolidated quotes directly from Screener (`data_fetcher.py`) by default.
-   - If a manual `--cmp` is explicitly passed for limit-order or entry-price stress-testing, the engine automatically checks for price drift against the live market price and triggers a prominent `[PRICE DRIFT WARNING]` if the deviation exceeds 5%.
+   - **Mandatory Dual-Source Live Verification**: Before running any valuation engine (`forward_growth_pe.py`, `reverse_dcf.py`) or generating equity research reports, the agent MUST explicitly cross-verify the stock's latest closing/current market price (CMP), Market Cap, and 52-week range using live market query tools (`search_web`).
+   - **Strict Cache Provenance & Prohibition of Silent Fallbacks**: Offline database snapshots (`portfolio_fundamentals.json`) must NEVER be silently labeled or treated as live data. If live web scraping is blocked, throttled, or encounters connection timeouts, `data_fetcher.py` and `forward_growth_pe.py` must emit prominent `⚠️ [STALE CACHE WARNING]` alerts, and the verified live market quote must be injected explicitly via `--cmp <verified_cmp> --mcap <verified_mcap>`.
+   - **Independent Fundamental EPS Anchoring (Zero P/E-Driven EPS Distortion)**: Trailing TTM EPS is an audited fundamental accounting metric ($\sum \text{PAT}_{\text{last 4 quarters}} / \text{Shares}$). When CMP changes, TTM EPS must remain anchored to audited fundamentals while Trailing P/E recalibrates dynamically ($\text{P/E} = \text{CMP} / \text{TTM EPS}$). Calculation engines must NEVER arbitrarily scale down EPS when a stock price falls.
+   - **Price Drift Threshold**: If any passed or cached CMP deviates by $>2\%$ from the live trading price, the engine must flag a prominent `[PRICE DRIFT WARNING]` and synchronize to the verified live price.
 
 7. **Strict Root Directory Cleanliness Invariant (Zero Extra Root Files)**:
    - The root directory `Finance/` MUST ALWAYS contain STRICTLY AND ONLY:
@@ -112,6 +114,9 @@ Finance/
      - **H2 (Q3/Q4: Oct 1 – March 31)**: Multiples roll forward as H1 concludes:
        - **1-Year Target**: Next fiscal year (**FY$_{t+1}$**), compounded by 2 years ($(1+g)^2$) from the FY$_{t-1}$ base.
        - **2-Year Target**: Two fiscal years ahead (**FY$_{t+2}$**), compounded by 3 years ($(1+g)^3$) from the FY$_{t-1}$ base.
+   - **Horizon-Aware Annualized CAGR Invariant**: When computing annualized CAGR over the evaluation horizon, the exponent MUST strictly match the forward compounding years ($T = \text{comp\_years\_yr2}$):
+     $$\text{CAGR} = \left(\frac{\text{Target Price}}{\text{CMP}}\right)^{1/T} - 1$$
+     where $T = 2$ in H1 and $T = 3$ in H2. Hardcoding `** 0.5` is strictly prohibited.
    - Example (Oct 18, 2026 $\to$ Q3 FY27):
      - Running year is FY27. Because it is H2, 1-Year target rolls to **FY28** ($(1+g)^2$) and 2-Year target rolls to **FY29** ($(1+g)^3$).
    - **Omit Bear Case Scenario**: Remove the Bear case scenario entirely. Only provide **Base Case** and **Bull Case** scenarios.
@@ -182,6 +187,41 @@ Finance/
       1. **What Management is Targeting**: Guided Revenue CAGR, PAT/EBITDA margins, capex budget, order inflow targets, and target horizon.
       2. **What We are Proposing**: Our research model's Base Case and Bull Case projections.
       3. **Variance & Operational Rationale**: Detailed fundamental reasoning explaining any divergence (e.g. conservative haircut for historical delivery delays, regulatory discounts, or operating leverage upside exceeding management's base guidance).
+19. **Low-P/E Value Trap & Balance Sheet Drag Guard (The Anti-Value Trap Invariant)**:
+    - Solves the mathematical distortion where low-P/E stocks ($< 22\times$) with slow top-line growth and high debt were erroneously awarded massive price targets due to unhedged multiple expansion and depressed-base PAT spikes.
+    - **Trough-Base PAT Rebound Guard**: For standard non-platform companies, sustainable earnings growth is bounded by organic revenue velocity ($\le \text{Sales 3Y} \times 1.25$). If 3-year PAT growth significantly exceeds sales growth while 5-year profit growth is low ($< 15\%$), it is flagged as a `Trough-Base Rebound Artifact` and anchored to sales velocity.
+    - **Debt & Working Capital Drag Haircut**: Apply an automatic 10% to 35% growth penalty to projected CAGR if $\text{Net Debt}/\text{Mcap} > 0.35$, $\text{CFO/PAT} < 0.60$, or $\text{Debtor Days} > 100$, reflecting debt service eating operating profits and working capital lockup.
+    - **Quality-Anchored Exit Multiples (Zero Low-P/E Free Rides)**: Low starting P/E stocks ($< 22\times$) with fragile balance sheets ($\text{D/Mcap} > 0.35$, $\text{ROCE} < 18\%$, or $\text{CFO/PAT} < 0.60$) must NEVER receive multiple expansion. Base Case exit multiple is derated down to $\min(\text{Current P/E} \times 0.85, 6\text{x}\text{--}9\text{x})$, and Bull Case is capped near current P/E ($\le \text{Current P/E} \times 1.05$).
+    - **Strict Disqualification Waterfall**: If projected Base or Bull CAGR $< 20\%$ or Bull Upside $< 50\%$, the stock MUST be immediately stamped `REJECT / LOW-GROWTH VALUE TRAP`. Multiple expansion cannot be used to artificially force hurdle compliance.
+20. **Algorithmic Calibration Invariant & Zero Unanchored Overrides (The Deterministic Repeatability Invariant)**:
+    - Eliminates model drift and contradictory verdicts when re-analyzing stocks across sessions.
+    - **Mandatory Default to First-Principles Calibration**: All valuation runs in `predict/scripts/forward_growth_pe.py` MUST default strictly to endogenous first-principles calibration (`calibrate_first_principles()`), which calculates sustainable growth (SGR) and dynamic exit P/Es directly from audited financial statements (`data_fetcher.py`).
+    - **Prohibition of Subjective / Manual Overrides**: Ad-hoc manual injection of arbitrary growth rates (`--growth`, `--bull-growth`) or arbitrary exit multiples (`--base-pe`, `--bull-pe`) without verified concall transcripts and a formal Guidance Reconciliation Bridge (Rule 18) is STRICTLY PROHIBITED.
+    - **The Multiple Compression Invariant (Zero Multiple Inflation)**: For stocks trading at hyper-elevated multiples ($> 80\text{x}\text{--}100\text{x}$ P/E), multiple compression toward sustainable PEG bounds ($1.4\text{x}\text{--}1.7\text{x}$ on end growth) is mandatory. The agent is strictly forbidden from arbitrarily holding exit multiples at 50x–60x simply to manufacture paper upside.
+21. **Primary Regulatory Due Diligence & Contract Asymmetry Invariant (The Take-or-Pay Liability Guard)**:
+    - **Mandatory Directionality Verification**: When evaluating major commercial contracts, joint ventures, or capacity reservations, the agent must verify primary regulatory filings (SEC 8-K/10-K, BSE/NSE exchange disclosures) to determine counterparty cash flow directionality: is the company receiving revenue, or committing to outbound fixed liabilities?
+    - **Prohibition of Mislabeled Wholesale Commitments**: A wholesale purchase obligation, capacity reservation, or take-or-pay contract must NEVER be mislabeled as an order book win or revenue backlog.
+    - **Existential Asymmetry Gate**: If a company enters an outbound take-or-pay liability where annual cash commitments exceed $>50\%$ of trailing annual turnover, the model must treat this as a high-risk operational fixed drain, stress-test underutilization risks, and flag a `TAKE-OR-PAY ASYMMETRY ALERT`.
+    - **Regulatory Invalidation Audit**: The agent must audit whether assets deployed under overseas agreements comply with the regulatory mandates of the company's core client base (e.g. RBI, SEBI, CERT-In data localization rules barring overseas hosting of Indian financial workloads).
+22. **Deterministic File Naming & Single-Source-of-Truth Idempotence**:
+    - **Strict File Naming Standard**: Every equity research report and compiled HTML dashboard MUST follow a deterministic naming standard based strictly on the lower-case stock ticker:
+      `predict/reports/<ticker_lower>_research_report.md`
+      `predict/reports/<ticker_lower>_research_report.html`
+    - **Prohibition of Variant or Orphan Names**: Creating naming variants (e.g. `esds_software`, `esds_software_solution`, `_new.html`, `_v2.html`) is strictly prohibited.
+    - **Idempotent Overwrite Invariant**: Re-analyzing or updating a stock must always idempotently overwrite the existing report in-place, followed by an immediate portal re-index (`python3 predict/scripts/generate_html_report.py --all`) to eliminate conflicting duplicate versions.
+
+23. **Centralized Management Guidance & Deterministic Parity Invariant (The Single Source of Truth Architecture)**:
+    - Official management guidance, contracted order backlogs, and multi-year capex roadmaps must NEVER be passed as ad-hoc, manual CLI flags that vary between screens, single-stock runs, or batch evaluations.
+    - **Single Source of Truth Store**: All vetted concall management guidance, contracted order backlogs, and dynamic exit multiple calibrations must reside centrally in `predict/data/guidance_registry.json`.
+    - **Deterministic Engine Ingestion**: All analytical tools—including `forward_growth_pe.py`, `screen_universe.py`, `evaluate_portfolio.py`, and `stockhold/engine/valuation.py`—must automatically ingest `predict/data/guidance_registry.json`.
+    - **Zero Mathematical Drift Mandate**: Standalone single-stock runs, thematic universe screens, batch portfolio evaluations, and the web application dashboard MUST ALWAYS produce 100% mathematically identical numbers (CMP, Mcap, TTM EPS, target price, exit P/E, and expected CAGR) down to the decimal point.
+    - **Prohibition of Report Memoization**: Analytical scripts must never scrape or anchor to prior static markdown/HTML reports to maintain consistency. Consistency must be enforced deterministically at the quantitative calculation and guidance ingestion engine level.
+
+24. **Zero-Debt Long-Cycle Working Capital & Generalized Asymmetric Re-Rating Invariants**:
+    - **Zero-Debt Long-Cycle Working Capital Invariant**: In capital goods, defense systems, aerospace, and heavy industrial manufacturing with 24–48 month build cycles, physical inventory and work-in-progress (WIP) absorb cash prior to sovereign milestone clearance. If the franchise is **virtually debt-free ($\text{Debt/Equity} \le 0.05\text{x}$ or Net Cash)** and cumulative 4-year operating cash flow is positive ($\sum \text{CFO} > 0$), there is zero risk of credit default or insolvency. The 4-year cumulative $\text{CFO/PAT}$ hurdle is calibrated to $\ge 0.30\times$. If $\text{Debt/Equity} > 0.05\text{x}$, the standard $\ge 0.60\times$ hurdle remains strictly non-negotiable.
+    - **Generalized Asymmetric Re-Rating Invariant (GARP Spread)**: If a company enters at deep-value valuation ($\text{Current P/E} \le 18.0\times$ or $\text{Forward P/E} \le 18.0\times$), maintains safe serviceable leverage ($\text{D/E} \le 0.50\text{x}$ or $\text{D/E} \le 0.85\text{x}$ with $\text{CFO/PAT} \ge 1.50\times$), and exhibits proven capital efficiency ($\text{ROCE} \ge 20\%$ or $\text{CFO/PAT} \ge 1.50\times$ or $\text{D/E} \le 0.15\text{x}$), the forward growth hurdle is calibrated down from $20.0\%$ to $14.0\%$. Modest EPS growth of $14\%\text{--}19\%$ combined with multiple expansion from $10\text{--}16\times$ up to $22\text{--}28\times$ reliably delivers $>50\%\text{--}150\%$ returns with superior downside margin of safety.
+
+
 
 
 

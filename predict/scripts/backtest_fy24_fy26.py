@@ -21,6 +21,7 @@ import requests
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+from investable_execution import decide_growth, uniform_targets, execute_investable
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
@@ -72,9 +73,9 @@ def clean_num(val_str):
     except ValueError:
         return 0.0
 
-def fetch_chart(cid: int) -> pd.DataFrame:
+def fetch_chart(cid: int, days: int = 1825) -> pd.DataFrame:
     try:
-        url = f"https://www.screener.in/api/company/{cid}/chart/?q=Price-DMA50-DMA200&days=1825"
+        url = f"https://www.screener.in/api/company/{cid}/chart/?q=Price-DMA50-DMA200&days={days}"
         r = requests.get(url, headers=HEADERS, timeout=12)
         if r.status_code == 200:
             data = r.json()
@@ -154,6 +155,7 @@ def fetch_company_financials(ticker: str) -> dict:
         "sales": get_row("profit-loss", "sales"),
         "pat": get_row("profit-loss", "net profit"),
         "eps": get_row("profit-loss", "eps"),
+        "opm": get_row("profit-loss", "opm"),
         "cfo": get_row("cash-flow", "operating activity"),
         "year_map": year_map
     }
@@ -246,6 +248,9 @@ def run_backtest():
         eps_23 = fin["eps"][idx_23] if idx_23 is not None and len(fin["eps"]) > idx_23 else (p0 / 40.0)
         sales_23 = fin["sales"][idx_23] if idx_23 is not None and len(fin["sales"]) > idx_23 else 0.0
         sales_20 = fin["sales"][idx_20] if idx_20 is not None and len(fin["sales"]) > idx_20 else 0.0
+        idx_22 = ymap.get(2022)
+        sales_22 = fin["sales"][idx_22] if idx_22 is not None and len(fin["sales"]) > idx_22 else 0.0
+        sales_1y = ((sales_23 / sales_22) - 1) * 100 if sales_23 > 0 and sales_22 > 0 else None
 
         # 3-Yr Sales CAGR up to FY23
         sales_cagr_3y = (((sales_23 / sales_20) ** (1/3.0)) - 1) * 100 if sales_23 > 0 and sales_20 > 0 else 15.0
@@ -263,44 +268,18 @@ def run_backtest():
                 if len(fin["pat"]) > iy: pat_list.append(fin["pat"][iy])
         cfo_pat_3y = sum(cfo_list) / sum(pat_list) if sum(pat_list) > 0 else 0.50
 
-        # C. Predict Model Quantitative Filter Gates:
-        # 1. Growth Hurdle >= 20%
-        if ticker in ["TRENT", "HAL", "POLYCAB", "DIXON", "KAYNES", "PERSISTENT", "NEWGEN", "GRAVITA", "APARINDS", "HBLENGINE"]:
-            model_growth = max(24.0, min(45.0, sales_cagr_3y))
-            bull_growth = model_growth + 8.0
-        elif ticker in ["TITAN", "SJS", "MAPMYINDIA", "AHLUCONT", "RATEGAIN"]:
-            model_growth = 20.0
-            bull_growth = 26.0
-        else: # Deceleration traps (ASIANPAINT, PAGEIND, CLEAN, TANLA, IEX)
-            model_growth = 12.0
-            bull_growth = 16.0
-
+        # C. Investable quantitative gates (no ticker lists, no turnaround
+        # bridge, one uniform target formula — see investable_execution.py).
+        # NOTE: `is_turnaround` in UNIVERSE is retained for documentation
+        # only and plays no role in decisions.
+        model_growth, bull_growth = decide_growth(sales_cagr_3y, sales_1y)
         gate_growth = model_growth >= 20.0
 
-        # 2. 2-Year Forward P/E < 50x (With Regime 2 Normalized Bridge for Turnaround/Footprint Compounders like Trent)
-        fwd_eps_yr2_base = eps_23 * ((1.0 + (model_growth / 100.0)) ** 2)
-        fwd_pe_yr2 = p0 / fwd_eps_yr2_base if fwd_eps_yr2_base > 0 else pe_0
-
-        if is_turnaround and sales_cagr_3y >= 30.0:
-            # Regime 2 Normalized Margin Bridge (GEMINI.md Rule 12)
-            # Reconstruct Normalized EPS at 6.0% steady-state NPM
-            norm_pat_yr2 = (sales_23 * ((1.0 + (model_growth / 100.0)) ** 2)) * 0.06
-            shares_approx = (sales_23 * 0.01) / (eps_23 if eps_23 > 0 else 1.0)
-            norm_fwd_pe = 34.2 # Pre-computed normalized forward multiple < 45x
-            gate_pe = norm_fwd_pe < 45.0
-            fwd_pe_yr2 = norm_fwd_pe
-        else:
-            gate_pe = fwd_pe_yr2 < 50.0
-
-        # 3. Bull Case Upside >= 50%
-        bull_exit_pe = min(60.0, max(28.0, bull_growth * 1.85))
-        if is_turnaround:
-            bull_target_price = p0 * 2.2 # Operating leverage target
-            bull_upside_pct = 120.0
-        else:
-            fwd_eps_yr2_bull = eps_23 * ((1.0 + (bull_growth / 100.0)) ** 2)
-            bull_target_price = fwd_eps_yr2_bull * bull_exit_pe
-            bull_upside_pct = ((bull_target_price - p0) / p0) * 100
+        fwd_pe_yr2, bull_target_price, bull_upside_pct = uniform_targets(
+            eps_23, p0, model_growth, bull_growth)
+        if fwd_pe_yr2 == float("inf"):
+            fwd_pe_yr2 = pe_0
+        gate_pe = fwd_pe_yr2 < 50.0
         gate_upside = bull_upside_pct >= 50.0
 
         # 4. Minervini Stage 2 Confirmation at entry (CMP > 200-DMA)
@@ -326,30 +305,12 @@ def run_backtest():
             verdict = "REJECTED (FAILED MOAT / RISK)"
             is_approved = False
 
-        # Actual Buy & Hold Return from FY24 to FY26
+        # Investable execution on CLOSES with costs (no peak-harvest fiction).
         bh_return = ((p1 - p0) / p0) * 100
         bh_cagr = (((p1 / p0) ** (1/3.0)) - 1) * 100
-
-        # Enhanced Predict Simulation: Cash Harvesting (50% trim at Bull target) + Trailing Stop
-        stop_price = p0 * 0.85
-        hit_bull = peak_price >= bull_target_price
-        hit_stop = not traj[traj["Price"] <= stop_price].empty
-
-        if is_approved:
-            if hit_bull:
-                half_gain_harvested = ((bull_target_price - p0) / p0) * 100
-                half_gain_held = ((p1 - p0) / p0) * 100
-                realized_return = (0.50 * half_gain_harvested) + (0.50 * half_gain_held)
-                strategy_note = f"Harvested 50% at ₹{bull_target_price:.1f} (+{half_gain_harvested:.1f}%), held 50% to ₹{p1:.1f}"
-            elif hit_stop and bh_return < -10.0:
-                realized_return = -15.0
-                strategy_note = f"Trailing Stop triggered at ₹{stop_price:.1f} (-15.0% protection)"
-            else:
-                realized_return = bh_return
-                strategy_note = "Held through cycle"
-        else:
-            realized_return = bh_return
-            strategy_note = "Model Disqualified (Capital Preserved)"
+        closes = traj["Price"].tolist() if not traj.empty else [p0, p1]
+        realized_return, strategy_note = execute_investable(
+            closes, p0, p1, bull_target_price, is_approved)
 
         realized_cagr = (((1.0 + (realized_return / 100.0)) ** (1/3.0)) - 1) * 100 if realized_return > -100 else -100
 
@@ -363,6 +324,9 @@ def run_backtest():
             "pe_0": round(pe_0, 1),
             "fwd_pe_yr2": round(fwd_pe_yr2, 1),
             "sales_cagr_3y": round(sales_cagr_3y, 1),
+            "sales_1y": round(sales_1y, 1) if sales_1y is not None else None,
+            "model_growth": model_growth,
+            "bull_growth": bull_growth,
             "cfo_pat_3y": round(cfo_pat_3y, 2),
             "verdict": verdict,
             "is_approved": is_approved,
@@ -416,9 +380,11 @@ def run_backtest():
     print(f" Alpha Generated vs Midcap 100:     {alpha_midcap:+.1f}%")
     print(f" Hit Rate / Win Rate:               {win_rate:.1f}%")
     print("--------------------------------------------------------------------------------")
-    print(f" Large Cap Approved Realized Ret:   {large_app['realized_return'].mean():+.1f}% (Count: {len(large_app)})")
-    print(f" Mid Cap Approved Realized Ret:     {mid_app['realized_return'].mean():+.1f}% (Count: {len(mid_app)})")
-    print(f" Small Cap Approved Realized Ret:   {small_app['realized_return'].mean():+.1f}% (Count: {len(small_app)})")
+    def _seg(ret_df):
+        return f"{ret_df['realized_return'].mean():+.1f}%" if not ret_df.empty else "n/a (no approvals)"
+    print(f" Large Cap Approved Realized Ret:   {_seg(large_app)} (Count: {len(large_app)})")
+    print(f" Mid Cap Approved Realized Ret:     {_seg(mid_app)} (Count: {len(mid_app)})")
+    print(f" Small Cap Approved Realized Ret:   {_seg(small_app)} (Count: {len(small_app)})")
     print("=" * 80)
 
     # Save outputs to JSON

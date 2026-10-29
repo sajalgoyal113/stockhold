@@ -39,39 +39,39 @@ def evaluate_portfolio(stocks: list, as_of_date=None, export_md=None):
     for s in stocks:
         ticker = s.get("ticker", "UNKNOWN").upper()
         name = s.get("name", ticker)
-        cmp = float(s["cmp"])
-        mcap = float(s.get("mcap", 0.0))
+        cmp = float(s.get("cmp", 0.0))
+        mcap = float(s.get("mcap", 0.0)) if s.get("mcap") else None
         pe = float(s.get("pe", 0.0)) if s.get("pe") else 0.0
-        growth = float(s.get("growth", 0.0))
-        bull_growth = float(s.get("bull_growth", growth * 1.25))
-        base_exit = float(s.get("base_exit_growth", growth * 0.9))
-        bull_exit = float(s.get("bull_exit_growth", bull_growth * 0.9))
-        base_prob = float(s.get("base_prob", 0.65))
-        bull_prob = float(s.get("bull_prob", 0.35))
-        base_reason = s.get("base_reason", "Execution friction or milestone delays")
-        bull_reason = s.get("bull_reason", "Flawless operational delivery & market share capture")
+        growth = float(s["growth"]) if ("growth" in s and s["growth"] is not None) else None
+        bull_growth = float(s["bull_growth"]) if ("bull_growth" in s and s["bull_growth"] is not None) else (growth * 1.25 if growth else None)
+        base_exit = float(s["base_exit_growth"]) if ("base_exit_growth" in s and s["base_exit_growth"] is not None) else (growth * 0.9 if growth else None)
+        bull_exit = float(s["bull_exit_growth"]) if ("bull_exit_growth" in s and s["bull_exit_growth"] is not None) else (bull_growth * 0.9 if bull_growth else None)
+        base_prob = float(s["base_prob"]) if ("base_prob" in s and s["base_prob"] is not None) else None
+        bull_prob = float(s["bull_prob"]) if ("bull_prob" in s and s["bull_prob"] is not None) else None
+        base_reason = s.get("base_reason")
+        bull_reason = s.get("bull_reason")
         disqualified = s.get("disqualified", False)
 
-        if disqualified or pe <= 0 or growth <= 0:
+        if disqualified:
             results.append({
                 "ticker": ticker,
                 "name": name,
                 "cmp": cmp,
-                "mcap": mcap,
+                "mcap": mcap or 0.0,
                 "current_pe": pe,
                 "verdict": "REJECT / DISQUALIFIED",
-                "target_base": round(cmp * 0.5, 2),
+                "target_base": round(cmp * 0.5, 2) if cmp > 0 else 0.0,
                 "return_base_pct": -50.0,
-                "target_bull": round(cmp * 0.8, 2),
+                "target_bull": round(cmp * 0.8, 2) if cmp > 0 else 0.0,
                 "return_bull_pct": -20.0,
-                "expected_target": round(cmp * 0.55, 2),
+                "expected_target": round(cmp * 0.55, 2) if cmp > 0 else 0.0,
                 "total_expected_return_pct": -45.0,
                 "expected_cagr": -25.8,
-                "base_prob": int(base_prob * 100),
-                "bull_prob": int(bull_prob * 100),
+                "base_prob": int((base_prob or 0.65) * 100),
+                "bull_prob": int((bull_prob or 0.35) * 100),
                 "disqualified": True,
-                "base_reason": base_reason,
-                "bull_reason": bull_reason
+                "base_reason": base_reason or "Severe structural, regulatory or corporate governance distress",
+                "bull_reason": bull_reason or "Emergency restructuring or debt workout"
             })
             continue
 

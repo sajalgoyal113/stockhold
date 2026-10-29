@@ -23,6 +23,11 @@ def calculate_implied_growth(enterprise_value, current_fcf, wacc, terminal_growt
     if current_fcf <= 0:
         return None
 
+    # Gordon terminal value TV = FCF_N*(1+g_term)/(wacc-g_term) is undefined
+    # when wacc <= g_term (division by zero or negative TV). Fail loud.
+    if wacc <= terminal_growth:
+        return None
+
     # Binary search for implied CAGR between -50% and +100%
     low_g = -0.50
     high_g = 1.50
@@ -60,6 +65,9 @@ def calculate_implied_growth(enterprise_value, current_fcf, wacc, terminal_growt
 
 def dcf_valuation(current_fcf, growth_rate, wacc, terminal_growth, net_debt, shares_count, years=10):
     """Computes target equity value per share given explicit growth assumptions."""
+    if wacc <= terminal_growth:
+        nan = float("nan")
+        return nan, nan, nan
     pv_fcf = 0.0
     fcf_t = current_fcf
     for t in range(1, years + 1):
@@ -191,7 +199,20 @@ def run_reverse_dcf(
     assesses feasibility, and computes a sensitivity matrix across discount and terminal rates.
     """
     ev = mcap_cr + net_debt
-    base_fcf = max(1.0, fcf_0)
+    # Do not fabricate a positive FCF for distressed/negative-FCF companies:
+    # flooring to +1 Cr would invent an implied CAGR. Return INCONCLUSIVE.
+    if fcf_0 is None or fcf_0 <= 0:
+        return {
+            "ev": round(ev, 1),
+            "fcf_0": round(fcf_0 or 0.0, 1),
+            "wacc_pct": round(wacc * 100, 1),
+            "g_term_pct": round(g_term * 100, 1),
+            "implied_cagr": None,
+            "assessment": "INCONCLUSIVE — non-positive base FCF; reverse-DCF not meaningful",
+            "color": "grey",
+            "sensitivity_matrix": {},
+        }
+    base_fcf = fcf_0
 
     raw_g = calculate_implied_growth(ev, base_fcf, wacc, g_term, years=10)
     implied_cagr = (raw_g * 100.0) if raw_g is not None else 0.0

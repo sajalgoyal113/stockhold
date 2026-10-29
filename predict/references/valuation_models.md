@@ -63,7 +63,17 @@ Where Justified Forward PEG reflects capital return quality, reinvestment moats,
 * **Indian Capital-Light / Tech & Consumer Compounders (Zero Debt, High Reinvestment)**:
   * **Base Case PEG**: $\approx \mathbf{1.5\times - 1.75\times}$ (Reflects baseline multiple for 15-18% growth $\implies \mathbf{24\times - 30\times\text{ P/E}}$ in Indian markets).
   * **Bull Case PEG**: $\approx \mathbf{1.8\times - 2.0\times}$ (Reflects scarcity premium for sustained 25%+ compounding $\implies \mathbf{45\times - 52\times\text{ P/E}}$).
-* **Capital-Intensive / Moderate ROIC / Cyclicals (ROIC 12-18%)**: PEG $\approx 1.0\times - 1.25\times$.
+* **Capital-Intensive / Moderate ROIC / Cyclicals (ROIC 12-18%)**: PEG $\approx 0.85\times - 1.10\times$.
+
+### The Anti-Value Trap & Quality-Anchored Exit Multiple Guard
+
+When analyzing low starting P/E stocks ($< 22\times$):
+1. **Zero Free Rides on Multiple Expansion**: Cheap stocks with high debt ($\text{D/Mcap} > 0.35$), low ROCE ($< 18\%$), or poor cash conversion ($\text{CFO/PAT} < 0.60$) are cheap for a structural reason: equity risk is subordinated to heavy debt, and Return on Equity (ROE) is below the company's cost of equity capital. Under corporate finance theory, reinvesting profits under such conditions destroys shareholder wealth.
+2. **Base Case Multiple Derating**: In the Base Case, exit multiples must contract rather than expand:
+   $$\text{Base Exit P/E} = \min(\text{Current P/E} \times 0.85, \; 6.0\text{x} - 9.0\text{x})$$
+   Bull Case exit multiples are capped near current levels ($\le \text{Current P/E} \times 1.05$), preventing the mathematical fabrication of fake multibaggers.
+3. **Debt & Working Capital Drag Haircut**: Projected EPS CAGR is subjected to an automatic **10% to 35% growth penalty** based on audited financial distress markers ($\text{D/Mcap} > 0.35$, $\text{CFO/PAT} < 0.50$, $\text{Debtor Days} > 100$).
+4. **Strict Hurdle Disqualification**: If projected growth is $< 20\%$ or Bull upside is $< 50\%$, the stock is immediately stamped `REJECT / LOW-GROWTH VALUE TRAP`.
 
 ### The Triangulated Exit Multiple Framework (Growth PEG + Historical Floor + Peer Benchmark)
 Pure linear PEG formulas ($\text{PEG} \times g_{\text{exit}}$) can understate the valuation of high-ROIC, net-cash leaders in decelerating Base Cases (e.g. projecting an unrealistic 27x for Sona BLW). Conversely, relying purely on unadjusted historical P/E leads to bubble anchoring. 
@@ -262,6 +272,23 @@ Empirically validated by multi-cycle backtesting across 32 Indian listed equitie
   2. **EARS Gross Margin Trend Invariant (China Dumping Gate)**:
      $$\Delta \text{GM} = \text{Gross Margin}_{Q_0} - \text{Gross Margin}_{Q_{-4}}$$
      $$\text{If } \Delta \text{GM} < -300\text{ bps (for 2 consecutive quarters)} \implies \text{CYCLICAL DE-STOCKING TRAP} \implies \textbf{REJECTED}$$
+
+### 3. Zero-Debt Long-Cycle Working Capital Gate (The Defense & Heavy Capital Goods Invariant)
+* **The Structural Principle:** In long-cycle physical manufacturing (naval shipyards, defense electronics, aerospace systems, heavy industrial fabrication), production cycles span 24 to 48 months. Physical raw materials, components, and assemblies accumulate as Work-in-Progress (WIP) on the balance sheet prior to sovereign client milestone clearance.
+* **Solvency vs Fraud Distinction:** Low cash conversion ($\text{CFO/PAT} < 0.60\times$) indicates fraud or imminent bankruptcy only when debt is being raised to fund uncollected receivables ($\text{D/E} > 0.50\text{x}$). In a virtually debt-free fortress franchise ($\text{D/E} \le 0.05\text{x}$ or Net Cash) with positive cumulative operating cash flow ($\text{CFO} > 0$), there is zero credit default or insolvency risk. Working capital absorption is physical contract fulfillment.
+* **Mathematical Invariant:**
+  $$\text{If } \text{Debt/Equity} \le 0.05\text{x} \text{ and } \sum_{i=1}^4 \text{CFO}_i > 0 \implies \text{CFO/PAT Hurdle} = 0.30\times$$
+  $$\text{If } \text{Debt/Equity} > 0.05\text{x} \implies \text{CFO/PAT Hurdle} = 0.60\times \text{ (Standard Forensic Hurdle)}$$
+
+### 4. Generalized Asymmetric Re-Rating Gate (GARP Spread)
+* **The Structural Principle:** Total 2-year compounding return is the product of EPS growth and exit P/E re-rating:
+  $$\text{Return} = (1 + g_{\text{EPS}})^2 \times \frac{\text{Exit P/E}}{\text{Entry P/E}} - 1$$
+  When a company enters at deep-value multiples ($\text{P/E} \le 18.0\times$ or $\text{Forward P/E} \le 18.0\times$), safe serviceable leverage ($\text{D/E} \le 0.50\text{x}$ or $\text{D/E} \le 0.85\text{x}$ with $\text{CFO/PAT} \ge 1.50\times$), and high capital efficiency ($\text{ROCE} \ge 20\%$ or $\text{CFO/PAT} \ge 1.50\times$):
+  EPS compounding of $14\%\text{--}19\%$ combined with multiple expansion from $10\text{--}16\times$ to $22\text{--}28\times$ generates $>50\%\text{--}150\%$ returns. Rejecting such franchises purely due to a rigid $20.0\%$ growth cutoff creates severe Type II omission errors.
+* **Mathematical Invariant:**
+  $$\text{If } (\text{P/E}_0 \le 18.0 \text{ or } \text{Fwd P/E}_{\text{yr2}} \le 18.0) \land \text{Debt Serviceable} \land (\text{ROCE} \ge 20\% \lor \text{CFO/PAT} \ge 1.50\times \lor \text{D/E} \le 0.15\text{x}):$$
+  $$\text{Growth Hurdle} = 14.0\% \quad (\text{else } 20.0\%)$$
+
 
 
 

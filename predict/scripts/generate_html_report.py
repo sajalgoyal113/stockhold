@@ -30,8 +30,12 @@ from datetime import datetime
 import markdown
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_PREDICT_DIR = os.path.dirname(_SCRIPT_DIR)
-_REPORTS_DIR = os.path.join(_PREDICT_DIR, "reports")
+_CANDIDATE_DIRS = [
+    os.path.join(os.path.dirname(_SCRIPT_DIR), "reports"),
+    os.path.join(os.path.dirname(os.path.dirname(_SCRIPT_DIR)), "predict", "reports"),
+    os.path.join(_SCRIPT_DIR, "..", "reports"),
+]
+_REPORTS_DIR = next((p for p in _CANDIDATE_DIRS if os.path.isdir(p)), _CANDIDATE_DIRS[0])
 
 POWERS_LIST = [
     ("Cornered Resource", "Proprietary IP, patents, or irreplaceable access", "gem"),
@@ -151,15 +155,23 @@ def extract_verdict_commentary(content, summary, verdict_str, ticker="", is_port
         raw = re.sub(r"\*\*|\*|__|_", "", raw)
         raw = " ".join(raw.split())
         
-        # If it has multiple sentences, take first 1-2 complete sentences
+        # Extract full commentary without truncating mid-sentence
+        if len(raw) <= 650:
+            return raw
+            
+        # For exceptionally long paragraphs (> 650 chars), extract complete sentences
         sentences = re.split(r"(?<=[.!?])\s+", raw)
-        if len(sentences) >= 2 and len(sentences[0]) + len(sentences[1]) < 420:
-            return f"{sentences[0]} {sentences[1]}"
-        elif len(sentences) >= 1 and len(sentences[0]) < 380:
-            return sentences[0]
-        elif len(sentences) >= 1:
-            return raw[:360].rsplit(" ", 1)[0] + "..."
-        return raw
+        combined = ""
+        for s in sentences:
+            if not combined:
+                combined = s
+            elif len(combined) + len(s) + 1 <= 650:
+                combined = f"{combined} {s}"
+            else:
+                break
+        if combined:
+            return combined
+        return raw[:650].rsplit(" ", 1)[0] + "..."
 
     # 2. Dynamic synthesis fallback based on verdict
     is_rejected = "REJECT" in verdict_str or "🔴" in verdict_str or "DISQUALIFIED" in verdict_str
@@ -568,9 +580,13 @@ def parse_and_render_sections(content, is_portfolio=False):
             chunk_body,
         )
         
-        # Normalize nested sub-bullet indentation to 4 spaces so markdown nests correctly
+        # Normalize nested sub-bullet indentation to 4 spaces and ensure preceding blank line
         fixed_lines = []
         for line in chunk_body.splitlines():
+            # If line starts a list and previous line was text, ensure blank line precedes it
+            if re.match(r"^(\s*[*+-]|\s*\d+\.)\s+", line):
+                if fixed_lines and fixed_lines[-1].strip() != "" and not re.match(r"^(\s*[*+-]|\s*\d+\.)\s+", fixed_lines[-1]) and not fixed_lines[-1].strip().startswith(("#", ">")):
+                    fixed_lines.append("")
             m_indent = re.match(r"^(\s{2,3})([*+-]|\d+\.)\s+(.*)$", line)
             if m_indent:
                 fixed_lines.append(f"    {m_indent.group(2)} {m_indent.group(3)}")
@@ -1808,33 +1824,35 @@ def generate_portal_index(reports_metadata, output_dir=_REPORTS_DIR):
         </div>
         ''' if comm else ""
             
+        c_name = r.get("company_name") or r.get("title") or r.get("ticker") or "Report"
+        t_sym = r.get("ticker", "REPORT").upper()
         cards_html += f"""
-        <div class="portal-card glass-card rounded-xl p-5 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between group" data-ticker="{r['ticker'].upper()}" data-name="{r['company_name'].upper()}" data-verdict="{verdict.upper()}">
+        <div class="portal-card glass-card rounded-xl p-5 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between group" data-ticker="{t_sym}" data-name="{c_name.upper()}" data-verdict="{verdict.upper()}">
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">{r['ticker']}</span>
+                    <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">{t_sym}</span>
                     <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold border {badge_color}">{verdict}</span>
                 </div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-300 transition-colors">{r['company_name']}</h3>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-500 dark:group-hover:text-indigo-300 transition-colors">{c_name}</h3>
                 
                 {comm_html}
                 
                 <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800/80 text-xs font-mono">
                     <div>
                         <span class="text-slate-400 dark:text-slate-500 block">Current CMP</span>
-                        <span class="text-slate-800 dark:text-slate-200 font-bold">{r['cmp']}</span>
+                        <span class="text-slate-800 dark:text-slate-200 font-bold">{r.get('cmp', 'N/A')}</span>
                     </div>
                     <div>
                         <span class="text-slate-400 dark:text-slate-500 block">Expected Target</span>
-                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r['target']}</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r.get('target', 'N/A')}</span>
                     </div>
                     <div>
                         <span class="text-slate-400 dark:text-slate-500 block">Exp. Upside</span>
-                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r['return']}</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r.get('return', 'N/A')}</span>
                     </div>
                     <div>
                         <span class="text-slate-400 dark:text-slate-500 block">Exp. CAGR</span>
-                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r['cagr']}</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{r.get('cagr', 'N/A')}</span>
                     </div>
                 </div>
             </div>
@@ -2281,6 +2299,26 @@ def get_available_reports(reports_dir: str = None):
         if html_file.name == "index.html":
             continue
         try:
+            if "smallcap_" in html_file.name.lower() or "backtest" in html_file.name.lower():
+                is_set2 = "set2" in html_file.name.lower()
+                title_str = "NIFTY Smallcap 250 Audit (Set 2: 30 Fresh Stocks)" if is_set2 else "NIFTY Smallcap 250 Audit (Set 1: 30 Random Stocks)"
+                reports.append({
+                    "ticker": "AUDIT",
+                    "name": title_str,
+                    "company_name": title_str,
+                    "title": title_str,
+                    "verdict": "STRATEGY BACKTEST",
+                    "cmp": "30 Stocks",
+                    "target": "+186.6% Realized" if is_set2 else "+190.6% Realized",
+                    "return": "+112.9% Alpha" if is_set2 else "+116.9% Alpha",
+                    "cagr": "71.4% Win Rate" if is_set2 else "90.9% Win Rate",
+                    "commentary": "Audited point-in-time holding FY24-FY26 under 3-Tranche Moonbag protocol (Flaw 1-5 corrected) net of trading costs.",
+                    "html_file": html_file.name,
+                    "html_path": str(html_file),
+                    "is_portfolio": False,
+                })
+                continue
+
             content = html_file.read_text(encoding="utf-8", errors="ignore")
             meta = parse_metadata(content[:4000], html_file.name)
             summary = parse_summary_box(content[:4000])
@@ -2291,6 +2329,7 @@ def get_available_reports(reports_dir: str = None):
             reports.append({
                 "ticker": meta.get("ticker", html_file.stem.split("_")[0].upper()),
                 "name": meta.get("company_name", html_file.stem.replace("_", " ").title()),
+                "company_name": meta.get("company_name", meta.get("title", html_file.stem.replace("_", " ").title())),
                 "title": meta.get("title", html_file.stem),
                 "verdict": verdict,
                 "target": target_str,
@@ -2318,10 +2357,18 @@ def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_d
             return existing_html, meta, "", True, existing_path
             
     md_dossier = build_institutional_markdown_dossier(data, val_res, forensic_res, rev_dcf_res, ai_output)
-    html_str, meta = generate_html_from_markdown(md_dossier, filename=f"{ticker.lower()}_research_report.md")
+    out_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.html")
+    html_str, meta = generate_html_from_markdown(md_dossier, filename=f"{ticker.lower()}_research_report.md", output_path=out_file)
+    md_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.md")
+    Path(md_file).write_text(md_dossier, encoding="utf-8")
     meta["is_curated"] = False
-    meta["source_path"] = None
-    return html_str, meta, md_dossier, False, None
+    meta["source_path"] = out_file
+    try:
+        reps = get_available_reports(_REPORTS_DIR)
+        generate_portal_index(reps, output_dir=_REPORTS_DIR)
+    except Exception:
+        pass
+    return html_str, meta, md_dossier, False, out_file
 
 
 def get_portal_index_html(output_dir: str = None) -> str:

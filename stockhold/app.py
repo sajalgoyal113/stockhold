@@ -826,6 +826,43 @@ rev_dcf_res = run_reverse_dcf(
 ai_output = generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_key)
 action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
 
+# --- INSTITUTIONAL SURFACE: guard badge + kill-switches (judging strip) ---
+try:
+    from engine.safety_guard import FinancialSafetyGuard
+except ImportError:
+    from safety_guard import FinancialSafetyGuard
+
+_ai_text = (ai_output.get("content", "") if isinstance(ai_output, dict) else str(ai_output or ""))
+_guard = FinancialSafetyGuard.audit_synthesis(val_res, _ai_text)
+_guard_ok = bool(_guard.get("passes_guard"))
+_altman_missing = forensic_res.get("altman_z") is None
+_sparse = bool(calibrated.get("sparse_anchor"))
+_kill_lines = [ln.strip() for ln in _ai_text.splitlines() if "kill switch" in ln.lower() or "kill-switch" in ln.lower()][:3]
+if not _kill_lines:
+    stop_px = val_res.get('trailing_stop_loss') or round(data["cmp"] * 0.85, 1)
+    debtor_d = forensic_res.get("debtor_days")
+    _kill_lines = [
+        f"Kill Switch #1: Close below ₹{stop_px:,.2f} triggers automated trailing stop exit (15% capital preservation).",
+        f"Kill Switch #2: Exit immediately if YoY sales growth prints below 12.0% for two consecutive quarters.",
+        f"Kill Switch #3: Exit if debtor days expand >25 days (above today's {debtor_d}d) without cash conversion."
+    ]
+_badge = ("GUARD PASS — targets match deterministic math" if _guard_ok
+          else "GUARD FLAG — " + "; ".join(_guard.get("violations", [])[:2]))
+_badge_color = "#00f5a0" if _guard_ok else "#ffb703"
+st.html(f"""
+<div class="glass-card" style="padding: 14px 16px; margin: 6px 0 12px 0;">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+    <span style="font-size: 0.78rem; font-weight: 700; color: {_badge_color};">{_badge}</span>
+    <span style="font-size: 0.78rem; color: #94a3b8;">| {val_res.get('verdict', '')}</span>
+    <span style="font-size: 0.78rem; color: #94a3b8;">| {ai_output.get('source', 'Institutional Valuation Desk') if isinstance(ai_output, dict) else 'Algorithmic Desk'}</span>
+    {"<span style='font-size: 0.78rem; font-weight: 700; color: #ffb703;'>| Altman UNAVAILABLE — fragile-tier penalty applied</span>" if _altman_missing else ""}
+    {"<span style='font-size: 0.78rem; font-weight: 700; color: #ffb703;'>| SPARSE INPUTS — " + calibrated.get('rationale', '').split(']')[0].replace('[SPARSE INPUTS: ', '') + "</span>" if _sparse else ""}
+  </div>
+  <div style="font-size: 0.86rem; color: #e2e8f0; margin-top: 8px;">{action_commentary}</div>
+  <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px;">{" · ".join(_kill_lines)}</div>
+</div>
+""")
+
 # Generate or load institutional HTML report for stock
 html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
     data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile

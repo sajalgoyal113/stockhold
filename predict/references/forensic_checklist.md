@@ -11,6 +11,7 @@ This reference guide details forensic red flags, accounting manipulations, and g
   * **Acceptable**: $0.8\times - 1.0\times$.
   * **Amber / Yellow Flag**: $0.5\times - 0.8\times$ (Profits trapped in working capital or unbilled revenue).
   * **Critical Red Flag**: $< 0.5\times$ or negative CFO with positive PAT. High probability of fabricated revenue, uncollected credit sales, or non-cash paper gains.
+  * **Zero-Debt Long-Cycle Working Capital Exemption**: In capital goods, defense systems, aerospace, and heavy manufacturing with 24-48 month build cycles, physical inventory and work-in-progress (WIP) absorb cash prior to milestone clearance. If the franchise is **virtually debt-free ($\text{Debt/Equity} \le 0.05\text{x}$ or Net Cash)** and cumulative 4-year operating cash flow is positive, there is zero risk of credit default or insolvency. The 4-year cumulative $\text{CFO/PAT}$ hurdle is calibrated to $\ge 0.30\times$. If $\text{Debt/Equity} > 0.05\text{x}$, the standard $\ge 0.60\times$ hurdle remains non-negotiable.
 
 ---
 

@@ -25,6 +25,7 @@ import requests
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+from investable_execution import decide_growth, uniform_targets, execute_investable
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
@@ -250,6 +251,9 @@ def run_unbiased_backtest():
         eps_23 = fin["eps"][idx_23] if idx_23 is not None and len(fin["eps"]) > idx_23 else (p0 / 30.0)
         sales_23 = fin["sales"][idx_23] if idx_23 is not None and len(fin["sales"]) > idx_23 else 0.0
         sales_20 = fin["sales"][idx_20] if idx_20 is not None and len(fin["sales"]) > idx_20 else 0.0
+        idx_22 = ymap.get(2022)
+        sales_22 = fin["sales"][idx_22] if idx_22 is not None and len(fin["sales"]) > idx_22 else 0.0
+        sales_1y = ((sales_23 / sales_22) - 1) * 100 if sales_23 > 0 and sales_22 > 0 else None
 
         sales_cagr_3y = (((sales_23 / sales_20) ** (1/3.0)) - 1) * 100 if sales_23 > 0 and sales_20 > 0 else 12.0
         pe_0 = p0 / eps_23 if eps_23 > 0 else 40.0
@@ -263,33 +267,16 @@ def run_unbiased_backtest():
                 if len(fin["pat"]) > iy: pat_list.append(fin["pat"][iy])
         cfo_pat_3y = sum(cfo_list) / sum(pat_list) if sum(pat_list) > 0 else 0.60
 
-        # Predict Model Decision Rules (GEMINI.md Invariants):
-        # 1. Growth Filter >= 20%
-        # Classify based on empirical sector dynamics & point-in-time consensus
-        if ticker in ["BHARTIARTL", "SUNPHARMA", "APOLLOTYRE", "CEATLTD", "SAFARI", "PNCINFRA"]:
-            # High-visibility sunrise/turnaround capex
-            model_growth = max(20.0, min(35.0, sales_cagr_3y))
-            bull_growth = model_growth + 6.0
-        elif ticker in ["INFY", "HINDUNILVR", "JSWSTEEL", "VOLTAS", "ORIENTELEC", "EPL"]:
-            # Mature / Cyclical / Low Growth (<15% CAGR)
-            model_growth = min(12.0, sales_cagr_3y)
-            bull_growth = 15.0
-        else: # High P/E traps (ASTRAL, FINEORG, BORORENEW, DEEPAKNTR, GRINDWELL, ROUTE, ROSSARI)
-            model_growth = max(15.0, min(24.0, sales_cagr_3y))
-            bull_growth = model_growth + 5.0
-
+        # Investable decision rules: one formula for every name (no ticker
+        # lists — see investable_execution.py).
+        model_growth, bull_growth = decide_growth(sales_cagr_3y, sales_1y)
         gate_growth = model_growth >= 20.0
 
-        # 2. 2-Year Forward P/E < 50x
-        fwd_eps_yr2_base = eps_23 * ((1.0 + (model_growth / 100.0)) ** 2)
-        fwd_pe_yr2 = p0 / fwd_eps_yr2_base if fwd_eps_yr2_base > 0 else pe_0
+        fwd_pe_yr2, bull_target_price, bull_upside_pct = uniform_targets(
+            eps_23, p0, model_growth, bull_growth)
+        if fwd_pe_yr2 == float("inf"):
+            fwd_pe_yr2 = pe_0
         gate_pe = fwd_pe_yr2 < 50.0
-
-        # 3. Mandated Bull Upside >= 50%
-        bull_exit_pe = min(50.0, max(24.0, bull_growth * 1.75))
-        fwd_eps_yr2_bull = eps_23 * ((1.0 + (bull_growth / 100.0)) ** 2)
-        bull_target_price = fwd_eps_yr2_bull * bull_exit_pe
-        bull_upside_pct = ((bull_target_price - p0) / p0) * 100
         gate_upside = bull_upside_pct >= 50.0
 
         # 4. Technical Trend Confirmation at entry: CMP >= 200-DMA
@@ -318,30 +305,12 @@ def run_unbiased_backtest():
             verdict = "REJECTED (FAILED MOAT / RISK)"
             is_approved = False
 
-        # Actual 3-Year Historical Performance
+        # Investable execution on CLOSES with costs (no peak-harvest fiction).
         bh_return = ((p1 - p0) / p0) * 100
         bh_cagr = (((p1 / p0) ** (1/3.0)) - 1) * 100
-
-        # Predict 2.0 Realized Return (50% Cash Harvest at Bull Target + Trailing Stop)
-        stop_price = p0 * 0.85
-        hit_bull = peak_price >= bull_target_price
-        hit_stop = not traj[traj["Price"] <= stop_price].empty
-
-        if is_approved:
-            if hit_bull:
-                half_gain_harvested = ((bull_target_price - p0) / p0) * 100
-                half_gain_held = ((p1 - p0) / p0) * 100
-                realized_return = (0.50 * half_gain_harvested) + (0.50 * half_gain_held)
-                strategy_note = f"Harvested 50% at ₹{bull_target_price:.1f} (+{half_gain_harvested:.1f}%), held 50% to ₹{p1:.1f}"
-            elif hit_stop and bh_return < -10.0:
-                realized_return = -15.0
-                strategy_note = f"Trailing Stop triggered at ₹{stop_price:.1f} (-15.0% protection)"
-            else:
-                realized_return = bh_return
-                strategy_note = "Held through cycle"
-        else:
-            realized_return = bh_return
-            strategy_note = "Model Disqualified (Capital Preserved)"
+        closes = traj["Price"].tolist() if not traj.empty else [p0, p1]
+        realized_return, strategy_note = execute_investable(
+            closes, p0, p1, bull_target_price, is_approved)
 
         realized_cagr = (((1.0 + (realized_return / 100.0)) ** (1/3.0)) - 1) * 100 if realized_return > -100 else -100
 
@@ -404,9 +373,11 @@ def run_unbiased_backtest():
     print(f" Alpha Generated vs Midcap 100:       {alpha_midcap:+.1f}% (+{app_cagr - bench_data.get('NMIDCAP100',{}).get('cagr',24.0):.1f}% CAGR)")
     print(f" Portfolio Win Rate / Hit Rate:       {win_rate:.1f}%")
     print("-------------------------------------------------------------------------------------")
-    print(f" Large Cap Approved Realized Ret:     {large_app['realized_return'].mean():+.1f}% (Count: {len(large_app)})")
-    print(f" Mid Cap Approved Realized Ret:       {mid_app['realized_return'].mean():+.1f}% (Count: {len(mid_app)})")
-    print(f" Small Cap Approved Realized Ret:     {small_app['realized_return'].mean():+.1f}% (Count: {len(small_app)})")
+    def _seg(ret_df):
+        return f"{ret_df['realized_return'].mean():+.1f}%" if not ret_df.empty else "n/a (no approvals)"
+    print(f" Large Cap Approved Realized Ret:     {_seg(large_app)} (Count: {len(large_app)})")
+    print(f" Mid Cap Approved Realized Ret:       {_seg(mid_app)} (Count: {len(mid_app)})")
+    print(f" Small Cap Approved Realized Ret:     {_seg(small_app)} (Count: {len(small_app)})")
     print("=" * 85)
 
     # Save outputs to JSON
