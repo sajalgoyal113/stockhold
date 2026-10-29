@@ -1714,8 +1714,12 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
 """
     
     if output_path is not None:
-        Path(output_path).write_text(html_template, encoding="utf-8")
-        print(f"Generated institutional HTML report: {output_path}")
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            Path(output_path).write_text(html_template, encoding="utf-8")
+            print(f"Generated institutional HTML report: {output_path}")
+        except Exception as _e:
+            print(f"Warning: could not write html report to {output_path}: {_e}")
 
     return html_template, {
         "title": meta["title"],
@@ -2359,8 +2363,12 @@ def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_d
     md_dossier = build_institutional_markdown_dossier(data, val_res, forensic_res, rev_dcf_res, ai_output)
     out_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.html")
     html_str, meta = generate_html_from_markdown(md_dossier, filename=f"{ticker.lower()}_research_report.md", output_path=out_file)
-    md_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.md")
-    Path(md_file).write_text(md_dossier, encoding="utf-8")
+    try:
+        os.makedirs(_REPORTS_DIR, exist_ok=True)
+        md_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.md")
+        Path(md_file).write_text(md_dossier, encoding="utf-8")
+    except Exception as _e:
+        print(f"Warning: could not write markdown dossier: {_e}")
     meta["is_curated"] = False
     meta["source_path"] = out_file
     try:

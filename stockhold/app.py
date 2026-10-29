@@ -513,40 +513,29 @@ ticker = query_ticker
 # Strict single-scrollbar viewport lock & mobile-responsive CSS
 st.html("""
 <style>
-/* 1. Eliminate Double Scrollbars: Lock outer Streamlit app viewport to 100vh */
-html, body, [data-testid="stAppViewContainer"], .main {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
-}
-
+/* 1. Natural Smooth Scrolling Container */
 .main .block-container {
-    padding: 6px 16px 0 16px !important;
+    padding: 8px 16px 40px 16px !important;
     max-width: 100% !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
 }
 
+/* 2. Seamless report container and iframe styling */
+div[data-testid="stElementContainer"]:has(iframe),
 div[data-testid="stCustomComponentV1"] {
-    flex: 1 1 auto !important;
-    height: calc(100vh - 60px) !important;
     width: 100% !important;
-    overflow: hidden !important;
     border-radius: 12px;
 }
 
-iframe[title="streamlit.components.v1.html"] {
-    height: 100% !important;
+iframe {
     width: 100% !important;
     border: none !important;
+    border-radius: 12px;
 }
 
-/* 2. Mobile Responsiveness: Keep top navbar clean and unstacked on mobile */
+/* 3. Mobile Responsiveness: Keep top navbar clean and unstacked on mobile */
 @media (max-width: 768px) {
     .main .block-container {
-        padding: 4px 8px 0 8px !important;
+        padding: 6px 10px 32px 10px !important;
     }
     div[data-testid="stHorizontalBlock"]:first-of-type {
         flex-direction: row !important;
@@ -563,9 +552,6 @@ iframe[title="streamlit.components.v1.html"] {
     div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"]:last-child {
         width: 64% !important;
         flex: 1 1 auto !important;
-    }
-    div[data-testid="stCustomComponentV1"] {
-        height: calc(100vh - 54px) !important;
     }
 }
 </style>
@@ -822,9 +808,19 @@ rev_dcf_res = run_reverse_dcf(
     fcf_0=base_fcf_input
 )
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def _get_cached_ai_analysis(ticker_str: str, c_data: dict, v_res: dict, f_res: dict, r_res: dict, api_k: str) -> dict:
+    return generate_ai_analysis(c_data, v_res, f_res, r_res, api_key=api_k)
+
 # AI strategic synthesis & action commentary derivation
-ai_output = generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_key)
-action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+with st.spinner(f"⚡ Synthesizing institutional research dossier & 7 Powers audit for {ticker}..."):
+    ai_output = _get_cached_ai_analysis(ticker, data, val_res, forensic_res, rev_dcf_res, api_k=api_key)
+    action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+
+    # Generate or load institutional HTML report for stock
+    html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
+        data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile
+    )
 
 # --- INSTITUTIONAL SURFACE: guard badge + kill-switches (judging strip) ---
 try:
@@ -863,10 +859,6 @@ st.html(f"""
 </div>
 """)
 
-# Generate or load institutional HTML report for stock
-html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
-    data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile
-)
 report_content = md_dossier if md_dossier else build_institutional_markdown_dossier(data, val_res, forensic_res, rev_dcf_res, ai_output)
 
 # --- SIDEBAR RESEARCH DOSSIER EXPORT TOOLS ---
@@ -967,8 +959,8 @@ st.html(f"""
 """)
 
 # --- EMBEDDED INSTITUTIONAL HTML RESEARCH REPORT ---
-report_height = max(2600, min(6500, int(len(html_report_str) / 26)))
-components.html(html_report_str, height=report_height, scrolling=True)
+report_height = max(2800, min(8000, int(len(html_report_str) / 24) + 400))
+components.html(html_report_str, height=report_height, scrolling=False)
 
 # --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
 render_footer()
