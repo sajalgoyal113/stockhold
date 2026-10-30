@@ -139,7 +139,7 @@ def run_cli_analysis(ticker: str, base_growth: Optional[float] = None,
     if generate_html:
         from generate_html_report import generate_html_for_stock
         print(f"\n[*] Compiling institutional HTML research dossier into predict/reports/...")
-        html_str, meta, _, _, _ = generate_html_for_stock(data, val, forensics, dcf, force_regenerate=True)
+        html_str, meta, _, _, _ = generate_html_for_stock(data, val, forensics, dcf, force_regenerate=True, save_to_disk=True)
         print(f"[+] Successfully generated: predict/reports/{t_clean.lower()}_research_report.html")
 
     print("\n" + "=" * 70)

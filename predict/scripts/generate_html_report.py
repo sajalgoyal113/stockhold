@@ -2347,7 +2347,7 @@ def get_available_reports(reports_dir: str = None):
     return reports
 
 
-def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_dcf_res: dict, ai_output: dict = None, force_regenerate: bool = False):
+def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_dcf_res: dict, ai_output: dict = None, force_regenerate: bool = False, save_to_disk: bool = False):
     """
     Returns (html_str, meta, md_dossier, is_curated_file, source_path)
     """
@@ -2361,14 +2361,15 @@ def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_d
             return existing_html, meta, "", True, existing_path
             
     md_dossier = build_institutional_markdown_dossier(data, val_res, forensic_res, rev_dcf_res, ai_output)
-    out_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.html")
+    out_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.html") if save_to_disk else None
     html_str, meta = generate_html_from_markdown(md_dossier, filename=f"{ticker.lower()}_research_report.md", output_path=out_file)
-    try:
-        os.makedirs(_REPORTS_DIR, exist_ok=True)
-        md_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.md")
-        Path(md_file).write_text(md_dossier, encoding="utf-8")
-    except Exception as _e:
-        print(f"Warning: could not write markdown dossier: {_e}")
+    if save_to_disk:
+        try:
+            os.makedirs(_REPORTS_DIR, exist_ok=True)
+            md_file = os.path.join(_REPORTS_DIR, f"{ticker.lower()}_research_report.md")
+            Path(md_file).write_text(md_dossier, encoding="utf-8")
+        except Exception as _e:
+            print(f"Warning: could not write markdown dossier: {_e}")
     meta["is_curated"] = False
     meta["source_path"] = out_file
     return html_str, meta, md_dossier, False, out_file
