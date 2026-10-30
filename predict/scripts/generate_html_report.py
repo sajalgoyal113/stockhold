@@ -2371,11 +2371,6 @@ def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_d
         print(f"Warning: could not write markdown dossier: {_e}")
     meta["is_curated"] = False
     meta["source_path"] = out_file
-    try:
-        reps = get_available_reports(_REPORTS_DIR)
-        generate_portal_index(reps, output_dir=_REPORTS_DIR)
-    except Exception:
-        pass
     return html_str, meta, md_dossier, False, out_file
 
 

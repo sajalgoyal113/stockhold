@@ -170,9 +170,14 @@ INDEXED_INDIAN_STOCKS = [
 ]
 
 
+_INDEXED_STOCK_OPTIONS_CACHE = None
+
 def get_indexed_stock_options() -> list[str]:
     """Returns formatted display strings for searchable selectbox / autocomplete."""
-    return [f"{s['ticker']} — {s['name']} ({s['sector']})" for s in INDEXED_INDIAN_STOCKS]
+    global _INDEXED_STOCK_OPTIONS_CACHE
+    if _INDEXED_STOCK_OPTIONS_CACHE is None:
+        _INDEXED_STOCK_OPTIONS_CACHE = [f"{s['ticker']} — {s['name']} ({s['sector']})" for s in INDEXED_INDIAN_STOCKS]
+    return _INDEXED_STOCK_OPTIONS_CACHE
 
 
 def extract_ticker_from_string(selection: str) -> str:

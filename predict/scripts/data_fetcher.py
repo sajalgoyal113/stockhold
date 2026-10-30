@@ -8,6 +8,10 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+# Persistent HTTP session with connection pooling & keep-alive
+_HTTP_SESSION = requests.Session()
+_HTTP_SESSION.headers.update(HEADERS)
+
 def clean_num(val_str):
     if not val_str:
         return 0.0
@@ -75,16 +79,9 @@ def resolve_screener_ticker(query: str) -> str:
     cleaned = query.upper().strip()
     if cleaned in COMMON_ALIASES:
         return COMMON_ALIASES[cleaned]
-    # Check if direct request works
+    # Screener Search API (fast resolution for renamed / BSE tickers)
     try:
-        r = requests.get(f"https://www.screener.in/company/{cleaned}/", headers=HEADERS, timeout=5)
-        if r.status_code == 200:
-            return cleaned
-    except Exception:
-        pass
-    # Try Screener Search API
-    try:
-        sr = requests.get(f"https://www.screener.in/api/company/search/?q={query}", headers=HEADERS, timeout=6)
+        sr = _HTTP_SESSION.get(f"https://www.screener.in/api/company/search/?q={query}", timeout=4)
         if sr.status_code == 200:
             results = sr.json()
             if results and len(results) > 0:
@@ -122,52 +119,71 @@ def _cache_put(key: str, rec: dict):
 
 def fetch_company_data(ticker: str):
     orig_ticker = (ticker or "").strip().upper()
-    ticker = resolve_screener_ticker(ticker)
-    hit = _cache_get(ticker)
-    if hit is not None:
-        return hit
+    if not orig_ticker:
+        raise ValueError("Empty ticker symbol provided")
+
+    # 1. Instant cache check (0ms in-memory return)
     hit = _cache_get(orig_ticker)
     if hit is not None:
         return hit
+    resolved_alias = COMMON_ALIASES.get(orig_ticker)
+    if resolved_alias:
+        hit = _cache_get(resolved_alias)
+        if hit is not None:
+            return hit
+
+    ticker = resolved_alias if resolved_alias else orig_ticker
+
+    # 2. Fast single-flight fetch: Try consolidated first (prefers 1 request in 95% of cases)
+    html = None
+    final_url = None
     
-    # Try consolidated and standalone URLs
-    urls = [
+    candidate_urls = [
         f"https://www.screener.in/company/{ticker}/consolidated/",
         f"https://www.screener.in/company/{ticker}/"
     ]
-    
-    valid_candidates = []
-    for u in urls:
-        for attempt in range(2):
-            try:
-                r = requests.get(u, headers=HEADERS, timeout=12)
-                if r.status_code == 200:
-                    soup_check = BeautifulSoup(r.text, "html.parser")
-                    for li in soup_check.find_all("li", class_="flex"):
-                        name_span = li.find("span", class_="name")
-                        val_span = li.find("span", class_="value")
-                        if name_span and val_span and "Current Price" in name_span.text:
-                            p_val = clean_num(val_span.text)
-                            if p_val > 0:
-                                valid_candidates.append((u, r.text))
-                                break
-                    if valid_candidates and valid_candidates[-1][0] == u:
-                        break
-            except Exception:
-                import time
-                time.sleep(1.0)
-                continue
-            
-    # Prefer consolidated if available with valid price, else standalone
-    html = None
-    final_url = None
-    for u, page_html in valid_candidates:
-        if "/consolidated/" in u:
-            html = page_html
-            final_url = u
-            break
-    if not html and valid_candidates:
-        final_url, html = valid_candidates[0]
+
+    for u in candidate_urls:
+        try:
+            r = _HTTP_SESSION.get(u, timeout=6)
+            if r.status_code == 200:
+                soup_check = BeautifulSoup(r.text, "html.parser")
+                for li in soup_check.find_all("li", class_="flex"):
+                    name_span = li.find("span", class_="name")
+                    val_span = li.find("span", class_="value")
+                    if name_span and val_span and "Current Price" in name_span.text:
+                        p_val = clean_num(val_span.text)
+                        if p_val > 0:
+                            html = r.text
+                            final_url = u
+                            break
+            if html:
+                break
+        except Exception:
+            continue
+
+    # 3. If direct candidate URLs failed, try resolving ticker via Screener Search API
+    if not html:
+        resolved_search = resolve_screener_ticker(orig_ticker)
+        if resolved_search and resolved_search != ticker:
+            ticker = resolved_search
+            for u in [f"https://www.screener.in/company/{ticker}/consolidated/", f"https://www.screener.in/company/{ticker}/"]:
+                try:
+                    r = _HTTP_SESSION.get(u, timeout=6)
+                    if r.status_code == 200:
+                        soup_check = BeautifulSoup(r.text, "html.parser")
+                        for li in soup_check.find_all("li", class_="flex"):
+                            name_span = li.find("span", class_="name")
+                            val_span = li.find("span", class_="value")
+                            if name_span and val_span and "Current Price" in name_span.text:
+                                if clean_num(val_span.text) > 0:
+                                    html = r.text
+                                    final_url = u
+                                    break
+                        if html:
+                            break
+                except Exception:
+                    continue
 
     if not html:
         # Check local fundamentals database snapshot if live network is throttled or offline
@@ -364,7 +380,7 @@ def fetch_company_data(ticker: str):
     if company_id:
         try:
             chart_url = f"https://www.screener.in/api/company/{company_id}/chart/?q=Price-DMA50-DMA200-Volume&days=365"
-            cr = requests.get(chart_url, headers=HEADERS, timeout=8)
+            cr = _HTTP_SESSION.get(chart_url, timeout=4)
             if cr.status_code == 200:
                 cdata = cr.json()
                 datasets = cdata.get("datasets", [])
@@ -430,4 +446,6 @@ def fetch_company_data(ticker: str):
         "roe_3yr": growth_ranges.get("roe_3yr")
     }
     _cache_put(ticker, res)
+    if orig_ticker and orig_ticker != ticker:
+        _cache_put(orig_ticker, res)
     return res

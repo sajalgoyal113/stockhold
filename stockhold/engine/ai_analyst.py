@@ -45,7 +45,7 @@ Format with crisp, scannable Markdown with clean bullet points and bold financia
             for m_name in models_to_try:
                 try:
                     model = genai.GenerativeModel(m_name)
-                    response = model.generate_content(prompt)
+                    response = model.generate_content(prompt, request_options={"timeout": 5.0})
                     if response and response.text:
                         return {
                             "source": f"Google Gemini ({m_name} Live AI)",

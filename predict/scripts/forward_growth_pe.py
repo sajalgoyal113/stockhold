@@ -252,11 +252,18 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
             bull_cagr = round(min(g_val, sgr_ceiling * 1.25), 1)
         else:
             bull_cagr = round(float(g_val), 1)
+        # Invariant: Base CAGR cannot exceed Bull CAGR under SGR constraint
+        if base_cagr > bull_cagr:
+            base_cagr = round(max(5.0, bull_cagr * 0.75), 1)
     else:
         if not is_platform and is_trough_rebound:
             bull_cagr = round(min(35.0, base_cagr + 4.0), 1)
         else:
             bull_cagr = round(min(48.0, base_cagr + min(12.0, max(6.0, sales_3yr * 0.20 if sales_3yr > 0 else 8.0))), 1)
+
+    # Invariant: Bull CAGR must always strictly exceed or equal Base CAGR
+    if bull_cagr < base_cagr:
+        bull_cagr = round(base_cagr + 4.0, 1)
 
     # 4. Endogenous Exit Multiples (Anchored to Balance Sheet Quality & Starting P/E)
     debt_to_mcap = latest_debt / mcap if mcap > 0 else 0.0
@@ -289,7 +296,7 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
             bull_exit_pe = round(min(current_pe * 1.35, max(12.0, bull_exit_g * bull_peg)), 1)
     else:
         base_exit_pe = round(max(12.0, min(current_pe * 0.90 if current_pe > 0 else 50.0, min(50.0, base_exit_g * base_peg * q_factor))), 1)
-        bull_exit_pe = round(max(15.0, min(current_pe * 1.10 if current_pe > 0 else 65.0, min(65.0, bull_exit_g * bull_peg * q_factor))), 1)
+        bull_exit_pe = round(max(base_exit_pe + 1.0, max(15.0, min(current_pe * 1.10 if current_pe > 0 else 65.0, min(65.0, bull_exit_g * bull_peg * q_factor)))), 1)
 
     # 5. Bayesian Balance Sheet Probability Scorecard
     base_prob = 50

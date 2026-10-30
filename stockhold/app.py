@@ -15,19 +15,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 
-import importlib
 import inspect
-import engine.data_fetcher
-import engine.valuation
-import engine.html_reporter
-import engine.stock_universe
-try:
-    importlib.reload(engine.data_fetcher)
-    importlib.reload(engine.valuation)
-    importlib.reload(engine.html_reporter)
-    importlib.reload(engine.stock_universe)
-except Exception:
-    pass
 
 import streamlit.components.v1 as components
 from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
@@ -808,19 +796,56 @@ rev_dcf_res = run_reverse_dcf(
     fcf_0=base_fcf_input
 )
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def _get_cached_ai_analysis(ticker_str: str, c_data: dict, v_res: dict, f_res: dict, r_res: dict, api_k: str) -> dict:
-    return generate_ai_analysis(c_data, v_res, f_res, r_res, api_key=api_k)
+# Check if curated institutional report already exists
+existing_html, existing_path = find_existing_html_report(ticker) if not force_recompile else (None, None)
 
-# AI strategic synthesis & action commentary derivation
-with st.spinner(f"⚡ Synthesizing institutional research dossier & 7 Powers audit for {ticker}..."):
-    ai_output = _get_cached_ai_analysis(ticker, data, val_res, forensic_res, rev_dcf_res, api_k=api_key)
+if existing_html:
+    html_report_str = existing_html
+    report_meta = {
+        "is_curated": True,
+        "source_path": existing_path,
+        "ticker": ticker,
+        "title": Path(existing_path).stem.replace("_", " ").title()
+    }
+    md_dossier = ""
+    is_curated = True
+    report_source_path = existing_path
+    ai_output = {
+        "source": "Published Institutional Coverage Desk",
+        "content": "Institutional equity research dossier from coverage universe"
+    }
     action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+else:
+    @st.cache_data(ttl=86400, show_spinner=False)
+    def _get_cached_ai_synthesis(
+        t_sym: str, cmp_val: float, mcap_val: float, eps_val: float, pe_val: float,
+        base_t: float, bull_t: float, cfo_pat: float, d_days: int, alt_z: float,
+        imp_cagr: float, api_k: str
+    ) -> dict:
+        return generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_k)
 
-    # Generate or load institutional HTML report for stock
-    html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
-        data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile
-    )
+    # Dynamic AI synthesis & action commentary derivation
+    with st.spinner(f"⚡ Synthesizing institutional research dossier & 7 Powers audit for {ticker}..."):
+        ai_output = _get_cached_ai_synthesis(
+            ticker,
+            round(cmp, 1),
+            round(mcap, 0),
+            round(ttm_eps, 2),
+            round(pe, 1),
+            round(val_res.get("target_base", 0.0), 1),
+            round(val_res.get("target_bull", 0.0), 1),
+            round(forensic_res.get("cum_cfo_pat_ratio", 0.0), 2),
+            int(forensic_res.get("debtor_days") or 0),
+            round(forensic_res.get("altman_z") or 0.0, 2),
+            round(rev_dcf_res.get("implied_cagr", 0.0), 1),
+            api_key
+        )
+        action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+
+        # Generate institutional HTML report for stock
+        html_report_str, report_meta, md_dossier, is_curated, report_source_path = generate_html_for_stock(
+            data, val_res, forensic_res, rev_dcf_res, ai_output, force_regenerate=force_recompile
+        )
 
 # --- INSTITUTIONAL SURFACE: guard badge + kill-switches (judging strip) ---
 try:
