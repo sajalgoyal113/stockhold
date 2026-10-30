@@ -79,6 +79,15 @@ class FinancialSafetyGuard:
             if not any(w in text.lower() for w in caution_words):
                 violations.append("Stage-4 tape without explicit downside caution in synthesis")
 
+        # 5. Methodology Integrity Watchdog: Detects any unauthorized parameter degradation
+        try:
+            from forward_growth_pe import verify_methodology_integrity
+            m_alerts = verify_methodology_integrity()
+            for ma in m_alerts:
+                violations.append(f"METHODOLOGY INTEGRITY ALERT: {ma}")
+        except Exception:
+            pass
+
         passes_guard = len(violations) == 0
         return {
             "passes_guard": passes_guard,

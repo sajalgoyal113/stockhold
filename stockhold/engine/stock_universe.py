@@ -167,6 +167,23 @@ INDEXED_INDIAN_STOCKS = [
     {"ticker": "BLUEDART", "name": "Blue Dart Express Ltd", "sector": "Air Express Courier & Document Delivery"},
     {"ticker": "TCIEXP", "name": "TCI Express Ltd", "sector": "Surface & Air Express Cargo Logistics"},
     {"ticker": "ALLCARGO", "name": "Allcargo Logistics Ltd", "sector": "Global Less-than-Container Load (LCL) Freight"},
+    # Portfolio & Special Situation High-Growth Universe
+    {"ticker": "SYRMA", "name": "Syrma SGS Technology Ltd", "sector": "EMS, High-Precision PCBAs & RFID Solutions"},
+    {"ticker": "EMMVEE", "name": "Emmvee Photovoltaic Power Ltd", "sector": "Solar PV Modules & TOPCon Solar Cells"},
+    {"ticker": "CLEANMAX", "name": "Clean Max Enviro Energy Solutions Ltd", "sector": "C&I Renewable Energy Independent Power Producer"},
+    {"ticker": "AMARAJABAT", "name": "Amara Raja Energy & Mobility Ltd", "sector": "Industrial & EV Batteries, BESS & Gigafactory"},
+    {"ticker": "YATHARTH", "name": "Yatharth Hospital & Trauma Care Services Ltd", "sector": "Regional Multi-Specialty Tertiary Healthcare"},
+    {"ticker": "SJS", "name": "SJS Enterprises Ltd", "sector": "Automotive Aesthetics & In-Mould Electronics"},
+    {"ticker": "IONEXCHANG", "name": "Ion Exchange (India) Ltd", "sector": "Industrial Water Treatment, Resins & Effluent Plants"},
+    {"ticker": "AHLUCONT", "name": "Ahluwalia Contracts (India) Ltd", "sector": "Institutional Civil Engineering & Hospital EPC"},
+    {"ticker": "SAMHI", "name": "SAMHI Hotels Ltd", "sector": "Branded Hospitality Ownership & Asset Management"},
+    {"ticker": "EIEL", "name": "Enviro Infra Engineers Ltd", "sector": "Wastewater Treatment (STP/CETP) & Urban Water Supply"},
+    {"ticker": "STALLION", "name": "Stallion India Fluorochemicals Ltd", "sector": "Specialty Fluorochemicals & Refrigerant Gases"},
+    {"ticker": "UTKARSHBNK", "name": "Utkarsh Small Finance Bank Ltd", "sector": "Microfinance & Small Finance Banking"},
+    {"ticker": "ASSOCHALC", "name": "Associated Alcohols & Breweries Ltd", "sector": "Distilleries, Grain ENA & Proprietary IMFL"},
+    {"ticker": "ECORECO", "name": "Eco Recycling Ltd", "sector": "E-Waste Recycling & Precious Metal Recovery"},
+    {"ticker": "VPRPL", "name": "Vishnu Prakash R Punglia Ltd", "sector": "Water Supply EPC & Railway Infrastructure"},
+    {"ticker": "ASALCBR", "name": "Associated Alcohols & Breweries Ltd", "sector": "Distilleries & IMFL Manufacturing"},
 ]
 
 

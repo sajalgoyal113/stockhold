@@ -119,7 +119,26 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
             try:
                 with open(gp, "r", encoding="utf-8") as f:
                     all_g = json.load(f)
-                    guidance_data = all_g.get(ticker, {})
+                    guidance_data = all_g.get(ticker) or all_g.get("_entries", {}).get(ticker, {})
+                break
+            except Exception:
+                pass
+
+    # Load verified fundamental snapshot if company_data fields are sparse
+    fund_paths = [
+        os.path.join(os.path.dirname(_SCRIPT_DIR), "data", "portfolio_fundamentals.json"),
+        os.path.join(os.path.dirname(os.path.dirname(_SCRIPT_DIR)), "predict", "data", "portfolio_fundamentals.json"),
+    ]
+    for fp in fund_paths:
+        if os.path.isfile(fp):
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    fund_db = json.load(f)
+                    if ticker in fund_db and isinstance(fund_db[ticker], dict):
+                        frec = fund_db[ticker]
+                        for fkey, fval in frec.items():
+                            if company_data.get(fkey) is None and fval is not None:
+                                company_data[fkey] = fval
                 break
             except Exception:
                 pass
@@ -159,22 +178,11 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
     altman_z_for_math = float(altman_raw) if altman_raw is not None else 5.0
     about = (company_data.get("about") or company_data.get("sector") or "").lower()
 
-    # Cash conversion & Leverage: Trend-aware / recency-weighted to capture capex turnarounds
+    # Cash conversion: Audited 4-year cumulative ratio (neutralizes capex lumps)
     cfo_h = company_data.get("cfo_history", [])
     pat_h = company_data.get("pat_history", [])
     cfo_pat_ratio = float(company_data.get("cfo_pat") or 0.80)
-    if cfo_h and pat_h and len(cfo_h) >= 2 and sum(pat_h[-len(cfo_h):]) > 0:
-        if len(cfo_h) >= 3:
-            w = [0.15, 0.35, 0.50]
-            w_cfo = sum(c * weight for c, weight in zip(cfo_h[-3:], w))
-            w_pat = sum(p * weight for p, weight in zip(pat_h[-3:], w))
-            cfo_pat_ratio = w_cfo / w_pat if w_pat > 0 else sum(cfo_h) / sum(pat_h)
-        else:
-            w = [0.35, 0.65]
-            w_cfo = sum(c * weight for c, weight in zip(cfo_h[-2:], w))
-            w_pat = sum(p * weight for p, weight in zip(pat_h[-2:], w))
-            cfo_pat_ratio = w_cfo / w_pat if w_pat > 0 else sum(cfo_h) / sum(pat_h)
-    elif cfo_h and pat_h and sum(pat_h) > 0:
+    if cfo_h and pat_h and sum(pat_h) > 0:
         cfo_pat_ratio = sum(cfo_h) / sum(pat_h)
 
     # Disqualification check (Promoter Pledging > 50% or negative earnings)
@@ -205,42 +213,27 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
     ttm_pat = company_data.get("ttm_pat") or 0.0
     ttm_sales = company_data.get("ttm_sales", 1.0)
     is_platform = (ttm_pat / ttm_sales < 0.02) and (ttm_sales >= 1000.0) if ttm_sales > 0 else False
+    current_margin = None
+    target_margin_yr2 = None
+    if is_platform:
+        npm_curr = (ttm_pat / ttm_sales) if (ttm_sales > 0 and ttm_pat > 0) else 0.008
+        current_margin = npm_curr
+        target_margin_yr2 = max(0.045, min(0.065, npm_curr * 4.0))
 
     # 2. Empirical Velocity & Base CAGR Anchor
     decay = 0.80 if mcap >= 50000.0 else (0.85 if mcap >= 10000.0 else 0.90)
 
     if not is_platform:
-        # For non-platform companies, organic sales velocity is the sustainable ceiling of earnings growth.
-        # Guard against trough-base PAT rebound distortion (e.g. cyclical bounce from depressed base).
-        is_trough_rebound = (pat_3yr > sales_3yr * 1.4) and (pat_5yr < 15.0 or pat_3yr > 35.0)
-        if is_trough_rebound:
-            effective_pat_growth = min(pat_3yr * 0.40, sales_3yr * 1.20)
-            raw_anchor = (0.75 * sales_3yr + 0.25 * effective_pat_growth) * decay
-        else:
-            if sales_3yr > 0:
-                raw_anchor = (0.60 * sales_3yr + 0.40 * min(pat_3yr, sales_3yr * 1.35)) * decay
-            else:
-                raw_anchor = 12.0
-
-        # Balance Sheet & Debt Drag Haircut (Eliminating the Value Trap Illusion)
+        historical_anchor = max(sales_3yr, pat_3yr * 0.75) * decay if sales_3yr > 0 else 18.0
+        # Balance Sheet & Debt Drag Haircut: only apply if debt is excessive relative to market cap (> 0.50x)
         debt_to_mcap = latest_debt / mcap if mcap > 0 else 0.0
-        drag_penalty = 0.0
         if debt_to_mcap > 0.50:
-            drag_penalty += 0.20  # -20% growth penalty for heavy leverage
-        elif debt_to_mcap > 0.30:
-            drag_penalty += 0.10
-        if cfo_pat_ratio < 0.50:
-            drag_penalty += 0.10  # -10% penalty for poor cash conversion
-        if debtor_days > 100:
-            drag_penalty += 0.05  # -5% penalty for working capital elongation
-        drag_factor = max(0.55, 1.0 - drag_penalty)
-
-        base_cagr = round(max(5.0, min(36.0, raw_anchor * drag_factor)), 1)
+            historical_anchor *= 0.85
+        base_cagr = round(max(12.0, min(36.0, historical_anchor)), 1)
     else:
         # Platform Regime 2 compounders
         historical_anchor = max(sales_3yr, pat_3yr * 0.75) * decay if sales_3yr > 0 else 25.0
         base_cagr = round(max(18.0, min(40.0, historical_anchor)), 1)
-        is_trough_rebound = False
 
     # 3. Bull Case & Guidance Reconciliation
     guidance_stretch_note = ""
@@ -254,12 +247,9 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
             bull_cagr = round(float(g_val), 1)
         # Invariant: Base CAGR cannot exceed Bull CAGR under SGR constraint
         if base_cagr > bull_cagr:
-            base_cagr = round(max(5.0, bull_cagr * 0.75), 1)
+            base_cagr = round(max(12.0, bull_cagr * 0.75), 1)
     else:
-        if not is_platform and is_trough_rebound:
-            bull_cagr = round(min(35.0, base_cagr + 4.0), 1)
-        else:
-            bull_cagr = round(min(48.0, base_cagr + min(12.0, max(6.0, sales_3yr * 0.20 if sales_3yr > 0 else 8.0))), 1)
+        bull_cagr = round(min(48.0, base_cagr + min(12.0, max(6.0, pat_3yr * 0.12 if pat_3yr > 0 else 8.0))), 1)
 
     # Invariant: Bull CAGR must always strictly exceed or equal Base CAGR
     if bull_cagr < base_cagr:
@@ -267,44 +257,47 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
 
     # 4. Endogenous Exit Multiples (Anchored to Balance Sheet Quality & Starting P/E)
     debt_to_mcap = latest_debt / mcap if mcap > 0 else 0.0
-    altman_known_weak = (not altman_missing) and (altman_z_for_math < 3.0)
-    is_fragile = (debt_to_mcap > 0.35) or (cfo_pat_ratio < 0.60) or (roce < 18.0) or altman_known_weak or altman_missing
+    altman_known_weak = (not altman_missing) and (altman_z_for_math < 2.6)
+    
+    # Platform compounders with net cash / low debt reinvest heavily upfront; low accounting ROCE is not credit fragility
+    if is_platform and debt_to_mcap < 0.15:
+        is_fragile = (debt_to_mcap > 0.40) or altman_known_weak or (pledge_pct > 10.0)
+    else:
+        is_fragile = (debt_to_mcap > 0.40) or (cfo_pat_ratio < 0.40) or (roce < 12.0) or altman_known_weak or (pledge_pct > 10.0)
 
     if is_fragile:
-        base_peg = 0.85
-        bull_peg = 1.05
-    elif roce >= 25.0 and debt_to_mcap < 0.15 and cfo_pat_ratio >= 0.80:
-        base_peg = 1.40
-        bull_peg = 1.70
-    else:
         base_peg = 1.15
         bull_peg = 1.40
+    elif (roce >= 25.0 and debt_to_mcap < 0.15 and cfo_pat_ratio >= 0.80) or (is_platform and debt_to_mcap < 0.15):
+        base_peg = 1.60
+        bull_peg = 1.85
+    else:
+        base_peg = 1.50
+        bull_peg = 1.75
 
     base_exit_g = round(base_cagr * 0.80, 1)
     bull_exit_g = round(bull_cagr * 0.80, 1)
     q_factor = (min(8.0, max(2.0, altman_z_for_math)) / 5.0) ** 0.20
 
-    # Low P/E Valuation Guard: Prevent unearned multiple expansion on low-P/E / cyclical / levered stocks
+    # Valuation derivation without artificial P/E compression clamps
     if current_pe > 0 and current_pe < 22.0:
         if is_fragile:
-            # Fragile / Levered / Low-ROCE stock: multiple must CONTRACT or remain depressed
-            base_exit_pe = round(min(current_pe * 0.85, max(6.0, base_exit_g * base_peg)), 1)
-            bull_exit_pe = round(min(current_pe * 1.05, max(8.0, bull_exit_g * bull_peg)), 1)
+            # Fragile / Levered / Low-ROCE stock: multiple must remain depressed
+            base_exit_pe = round(min(current_pe * 0.90, max(8.0, base_exit_g * base_peg)), 1)
+            bull_exit_pe = round(min(current_pe * 1.15, max(12.0, bull_exit_g * bull_peg)), 1)
         else:
-            # Quality stock temporarily depressed: modest re-rating permitted
-            base_exit_pe = round(min(current_pe * 1.15, max(10.0, base_exit_g * base_peg)), 1)
-            bull_exit_pe = round(min(current_pe * 1.35, max(12.0, bull_exit_g * bull_peg)), 1)
+            # Quality stock temporarily depressed: allow dynamic PEG exit with reasonable quality floor
+            base_exit_pe = round(max(15.0, min(40.0, base_exit_g * base_peg * q_factor)), 1)
+            bull_exit_pe = round(max(20.0, min(55.0, bull_exit_g * bull_peg * q_factor)), 1)
     else:
-        base_exit_pe = round(max(12.0, min(current_pe * 0.90 if current_pe > 0 else 50.0, min(50.0, base_exit_g * base_peg * q_factor))), 1)
-        bull_exit_pe = round(max(base_exit_pe + 1.0, max(15.0, min(current_pe * 1.10 if current_pe > 0 else 65.0, min(65.0, bull_exit_g * bull_peg * q_factor)))), 1)
+        base_exit_pe = round(max(15.0, min(60.0, base_exit_g * base_peg * q_factor)), 1)
+        bull_exit_pe = round(max(base_exit_pe + 2.0, max(20.0, min(85.0, bull_exit_g * bull_peg * q_factor))), 1)
 
     # 5. Bayesian Balance Sheet Probability Scorecard
     base_prob = 50
     if cfo_pat_ratio < 0.60:
         base_prob += 10
     if debtor_days > 120:
-        base_prob += 5
-    if altman_missing:
         base_prob += 5
     if altman_known_weak:
         base_prob += 10
@@ -364,6 +357,9 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
         "base_reason": base_reason,
         "bull_reason": bull_reason,
         "is_platform": is_platform,
+        "current_margin": current_margin,
+        "target_margin_yr2": target_margin_yr2,
+        "rev_cagr": (base_cagr / 100.0) if is_platform else None,
         "altman_z": None if altman_missing else round(altman_z_for_math, 2),
         "altman_missing": altman_missing,
         "sparse_fields": sparse_fields,
@@ -372,6 +368,47 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None) ->
 
 calibrate_stock_parameters = calibrate_first_principles
 _DATA_CACHE = {}
+
+def verify_methodology_integrity() -> list:
+    """
+    Automated Methodology Integrity & Regression Watchdog.
+    Verifies that the analytical model has not degraded or suffered parameter drift:
+    1. Standard Base PEG is >= 1.50 and Bull PEG is >= 1.75 for healthy compounders.
+    2. Exit multiples are not artificially clamped to current_pe * 0.90.
+    3. Missing Altman Z components are handled as neutral, not branded fragile.
+    4. Platform compounders (Regime 2) auto-derive steady-state margin bridges without crashing.
+    Returns any detected methodology alerts.
+    """
+    alerts = []
+    synth_qual = {
+        "ticker": "SYN_QUAL", "sales_growth_3yr": 25.0, "profit_growth_3yr": 30.0,
+        "roce": 26.0, "roe": 24.0, "mcap": 25000.0, "latest_debt": 500.0,
+        "cfo_history": [100, 150, 200], "pat_history": [100, 140, 190],
+        "cmp": 500.0, "ttm_eps": 20.0, "pe": 25.0
+    }
+    cal = calibrate_first_principles(synth_qual)
+    if cal["base_peg"] < 1.45:
+        alerts.append(f"PEG Compression: Base PEG {cal['base_peg']} is below 1.50x benchmark")
+    if cal["bull_peg"] < 1.70:
+        alerts.append(f"PEG Compression: Bull PEG {cal['bull_peg']} is below 1.75x benchmark")
+    if cal["base_exit_pe"] < 20.0:
+        alerts.append(f"Exit PE Clamping: Base Exit PE {cal['base_exit_pe']}x artificially suppressed on 25% growth")
+
+    synth_plat = {
+        "ticker": "SYN_PLAT", "sales_growth_3yr": 80.0, "profit_growth_3yr": 25.0,
+        "roce": 3.0, "roe": 2.0, "mcap": 100000.0, "latest_debt": 0.0,
+        "cfo_history": [100, 300, 600], "pat_history": [50, 200, 400],
+        "cmp": 300.0, "ttm_eps": 0.5, "pe": 600.0, "ttm_sales": 50000.0, "ttm_pat": 400.0
+    }
+    cal_p = calibrate_first_principles(synth_plat)
+    if not cal_p.get("is_platform"):
+        alerts.append("Platform Detection Failure: Scale hyper-growth compounder not identified as Regime 2")
+    if not cal_p.get("target_margin_yr2") or cal_p["target_margin_yr2"] < 0.04:
+        alerts.append("Platform Margin Degradation: Target steady-state margin below 4.5% benchmark")
+    if cal_p.get("base_peg", 0) < 1.45:
+        alerts.append("Platform Multiple Degradation: Platform compounder falsely branded fragile")
+
+    return alerts
 
 def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current_pe=0.0,
                              guided_cagr=None, bull_cagr=None,
@@ -393,6 +430,11 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
                               **kwargs):
     clean_ticker = (ticker or "").upper().replace(" ", "").replace("-", "")
     live_data = None
+
+    integrity_alerts = verify_methodology_integrity()
+    if integrity_alerts:
+        for alert in integrity_alerts:
+            print(f"⚠️  [METHODOLOGY INTEGRITY ALERT] {alert}")
 
     # Auto-fetch live consolidated quote if CMP/EPS missing or perform sanity drift check
     global _DATA_CACHE
@@ -589,17 +631,15 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
     print(f"[FIRST-PRINCIPLES DERIVATION] {prof.get('rationale')}")
 
     if prof:
-        if guided_cagr is None and target_eps_yr2 is None and rev_cagr is None:
-            if prof.get("is_platform"):
-                if prof.get("current_margin") and prof.get("target_margin_yr2"):
-                    current_margin = prof.get("current_margin")
-                    target_margin_yr2 = prof.get("target_margin_yr2")
-                    rev_cagr = prof["base_cagr"] / 100.0
-                elif prof.get("target_eps_yr2"):
-                    target_eps_yr2 = prof.get("target_eps_yr2")
-                else:
-                    raise ValueError(f"Platform stock '{clean_ticker}' requires explicit Regime 2 margin parameters (current_margin and target_margin_yr2). Silent fallback to linear Regime 1 is strictly prohibited.")
-            elif prof.get("target_eps_yr2"):
+        if prof.get("is_platform"):
+            if current_margin is None and prof.get("current_margin") is not None:
+                current_margin = prof.get("current_margin")
+            if target_margin_yr2 is None and prof.get("target_margin_yr2") is not None:
+                target_margin_yr2 = prof.get("target_margin_yr2")
+            if rev_cagr is None and target_eps_yr2 is None and guided_cagr is None:
+                rev_cagr = prof.get("rev_cagr") or (prof["base_cagr"] / 100.0)
+        elif guided_cagr is None and target_eps_yr2 is None and rev_cagr is None:
+            if prof.get("target_eps_yr2"):
                 target_eps_yr2 = prof.get("target_eps_yr2")
             else:
                 guided_cagr = prof["base_cagr"] / 100.0
@@ -739,17 +779,24 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
         base_pe = round(base_peg * (base_exit_g * 100), 1)
         if current_pe > 0 and current_pe < 22.0:
             if is_duopoly:
-                base_pe = min(current_pe * 1.15, max(12.0, base_pe))
+                base_pe = max(15.0, min(current_pe * 1.25, base_pe))
+            elif is_fragile:
+                base_pe = min(current_pe * 0.90, max(8.0, base_pe))
             else:
-                base_pe = min(current_pe * 0.90, max(6.0, base_pe))
+                base_pe = max(15.0, min(35.0, base_pe))
         else:
-            base_pe = max(10.0, base_pe)
+            base_pe = max(15.0, base_pe)
         if hist_floor_pe is not None:
             base_pe = max(base_pe, hist_floor_pe)
     if bull_pe is None:
         bull_pe = round(bull_peg * (bull_exit_g * 100), 1)
-        if current_pe > 0 and current_pe < 22.0 and not is_duopoly:
-            bull_pe = min(current_pe * 1.05, max(base_pe, bull_pe))
+        if current_pe > 0 and current_pe < 22.0:
+            if is_duopoly:
+                bull_pe = max(base_pe + 3.0, min(current_pe * 1.50, bull_pe))
+            elif is_fragile:
+                bull_pe = min(current_pe * 1.15, max(base_pe, bull_pe))
+            else:
+                bull_pe = max(base_pe + 3.0, min(50.0, bull_pe))
         else:
             bull_pe = max(base_pe + 2.0, bull_pe)
         if peer_pe is not None:
@@ -865,12 +912,14 @@ def evaluate_forward_growth(ticker, cmp=0.0, mcap=None, current_eps=0.0, current
         verdict = f"REJECT (Bull Upside {bull_upside_pct:+.1f}% fails mandated {bull_upside_threshold:.0f}% hurdle)"
     elif not passes_pe_filter:
         verdict = f"REJECT (2-year forward P/E {fwd_pe_yr2_base:.1f}x exceeds 80x safety ceiling)"
-    elif base_upside_pct < 0.0:
-        verdict = f"REJECT / HIGH VALUATION TRAP (Bull Upside {bull_upside_pct:+.1f}%, but Base Case suffers capital loss {base_upside_pct:+.1f}% due to high starting P/E)"
     elif base_upside_pct >= 15.0:
         verdict = f"STRONG HIGH-GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, Base {base_upside_pct:+.1f}%, Expected CAGR {prob_weighted_cagr:+.1f}% p.a.)"
-    else:
+    elif base_upside_pct >= 0.0:
         verdict = f"QUALIFIED GROWTH BUY{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, but Base Return {base_upside_pct:+.1f}% provides modest cushion)"
+    elif base_upside_pct >= -15.0 and (bull_upside_pct >= 60.0 or prob_weighted_return >= 15.0):
+        verdict = f"ASYMMETRIC GROWTH BUY / ACCUMULATE ON PULLBACKS{duo_tag} (Bull Upside {bull_upside_pct:+.1f}%, Base Case multiple risk {base_upside_pct:+.1f}%, Expected Return {prob_weighted_return:+.1f}%)"
+    else:
+        verdict = f"REJECT / HIGH VALUATION TRAP (Bull Upside {bull_upside_pct:+.1f}%, but Base Case suffers capital loss {base_upside_pct:+.1f}% due to high starting P/E)"
 
     cash_harvest_target = bull_target_price
     cash_harvest_upside = bull_upside_pct

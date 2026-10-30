@@ -407,20 +407,20 @@
   },
   "NETWEB": {
     "ticker": "NETWEB",
-    "name": "Netweb Technologies",
-    "sector": "AI Supercomputing Servers, Enterprise Storage & Private Cloud",
-    "cmp": 4336.0,
-    "mcap": 25775.0,
-    "pe": 68.5,
-    "eps": 63.31,
-    "ttm_eps": 63.31,
-    "dma200": 4219.41,
-    "dma50": 4480.0,
+    "name": "Netweb Technologies India Ltd",
+    "sector": "Sovereign AI Supercomputing Servers, Private Cloud & Enterprise HCS",
+    "cmp": 4172.6,
+    "mcap": 24798.0,
+    "pe": 67.8,
+    "eps": 61.55,
+    "ttm_eps": 61.55,
+    "dma200": 4142.6,
+    "dma50": 4862.2,
     "rs": 88,
     "altman_z": 5.88,
-    "cfo_pat": 0.72,
-    "sales_growth_3yr": 58.8,
-    "profit_growth_3yr": 77.1,
+    "cfo_pat": 0.79,
+    "sales_growth_3yr": 70.0,
+    "profit_growth_3yr": 64.0,
     "fy_trend": [
       {
         "year": "FY23",
@@ -435,7 +435,7 @@
       {
         "year": "FY24",
         "rev": 732.0,
-        "pat": 75.0,
+        "pat": 75.9,
         "cfo": 55.0,
         "fcf": 40.0,
         "rec": 190.0,
@@ -444,38 +444,48 @@
       },
       {
         "year": "FY25",
-        "rev": 1240.0,
-        "pat": 165.0,
-        "cfo": 120.0,
-        "fcf": 85.0,
-        "rec": 340.0,
-        "cash": 260.0,
+        "rev": 1149.0,
+        "pat": 113.8,
+        "cfo": 85.0,
+        "fcf": 55.0,
+        "rec": 280.0,
+        "cash": 162.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY26",
+        "rev": 2183.6,
+        "pat": 205.8,
+        "cfo": 170.0,
+        "fcf": 115.0,
+        "rec": 420.0,
+        "cash": 45.0,
         "pledge": 0.0
       },
       {
         "year": "TTM",
-        "rev": 1780.0,
-        "pat": 260.6,
-        "cfo": 188.0,
+        "rev": 3722.0,
+        "pat": 365.8,
+        "cfo": 260.0,
         "fcf": 135.0,
-        "rec": 480.0,
-        "cash": 340.0,
+        "rec": 650.0,
+        "cash": 14.0,
         "pledge": 0.0
       }
     ],
     "top5_concentration": "48.0%",
     "single_client": "18.2% (Indian Sovereign Cloud Hyperscaler)",
-    "order_book": "Firm executable backlog \u20b94,000+ Cr under IndiaAI Mission and enterprise generative AI pilots",
-    "upcoming_ramps": "Deployment of Grace Hopper GH200 and Blackwell GB200 AI superclusters in Indian data centers",
-    "powers": "Cornered Resource (direct OEM status with NVIDIA for AI enterprise servers) & Process Power (liquid immersion cooling)",
+    "order_book": "Firm executable backlog \u20b92,629 Cr + \u20b9652.5 Cr L1 bids; Active pipeline \u20b911,152 Cr",
+    "upcoming_ramps": "Deployment of NVIDIA Grace Hopper GH200 and Blackwell GB200 AI superclusters under IndiaAI Mission",
+    "powers": "Cornered Resource (official NVIDIA OEM status for AI enterprise servers) & Process Power (liquid immersion cooling)",
     "mgmt_anomalies": [
       [
-        "GPU Allocation Bottlenecks",
-        "Management confirmed prioritized tier-1 allocation from NVIDIA leadership, ensuring timely fulfilment of large AI server contracts."
+        "High Growth Working Capital Consumption",
+        "Working capital is anchored by milestone customer advances (15-20%) upon order placement, with debtor days improving to 64 days."
       ],
       [
-        "Customer Advance Cash Flows",
-        "Working capital remains controlled as government and enterprise customers provide upfront project milestone advances."
+        "Margin Resilience During AI Mix Surge",
+        "EBITDA margin held stable at 14.9% due to proprietary liquid cooling and Kubyts software value-add."
       ]
     ],
     "reverse_dcf_fcf": 135.0,
@@ -483,21 +493,23 @@
       "Loss of NVIDIA Elite Partner / authorized OEM manufacturing status.",
       "Quarterly YoY revenue growth falls below 25%.",
       "Promoter share sale or governance red flags."
-    ]
+    ],
+    "roce": 37.5,
+    "roe": 32.8
   },
   "KAYNES": {
     "ticker": "KAYNES",
     "name": "Kaynes Technology",
     "sector": "Semiconductor OSAT, Aerospace Electronics & Industrial EMS",
-    "cmp": 3188.0,
-    "mcap": 21430.0,
-    "pe": 61.8,
-    "eps": 51.57,
-    "dma200": 3832.28,
-    "dma50": 3420.0,
+    "cmp": 3131.0,
+    "mcap": 21093.0,
+    "pe": 60.7,
+    "eps": 51.58,
+    "dma200": 3810.0,
+    "dma50": 3494.0,
     "rs": 75,
     "altman_z": 6.38,
-    "cfo_pat": 0.79,
+    "cfo_pat": -0.68,
     "sales_growth_3yr": 45.7,
     "profit_growth_3yr": 53.9,
     "fy_trend": [
@@ -562,7 +574,10 @@
       "Sanand OSAT facility fails customer packaging qualification trials.",
       "Working capital days expand beyond 140 days.",
       "EBITDA margin drops below 12.0%."
-    ]
+    ],
+    "ttm_eps": 51.58,
+    "roce": 12.7,
+    "roe": 8.69
   },
   "EMMVEE": {
     "ticker": "EMMVEE",

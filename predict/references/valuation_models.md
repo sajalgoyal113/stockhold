@@ -289,6 +289,17 @@ Empirically validated by multi-cycle backtesting across 32 Indian listed equitie
   $$\text{If } (\text{P/E}_0 \le 18.0 \text{ or } \text{Fwd P/E}_{\text{yr2}} \le 18.0) \land \text{Debt Serviceable} \land (\text{ROCE} \ge 20\% \lor \text{CFO/PAT} \ge 1.50\times \lor \text{D/E} \le 0.15\text{x}):$$
   $$\text{Growth Hurdle} = 14.0\% \quad (\text{else } 20.0\%)$$
 
+### 5. Methodology Integrity Watchdog & Anti-Compression Invariants
+* **The Structural Principle:** Model parameters must remain resilient against accidental degradation, PEG compression, or artificial exit P/E clamps that penalize healthy compounders.
+* **Core Anti-Compression Rules:**
+  1. **Audited Cumulative CFO/PAT Base**: Replaces transient recency weights with audited 4-year cumulative cash conversion ($\sum \text{CFO} / \sum \text{PAT}$).
+  2. **Growth Drag Immunity for Quality Businesses**: No artificial growth haircuts are applied unless structural financial distress markers ($\text{D/Mcap} > 0.35$ or $\text{CFO/PAT} < 0.50$) are empirically present.
+  3. **Verified Quality PEG Floors**: Base PEG of $1.50\text{x}\text{--}1.60\text{x}$ and Bull PEG of $1.75\text{x}\text{--}1.85\text{x}$ for high-ROIC sunrise compounders.
+  4. **Prohibition of Arbitrary Exit Clamps**: Exit multiples are driven endogenously by terminal growth runway ($g_{\text{exit}} \times \text{PEG}$), never arbitrarily compressed to fractions of trailing P/E.
+  5. **Neutral Default on Missing Balance Sheet Fields**: Unreported metrics (like Altman Z) default safely to neutral, preventing false-fragility downgrades.
+  6. **Automated Regression Alerting**: Both `forward_growth_pe.py` and `safety_guard.py` run `verify_methodology_integrity()`, raising `⚠️ [METHODOLOGY INTEGRITY ALERT]` and blocking report synthesis if any parameter degradation is detected.
+
+
 
 
 

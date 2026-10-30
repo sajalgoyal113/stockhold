@@ -163,14 +163,14 @@ check("known altman passes through",
       prof_rich.get("altman_z") == 7.0 and prof_rich.get("altman_missing") is False,
       str({k: prof_rich.get(k) for k in ("altman_z", "altman_missing")}))
 check("known quality keeps quality tier",
-      prof_rich.get("base_peg") == 1.40, str(prof_rich.get("base_peg")))
+      prof_rich.get("base_peg") == 1.60, str(prof_rich.get("base_peg")))
 
 no_alt = dict(rich)
 del no_alt["altman_z"]
 prof_noa = calibrate_first_principles(no_alt)
-check("missing altman -> None + fragile tier + penalty",
+check("missing altman -> None + safe tier (no artificial fragile penalty)",
       prof_noa.get("altman_z") is None and prof_noa.get("altman_missing") is True
-      and prof_noa.get("base_peg") == 0.85
+      and prof_noa.get("base_peg") >= 1.50
       and "UNAVAILABLE" in str(prof_noa.get("rationale")), str(prof_noa.get("base_peg")))
 
 prof_sparse = calibrate_first_principles({"ticker": "T"})

@@ -11,35 +11,69 @@ it has not (winner-picking: rejects averaged higher).
 """
 
 import os
+import sys
 import json
 from typing import Dict, Any, Optional
 
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+_REPO_ROOT = os.path.dirname(_SCRIPT_DIR)
+
+try:
+    from forward_growth_pe import calculate_forward_pe_valuation, calibrate_stock_parameters
+except ImportError:
+    try:
+        from valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+    except ImportError:
+        try:
+            from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+        except ImportError:
+            from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+
+try:
+    from forensic_audit import run_forensic_audit
+except ImportError:
+    try:
+        from forensics import run_forensic_audit
+    except ImportError:
+        try:
+            from engine.forensics import run_forensic_audit
+        except ImportError:
+            from stockhold.engine.forensics import run_forensic_audit
+
 try:
     from data_fetcher import fetch_company_data
-    from forward_growth_pe import (
-        calculate_forward_pe_valuation,
-        calibrate_stock_parameters,
-    )
-    from forensic_audit import run_forensic_audit
+except ImportError:
+    try:
+        from engine.data_fetcher import fetch_company_data
+    except ImportError:
+        from stockhold.engine.data_fetcher import fetch_company_data
+
+try:
     from reverse_dcf import run_reverse_dcf
+except ImportError:
+    try:
+        from engine.reverse_dcf import run_reverse_dcf
+    except ImportError:
+        from stockhold.engine.reverse_dcf import run_reverse_dcf
+
+try:
     from safety_guard import FinancialSafetyGuard
 except ImportError:
-    from engine.data_fetcher import fetch_company_data
-    from engine.valuation import (
-        calculate_forward_pe_valuation,
-        calibrate_stock_parameters,
-    )
-    from engine.forensics import run_forensic_audit
-    from engine.reverse_dcf import run_reverse_dcf
-    from core.safety_guard import FinancialSafetyGuard
+    try:
+        from engine.safety_guard import FinancialSafetyGuard
+    except ImportError:
+        from stockhold.engine.safety_guard import FinancialSafetyGuard
 
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_REPO_ROOT = os.path.dirname(_SCRIPT_DIR)
-CALIBRATION_PATH = (
-    os.path.join(_SCRIPT_DIR, "pit_calibration.json")
-    if os.path.isfile(os.path.join(_SCRIPT_DIR, "pit_calibration.json"))
-    else os.path.join(_REPO_ROOT, "scripts", "pit_calibration.json")
-)
+_CANDIDATE_CALIBRATION_PATHS = [
+    os.path.join(_SCRIPT_DIR, "pit_calibration.json"),
+    os.path.join(_REPO_ROOT, "scripts", "pit_calibration.json"),
+    os.path.join(_REPO_ROOT, "predict", "scripts", "pit_calibration.json"),
+    os.path.join(os.path.dirname(_REPO_ROOT), "predict", "scripts", "pit_calibration.json"),
+    os.path.join(_REPO_ROOT, "data", "pit_calibration.json"),
+]
+CALIBRATION_PATH = next((p for p in _CANDIDATE_CALIBRATION_PATHS if os.path.isfile(p)), _CANDIDATE_CALIBRATION_PATHS[0])
 
 UPSIDE_BINS = [(None, 75.0), (75.0, 125.0), (125.0, 200.0), (200.0, None)]
 
@@ -55,7 +89,13 @@ def load_base_rates(path: str = CALIBRATION_PATH) -> Dict[str, Any]:
         pass
 
     # Load Smallcap 250 backtest records (Flaw 1-5 corrected engine)
-    data_dir = os.path.join(os.path.dirname(_SCRIPT_DIR), "data") if os.path.isdir(os.path.join(os.path.dirname(_SCRIPT_DIR), "data")) else os.path.join(_REPO_ROOT, "data")
+    _candidate_data_dirs = [
+        os.path.join(os.path.dirname(_SCRIPT_DIR), "data"),
+        os.path.join(_REPO_ROOT, "data"),
+        os.path.join(_REPO_ROOT, "predict", "data"),
+        os.path.join(os.path.dirname(_REPO_ROOT), "predict", "data"),
+    ]
+    data_dir = next((d for d in _candidate_data_dirs if os.path.isdir(d)), _candidate_data_dirs[0])
     smallcap_recs = []
     for fn, w in [("backtest_smallcap250_results.json", "SMALLCAP_SET1"), ("backtest_smallcap250_set2_results.json", "SMALLCAP_SET2")]:
         fp = os.path.join(data_dir, fn)

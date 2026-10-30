@@ -1,0 +1,5 @@
+{
+  "_schema": "guidance_registry v1: verified management guidance overrides for calibrate_first_principles. Empty by default \u2014 no ticker is overridden until a registered entry with source + as_of is added. Any entry here overrides base/bull CAGR, exit growth, exit PEs and probs outright (see forward_growth_pe.py).",
+  "_as_of": "2026-10-30",
+  "_entries": {}
+}

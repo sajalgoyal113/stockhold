@@ -1,0 +1,2103 @@
+{
+  "PERSISTENT": {
+    "ticker": "PERSISTENT",
+    "name": "Persistent Systems",
+    "sector": "Enterprise IT & Digital Product Engineering",
+    "cmp": 5741.0,
+    "mcap": 90564.3,
+    "pe": 48.43,
+    "eps": 118.54,
+    "dma200": 5120.0,
+    "dma50": 5480.0,
+    "rs": 74,
+    "altman_z": 7.42,
+    "cfo_pat": 0.92,
+    "sales_growth_3yr": 16.3,
+    "profit_growth_3yr": 26.6,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 8350.6,
+        "pat": 921.1,
+        "cfo": 880.4,
+        "fcf": 510.2,
+        "rec": 1390.5,
+        "cash": 1820.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 9821.6,
+        "pat": 1093.5,
+        "cfo": 1120.5,
+        "fcf": 740.1,
+        "rec": 1640.2,
+        "cash": 2050.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 11840.0,
+        "pat": 1410.2,
+        "cfo": 1350.0,
+        "fcf": 980.5,
+        "rec": 1980.4,
+        "cash": 2240.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 13150.0,
+        "pat": 1870.0,
+        "cfo": 1720.0,
+        "fcf": 1280.0,
+        "rec": 2210.0,
+        "cash": 2450.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "39.5%",
+    "single_client": "12.8% (Large US Healthcare ISV)",
+    "order_book": "$520M quarterly ACV/TCV (75% forward revenue visibility)",
+    "upcoming_ramps": "GenAI digital engineering platform integration; enterprise cloud modernization deals",
+    "powers": "Switching Costs (deep enterprise codebase integration) & Process Power (proprietary engineering accelerators)",
+    "mgmt_anomalies": [
+      [
+        "DSO Expansion in European BFSI",
+        "Management stated that client procurement review elongation temporarily delayed milestone sign-offs; collections normalized with zero bad debt write-offs."
+      ],
+      [
+        "Wage Rationalization & Margin Pacing",
+        "EBITDA margins temporarily absorbed campus fresher onboarding costs; management reiterated 100-150 bps margin expansion target over FY27-FY28."
+      ]
+    ],
+    "reverse_dcf_fcf": 1280.0,
+    "kill_switches": [
+      "Quarterly YoY revenue growth dips below 12% for two consecutive quarters.",
+      "Operating EBIT margin contracts below 13.0% due to enterprise pricing renegotiations.",
+      "Promoter pledging rises above 5% or unannounced large-scale equity dilution occurs."
+    ]
+  },
+  "COFORGE": {
+    "ticker": "COFORGE",
+    "name": "Coforge Limited",
+    "sector": "Enterprise IT & Digital Engineering",
+    "cmp": 1962.0,
+    "mcap": 86924.0,
+    "pe": 38.7,
+    "eps": 50.68,
+    "dma200": 1538.0,
+    "dma50": 1876.0,
+    "rs": 74,
+    "altman_z": 6.4,
+    "cfo_pat": 1.15,
+    "sales_growth_3yr": 27.0,
+    "profit_growth_3yr": 33.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 8015.0,
+        "pat": 745.0,
+        "cfo": 950.0,
+        "fcf": 797.0,
+        "rec": 1603.0,
+        "cash": 650.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 9009.0,
+        "pat": 836.0,
+        "cfo": 903.0,
+        "fcf": 644.0,
+        "rec": 1802.0,
+        "cash": 720.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 12073.0,
+        "pat": 936.0,
+        "cfo": 1237.0,
+        "fcf": 680.0,
+        "rec": 2580.0,
+        "cash": 1190.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY26",
+        "rev": 16403.0,
+        "pat": 1745.0,
+        "cfo": 1792.0,
+        "fcf": 1197.0,
+        "rec": 3955.0,
+        "cash": 1450.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 20380.0,
+        "pat": 2100.0,
+        "cfo": 2200.0,
+        "fcf": 1500.0,
+        "rec": 4600.0,
+        "cash": 1850.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "18.1%",
+    "single_client": "6.8% (Tier-1 Global Travel/Airline Conglomerate)",
+    "order_book": ".04B quarterly order intake; 12-month executable order book .38B (+45.4% YoY)",
+    "upcoming_ramps": "Encora digital engineering cross-sell into Tier-1 US BFS accounts; Cigniti AI software assurance expansion; UK public sector M contract ramp-up",
+    "powers": "Process Power (deep aviation & banking domain mastery, Pega/Duck Creek workflow automation) & High Switching Costs (95.5% repeat business ratio)",
+    "mgmt_anomalies": [
+      [
+        "Receivables & Debtor Days Expansion (88 Days)",
+        "Management noted in concalls that debtor days expanded temporarily due to integration of Cigniti accounts and milestone billing on large public sector contracts (M UK engagement). Cash collection velocity remains solid with 1.15x CFO/PAT conversion and collections normalising post-milestone sign-offs."
+      ],
+      [
+        "Encora Acquisition Integration & Leverage",
+        "Transaction funded predominantly via .89B equity share swap to Advent & Warburg Pincus at \u20b91,815.91/share, plus M 3-year syndicated loan at 4.6% fixed interest. Net Debt/Equity remains conservative at 0.19x and EBIT margin guidance raised to 16.0% targeting 17% exit rate."
+      ]
+    ],
+    "reverse_dcf_fcf": 1197.0,
+    "kill_switches": [
+      "Quarterly order intake falls below M for two consecutive quarters.",
+      "EBIT margin drops below 14.5% due to integration friction or wage inflation.",
+      "Net Debt/Equity exceeds 0.40x via aggressive unhedged debt acquisitions.",
+      "Quarterly PAT miss exceeds 15% against consensus or debtor days spike >110 days without cash realization."
+    ]
+  },
+  "PRESTIGE": {
+    "ticker": "PRESTIGE",
+    "name": "Prestige Estates Projects",
+    "sector": "Real Estate Development & Commercial Township Assets",
+    "cmp": 1492.0,
+    "mcap": 64264.9,
+    "pe": 56.43,
+    "eps": 26.44,
+    "dma200": 1620.0,
+    "dma50": 1510.0,
+    "rs": 54,
+    "altman_z": 1.95,
+    "cfo_pat": 0.31,
+    "sales_growth_3yr": 5.0,
+    "profit_growth_3yr": 2.2,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 8314.9,
+        "pat": 1066.8,
+        "cfo": -420.0,
+        "fcf": -1200.0,
+        "rec": 1820.0,
+        "cash": 1200.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 7776.4,
+        "pat": 1374.1,
+        "cfo": 480.0,
+        "fcf": -850.0,
+        "rec": 2100.0,
+        "cash": 1450.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 8940.0,
+        "pat": 980.0,
+        "cfo": 210.0,
+        "fcf": -1400.0,
+        "rec": 2450.0,
+        "cash": 1600.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 9620.0,
+        "pat": 1138.8,
+        "cfo": 350.0,
+        "fcf": -1800.0,
+        "rec": 2890.0,
+        "cash": 1850.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "N/A (B2C Homebuyers)",
+    "single_client": "N/A (Diversified retail pre-sales)",
+    "order_book": "Pre-sales booking run rate ~\u20b920,000+ Cr; ongoing development pipeline >50M sq ft",
+    "upcoming_ramps": "Mega-launches in Noida (The Forest), Mumbai (Mulund, Marine Lines), and Bengaluru township expansions",
+    "powers": "Brand (Prestige reputation in South India) & Scale Economies (land acquisition purchasing power)",
+    "mgmt_anomalies": [
+      [
+        "Persistent Negative Free Cash Flow",
+        "Management indicated that land bank acquisitions in NCR and Mumbai require upfront cash disbursements that precede customer booking collections."
+      ],
+      [
+        "Debt/Equity Expansion to 1.09x",
+        "Management guided for debt reduction via planned QIP dilution and monetization of office/hospitality portfolio through REIT structures."
+      ]
+    ],
+    "reverse_dcf_fcf": -1800.0,
+    "kill_switches": [
+      "Debt-to-Equity climbs above 1.30x.",
+      "Quarterly residential pre-sales collections drop below \u20b93,500 Cr.",
+      "Regulatory or environmental litigation halts launches in NCR or Mumbai."
+    ]
+  },
+  "SONACOMS": {
+    "ticker": "SONACOMS",
+    "name": "Sona BLW Precision Forgings",
+    "sector": "Automotive Driveline, EV Bevel Gears & Traction Motors",
+    "cmp": 800.0,
+    "mcap": 49933.6,
+    "pe": 64.22,
+    "eps": 12.46,
+    "dma200": 760.0,
+    "dma50": 795.0,
+    "rs": 68,
+    "altman_z": 6.12,
+    "cfo_pat": 0.88,
+    "sales_growth_3yr": 16.3,
+    "profit_growth_3yr": 25.3,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 2675.6,
+        "pat": 395.3,
+        "cfo": 380.2,
+        "fcf": 140.0,
+        "rec": 520.0,
+        "cash": 320.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 3185.0,
+        "pat": 518.0,
+        "cfo": 480.0,
+        "fcf": 210.0,
+        "rec": 610.0,
+        "cash": 410.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 3890.0,
+        "pat": 645.0,
+        "cfo": 590.0,
+        "fcf": 280.0,
+        "rec": 740.0,
+        "cash": 560.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 4210.0,
+        "pat": 777.5,
+        "cfo": 690.0,
+        "fcf": 350.0,
+        "rec": 810.0,
+        "cash": 680.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "52.0%",
+    "single_client": "21.0% (Leading North American EV OEM - Tesla)",
+    "order_book": "Net executable order backlog \u20b924,000+ Cr (78% EV-focused)",
+    "upcoming_ramps": "High-voltage traction motors for North American commercial vehicles; integrated motor-controller modules",
+    "powers": "Process Power (proprietary precision warm forging IP) & Cornered Resource (patented differential assemblies)",
+    "mgmt_anomalies": [
+      [
+        "Client Concentration Sensitivity (Tesla 21%)",
+        "Management stated that revenue diversification is accelerating with new program wins across European PVs and Indian commercial EV OEMs."
+      ],
+      [
+        "EV Capex Gestation",
+        "Front-loaded R&D and tooling capex for traction motors will transition to cash harvesting as SOP begins across 3 global programs."
+      ]
+    ],
+    "reverse_dcf_fcf": 350.0,
+    "kill_switches": [
+      "Order book drops below \u20b920,000 Cr or cancellation rate exceeds 10%.",
+      "Single client exposure to top EV OEM drops sharply without replacement programs.",
+      "Operating EBITDA margin dips below 23.0%."
+    ]
+  },
+  "SYRMA": {
+    "ticker": "SYRMA",
+    "name": "Syrma SGS Tech",
+    "sector": "Electronics Manufacturing Services (EMS), PCBAs & RFID Solutions",
+    "cmp": 1433.0,
+    "mcap": 27635.0,
+    "pe": 75.0,
+    "eps": 19.1,
+    "dma200": 1253.18,
+    "dma50": 1580.0,
+    "rs": 72,
+    "altman_z": 4.25,
+    "cfo_pat": 0.45,
+    "sales_growth_3yr": 35.7,
+    "profit_growth_3yr": 44.5,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 2048.4,
+        "pat": 123.1,
+        "cfo": 42.0,
+        "fcf": -65.0,
+        "rec": 510.0,
+        "cash": 280.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 3145.0,
+        "pat": 182.0,
+        "cfo": 88.0,
+        "fcf": -120.0,
+        "rec": 820.0,
+        "cash": 340.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 4410.0,
+        "pat": 285.0,
+        "cfo": 140.0,
+        "fcf": -40.0,
+        "rec": 1150.0,
+        "cash": 410.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 5120.0,
+        "pat": 371.4,
+        "cfo": 165.0,
+        "fcf": 20.0,
+        "rec": 1380.0,
+        "cash": 490.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "38.0%",
+    "single_client": "14.5% (Tier-1 Healthcare Diagnostic Equipment Maker)",
+    "order_book": "Firm executable order book \u20b94,500+ Cr across industrial, healthcare, and auto verticals",
+    "upcoming_ramps": "Pune electronics box-build expansion; Chennai high-density interconnect (HDI) line commissioning",
+    "powers": "Process Power (high-mix low-volume engineering) & Switching Costs (medical device certifications)",
+    "mgmt_anomalies": [
+      [
+        "Working Capital Elongation (NWC ~105 Days)",
+        "Management clarified that component buffer inventory maintained for aerospace/industrial clients inflated working capital; inventory days targeted to decline by 15-20 days."
+      ],
+      [
+        "Consumer Segment Margin Dilution",
+        "Margin dilution was caused by rapid scale-up of lower-margin consumer electronics; management is intentionally shifting mix towards high-margin industrial and automotive box-builds."
+      ]
+    ],
+    "reverse_dcf_fcf": 20.0,
+    "kill_switches": [
+      "CFO/PAT ratio remains below 0.40x for two consecutive fiscal years.",
+      "Operating EBITDA margin contracts below 6.5%.",
+      "Loss of top medical electronics OEM account."
+    ]
+  },
+  "NETWEB": {
+    "ticker": "NETWEB",
+    "name": "Netweb Technologies India Ltd",
+    "sector": "Sovereign AI Supercomputing Servers, Private Cloud & Enterprise HCS",
+    "cmp": 4172.6,
+    "mcap": 24798.0,
+    "pe": 67.8,
+    "eps": 61.55,
+    "ttm_eps": 61.55,
+    "dma200": 4142.6,
+    "dma50": 4862.2,
+    "rs": 88,
+    "altman_z": 5.88,
+    "cfo_pat": 0.79,
+    "sales_growth_3yr": 70.0,
+    "profit_growth_3yr": 64.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 444.9,
+        "pat": 46.9,
+        "cfo": 38.0,
+        "fcf": 28.0,
+        "rec": 110.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 732.0,
+        "pat": 75.9,
+        "cfo": 55.0,
+        "fcf": 40.0,
+        "rec": 190.0,
+        "cash": 190.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 1149.0,
+        "pat": 113.8,
+        "cfo": 85.0,
+        "fcf": 55.0,
+        "rec": 280.0,
+        "cash": 162.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY26",
+        "rev": 2183.6,
+        "pat": 205.8,
+        "cfo": 170.0,
+        "fcf": 115.0,
+        "rec": 420.0,
+        "cash": 45.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 3722.0,
+        "pat": 365.8,
+        "cfo": 260.0,
+        "fcf": 135.0,
+        "rec": 650.0,
+        "cash": 14.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "48.0%",
+    "single_client": "18.2% (Indian Sovereign Cloud Hyperscaler)",
+    "order_book": "Firm executable backlog \u20b92,629 Cr + \u20b9652.5 Cr L1 bids; Active pipeline \u20b911,152 Cr",
+    "upcoming_ramps": "Deployment of NVIDIA Grace Hopper GH200 and Blackwell GB200 AI superclusters under IndiaAI Mission",
+    "powers": "Cornered Resource (official NVIDIA OEM status for AI enterprise servers) & Process Power (liquid immersion cooling)",
+    "mgmt_anomalies": [
+      [
+        "High Growth Working Capital Consumption",
+        "Working capital is anchored by milestone customer advances (15-20%) upon order placement, with debtor days improving to 64 days."
+      ],
+      [
+        "Margin Resilience During AI Mix Surge",
+        "EBITDA margin held stable at 14.9% due to proprietary liquid cooling and Kubyts software value-add."
+      ]
+    ],
+    "reverse_dcf_fcf": 135.0,
+    "kill_switches": [
+      "Loss of NVIDIA Elite Partner / authorized OEM manufacturing status.",
+      "Quarterly YoY revenue growth falls below 25%.",
+      "Promoter share sale or governance red flags."
+    ],
+    "roce": 37.5,
+    "roe": 32.8
+  },
+  "KAYNES": {
+    "ticker": "KAYNES",
+    "name": "Kaynes Technology",
+    "sector": "Semiconductor OSAT, Aerospace Electronics & Industrial EMS",
+    "cmp": 3131.0,
+    "mcap": 21093.0,
+    "pe": 60.7,
+    "eps": 51.58,
+    "dma200": 3810.0,
+    "dma50": 3494.0,
+    "rs": 75,
+    "altman_z": 6.38,
+    "cfo_pat": -0.68,
+    "sales_growth_3yr": 45.7,
+    "profit_growth_3yr": 53.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 1126.1,
+        "pat": 95.2,
+        "cfo": 48.0,
+        "fcf": -120.0,
+        "rec": 340.0,
+        "cash": 220.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 1804.6,
+        "pat": 183.3,
+        "cfo": 110.0,
+        "fcf": -180.0,
+        "rec": 580.0,
+        "cash": 850.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 2840.0,
+        "pat": 310.0,
+        "cfo": 210.0,
+        "fcf": -250.0,
+        "rec": 920.0,
+        "cash": 1200.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 3480.0,
+        "pat": 347.3,
+        "cfo": 275.0,
+        "fcf": -150.0,
+        "rec": 1140.0,
+        "cash": 1450.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "32.0%",
+    "single_client": "11.2% (Tier-1 Global Industrial Automation Leader)",
+    "order_book": "Firm executable backlog \u20b95,400+ Cr (2.5x annual revenue visibility)",
+    "upcoming_ramps": "Commercial operation of Sanand semiconductor OSAT facility; railway Kavach collision avoidance electronics",
+    "powers": "Cornered Resource (Sanand OSAT semiconductor approval) & Switching Costs (aerospace and railway certifications)",
+    "mgmt_anomalies": [
+      [
+        "Semiconductor OSAT Capex Spend",
+        "Management confirmed \u20b93,300 Cr Sanand plant construction is fully funded via equity QIP and central government semiconductor capital subsidies."
+      ],
+      [
+        "Railway Kavach Execution Timing",
+        "Tender milestone billings are back-ended in H2; H1 deceleration was purely seasonal and normalized in Q3."
+      ]
+    ],
+    "reverse_dcf_fcf": 275.0,
+    "kill_switches": [
+      "Sanand OSAT facility fails customer packaging qualification trials.",
+      "Working capital days expand beyond 140 days.",
+      "EBITDA margin drops below 12.0%."
+    ],
+    "ttm_eps": 51.58,
+    "roce": 12.7,
+    "roe": 8.69
+  },
+  "EMMVEE": {
+    "ticker": "EMMVEE",
+    "name": "Emmvee Photovoltaic",
+    "sector": "Solar PV Modules, TOPCon Solar Cells & Green Energy Infrastructure",
+    "cmp": 277.2,
+    "mcap": 19191.8,
+    "pe": 13.53,
+    "eps": 20.49,
+    "dma200": 240.0,
+    "dma50": 268.0,
+    "rs": 82,
+    "altman_z": 4.82,
+    "cfo_pat": 0.85,
+    "sales_growth_3yr": 81.4,
+    "profit_growth_3yr": 116.4,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 980.0,
+        "pat": 140.0,
+        "cfo": 125.0,
+        "fcf": 45.0,
+        "rec": 220.0,
+        "cash": 180.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 2150.0,
+        "pat": 480.0,
+        "cfo": 410.0,
+        "fcf": 180.0,
+        "rec": 480.0,
+        "cash": 340.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 4200.0,
+        "pat": 1050.0,
+        "cfo": 890.0,
+        "fcf": 350.0,
+        "rec": 890.0,
+        "cash": 680.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 5850.0,
+        "pat": 1418.5,
+        "cfo": 1210.0,
+        "fcf": 520.0,
+        "rec": 1180.0,
+        "cash": 950.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "45.0%",
+    "single_client": "16.5% (National Utility Solar Developer)",
+    "order_book": "Firm executable module supply order book ~\u20b96,500+ Cr with guaranteed DCR price premiums",
+    "upcoming_ramps": "Commercial operation of 1.5 GW captive TOPCon solar cell plant in Karnataka",
+    "powers": "Scale Economies & Process Power (advanced bifacial cell efficiency and ALMM vendor qualification)",
+    "mgmt_anomalies": [
+      [
+        "Solar Module Global Price Volatility",
+        "Management noted that DCR-mandated government tenders insulate margins from Chinese dumping, maintaining 18-22% gross margins."
+      ],
+      [
+        "Cell Plant Backward Integration Capex",
+        "The 1.5 GW cell line will eliminate external wafer/cell import dependency, capturing an incremental 400-500 bps EBITDA margin."
+      ]
+    ],
+    "reverse_dcf_fcf": 520.0,
+    "kill_switches": [
+      "Removal or significant dilution of ALMM (Approved List of Module Manufacturers) protectionist policy.",
+      "Severe raw material polysilicon supply disruption.",
+      "Debt/Equity climbs above 0.75x."
+    ]
+  },
+  "CLEANMAX": {
+    "ticker": "CLEANMAX",
+    "name": "Clean Max Enviro",
+    "sector": "Commercial & Industrial (C&I) Renewable Energy Independent Power Producer (IPP)",
+    "cmp": 1276.0,
+    "mcap": 15006.5,
+    "pe": 95.67,
+    "eps": 13.34,
+    "dma200": 1380.0,
+    "dma50": 1310.0,
+    "rs": 42,
+    "altman_z": 1.05,
+    "cfo_pat": 3.89,
+    "sales_growth_3yr": 30.4,
+    "profit_growth_3yr": 55.2,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 820.0,
+        "pat": 42.0,
+        "cfo": 280.0,
+        "fcf": -650.0,
+        "rec": 210.0,
+        "cash": 140.0,
+        "pledge": 22.0
+      },
+      {
+        "year": "FY24",
+        "rev": 1150.0,
+        "pat": 78.0,
+        "cfo": 410.0,
+        "fcf": -920.0,
+        "rec": 290.0,
+        "cash": 180.0,
+        "pledge": 21.5
+      },
+      {
+        "year": "FY25",
+        "rev": 1480.0,
+        "pat": 110.0,
+        "cfo": 520.0,
+        "fcf": -1200.0,
+        "rec": 380.0,
+        "cash": 220.0,
+        "pledge": 20.5
+      },
+      {
+        "year": "TTM",
+        "rev": 1820.0,
+        "pat": 156.9,
+        "cfo": 610.0,
+        "fcf": -1450.0,
+        "rec": 460.0,
+        "cash": 250.0,
+        "pledge": 20.02
+      }
+    ],
+    "top5_concentration": "35.0%",
+    "single_client": "12.0% (Large Industrial Conglomerate)",
+    "order_book": "Operational solar/wind portfolio ~2.2 GW with multi-year corporate PPAs",
+    "upcoming_ramps": "Hybrid wind-solar parks in Gujarat and Karnataka under open access",
+    "powers": "Scale Economies in localized C&I park development",
+    "mgmt_anomalies": [
+      [
+        "Severe Financial Leverage (D/E 2.73x)",
+        "High interest expense consumes 70%+ of operating EBITDA; refinancing risks are acute during tight monetary cycles."
+      ],
+      [
+        "Promoter Share Pledging (20.02%)",
+        "Promoter pledge creates severe downside liquidation risk if stock price faces broad market sell-offs."
+      ]
+    ],
+    "reverse_dcf_fcf": -1450.0,
+    "kill_switches": [
+      "Promoter share pledge exceeds 25%.",
+      "Interest coverage ratio drops below 1.5x.",
+      "State electricity regulatory commissions impose open access cross-subsidy surcharges."
+    ]
+  },
+  "AMARAJABAT": {
+    "ticker": "AMARAJABAT",
+    "name": "Amara Raja Energy",
+    "sector": "Industrial & Automotive Batteries, BESS & Lithium Gigafactory",
+    "cmp": 743.0,
+    "mcap": 13598.8,
+    "pe": 17.33,
+    "eps": 42.87,
+    "dma200": 810.0,
+    "dma50": 765.0,
+    "rs": 60,
+    "altman_z": 5.52,
+    "cfo_pat": 1.16,
+    "sales_growth_3yr": 8.3,
+    "profit_growth_3yr": 4.2,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 10385.9,
+        "pat": 694.5,
+        "cfo": 890.0,
+        "fcf": 350.0,
+        "rec": 1420.0,
+        "cash": 450.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 11259.0,
+        "pat": 905.0,
+        "cfo": 1120.0,
+        "fcf": 480.0,
+        "rec": 1580.0,
+        "cash": 580.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 12450.0,
+        "pat": 840.0,
+        "cfo": 980.0,
+        "fcf": 150.0,
+        "rec": 1720.0,
+        "cash": 640.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 13200.0,
+        "pat": 784.7,
+        "cfo": 910.0,
+        "fcf": 80.0,
+        "rec": 1850.0,
+        "cash": 720.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "22.0%",
+    "single_client": "7.5% (Major Telecom Tower Infrastructure Provider)",
+    "order_book": "Leading aftermarket automotive brand (Amaron); telecom tower battery replacement contracts",
+    "upcoming_ramps": "Phase-1 2 GWh commercial operation of Telangana lithium-ion cell gigafactory",
+    "powers": "Brand (Amaron high-recall aftermarket franchise) & Scale Economies (pan-India distributor moat)",
+    "mgmt_anomalies": [
+      [
+        "Lead-Acid Technological Obsolescence Concerns",
+        "Management reiterated that automotive 12V auxiliary lead-acid batteries remain indispensable even in pure BEVs for safety and sensor logic."
+      ],
+      [
+        "Gigafactory Capex Gestation",
+        "Telangana project funding is supported by strong legacy lead-acid cash flows without raising excessive balance sheet leverage."
+      ]
+    ],
+    "reverse_dcf_fcf": 80.0,
+    "kill_switches": [
+      "Telangana Li-ion gigafactory suffers severe technological delays or yield failures.",
+      "Aggressive price competition from Exide or imported Chinese cells erodes EBITDA margins below 10%.",
+      "Debt-to-equity increases beyond 0.40x."
+    ]
+  },
+  "RAINBOW": {
+    "ticker": "RAINBOW",
+    "name": "Rainbow Children's Medicare",
+    "sector": "Specialized Pediatric, Neonatal & Perinatal Healthcare",
+    "cmp": 1248.9,
+    "mcap": 12684.7,
+    "pe": 44.28,
+    "eps": 28.2,
+    "dma200": 1190.0,
+    "dma50": 1235.0,
+    "rs": 78,
+    "altman_z": 4.65,
+    "cfo_pat": 1.71,
+    "sales_growth_3yr": 17.2,
+    "profit_growth_3yr": 10.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 1173.5,
+        "pat": 210.3,
+        "cfo": 310.0,
+        "fcf": 140.0,
+        "rec": 85.0,
+        "cash": 220.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 1385.0,
+        "pat": 260.0,
+        "cfo": 380.0,
+        "fcf": 160.0,
+        "rec": 110.0,
+        "cash": 310.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 1690.0,
+        "pat": 315.0,
+        "cfo": 440.0,
+        "fcf": 180.0,
+        "rec": 145.0,
+        "cash": 420.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 1890.0,
+        "pat": 286.5,
+        "cfo": 490.0,
+        "fcf": 210.0,
+        "rec": 165.0,
+        "cash": 490.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "N/A (B2C Patient Footfall)",
+    "single_client": "N/A (Zero corporate counterparty concentration)",
+    "order_book": "1,900+ operational beds expanding to 2,500+ beds over the next 24-36 months",
+    "upcoming_ramps": "New greenfield hospital launches in Sector 44 Gurgaon, Anna Nagar Chennai, and Sarjapur Bengaluru",
+    "powers": "Brand (paramount trust in neonatal/pediatric intensive care) & Cornered Resource (top pediatric super-specialists)",
+    "mgmt_anomalies": [
+      [
+        "New Bed Gestation Drag",
+        "Management highlighted that new hospitals reach EBITDA breakeven within 9-12 months, faster than industry average of 18-24 months."
+      ],
+      [
+        "Doctor Retention & Professional Fees",
+        "Doctor attrition remains below 5% due to clinical equity participation and dedicated research infrastructure."
+      ]
+    ],
+    "reverse_dcf_fcf": 210.0,
+    "kill_switches": [
+      "Mature hospital bed occupancy drops below 55% for two consecutive quarters.",
+      "Key doctor team departures from flagship Hyderabad or Bengaluru hubs.",
+      "EBITDA margin compresses below 28%."
+    ]
+  },
+  "YATHARTH": {
+    "ticker": "YATHARTH",
+    "name": "Yatharth Hospital",
+    "sector": "Regional Multi-Specialty Tertiary Healthcare (Delhi-NCR & MP)",
+    "cmp": 992.1,
+    "mcap": 9559.3,
+    "pe": 52.76,
+    "eps": 18.8,
+    "dma200": 840.0,
+    "dma50": 950.0,
+    "rs": 84,
+    "altman_z": 5.24,
+    "cfo_pat": 1.27,
+    "sales_growth_3yr": 29.1,
+    "profit_growth_3yr": 40.2,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 520.3,
+        "pat": 65.8,
+        "cfo": 92.0,
+        "fcf": 45.0,
+        "rec": 75.0,
+        "cash": 80.0,
+        "pledge": 12.0
+      },
+      {
+        "year": "FY24",
+        "rev": 670.0,
+        "pat": 114.0,
+        "cfo": 145.0,
+        "fcf": 60.0,
+        "rec": 110.0,
+        "cash": 280.0,
+        "pledge": 10.5
+      },
+      {
+        "year": "FY25",
+        "rev": 920.0,
+        "pat": 155.0,
+        "cfo": 195.0,
+        "fcf": 80.0,
+        "rec": 160.0,
+        "cash": 340.0,
+        "pledge": 9.8
+      },
+      {
+        "year": "TTM",
+        "rev": 1120.0,
+        "pat": 181.2,
+        "cfo": 230.0,
+        "fcf": 110.0,
+        "rec": 195.0,
+        "cash": 410.0,
+        "pledge": 9.59
+      }
+    ],
+    "top5_concentration": "N/A (B2C Retail Patients)",
+    "single_client": "N/A (Diversified patient footfall)",
+    "order_book": "Current 1,405 operational beds expanding rapidly to 2,800+ beds via brownfield acquisitions",
+    "upcoming_ramps": "Faridabad super-specialty hospital ramp; expansion of oncology and robotic surgery suites in Greater Noida",
+    "powers": "Scale Economies & Process Power (speedy brownfield hospital acquisition and turnaround playbook)",
+    "mgmt_anomalies": [
+      [
+        "Promoter Pledging (9.59%)",
+        "Management committed to releasing remaining shares pledged against older business guarantees within the fiscal year."
+      ],
+      [
+        "Faridabad Facility Turnaround",
+        "Acquired Faridabad facility reached positive EBITDA in Q2, with occupancy climbing from 25% to 45%."
+      ]
+    ],
+    "reverse_dcf_fcf": 110.0,
+    "kill_switches": [
+      "Promoter pledging crosses 15%.",
+      "Operating EBITDA margin drops below 22%.",
+      "Delay in brownfield bed commercialization exceeding 12 months."
+    ]
+  },
+  "CYIENTDLM": {
+    "ticker": "CYIENTDLM",
+    "name": "Cyient DLM",
+    "sector": "Aerospace, Defense & Mission-Critical Electronics Manufacturing",
+    "cmp": 753.5,
+    "mcap": 5982.0,
+    "pe": 71.2,
+    "eps": 10.58,
+    "dma200": 530.0,
+    "dma50": 850.0,
+    "rs": 62,
+    "altman_z": 4.12,
+    "cfo_pat": 0.65,
+    "sales_growth_3yr": 30.3,
+    "profit_growth_3yr": 38.4,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 832.0,
+        "pat": 31.7,
+        "cfo": -45.0,
+        "fcf": -95.0,
+        "rec": 240.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 1191.8,
+        "pat": 61.2,
+        "cfo": 28.0,
+        "fcf": -40.0,
+        "rec": 380.0,
+        "cash": 240.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 1580.0,
+        "pat": 72.0,
+        "cfo": 42.0,
+        "fcf": -20.0,
+        "rec": 510.0,
+        "cash": 290.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 1840.0,
+        "pat": 84.0,
+        "cfo": 55.0,
+        "fcf": 10.0,
+        "rec": 620.0,
+        "cash": 320.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "65.0%",
+    "single_client": "41.5% (Honeywell Aerospace)",
+    "order_book": "Firm executable order backlog \u20b92,814 Cr",
+    "upcoming_ramps": "Honeywell Micro VCS avionics; Thales defense radar electronics subsystems",
+    "powers": "Process Power (AS9100 aerospace certification) & Switching Costs (aerospace qualification lead times)",
+    "mgmt_anomalies": [
+      [
+        "Severe Honeywell Client Concentration (41.5%)",
+        "Management stated that non-Honeywell business grew 45% YoY and targeted bringing single-client exposure below 30% by FY28."
+      ],
+      [
+        "Thin Net Margins (4.5%)",
+        "Operating margins are burdened by pass-through electronic component procurement; box-build expansion expected to lift margins towards 8.5%."
+      ]
+    ],
+    "reverse_dcf_fcf": 10.0,
+    "kill_switches": [
+      "Loss or order reduction from Honeywell.",
+      "Working capital cycle exceeds 135 days.",
+      "Operating margin drops below 7.0%."
+    ]
+  },
+  "SJS": {
+    "ticker": "SJS",
+    "name": "SJS Enterprises",
+    "sector": "Automotive Aesthetics, In-Mould Electronics & Premium Badges",
+    "cmp": 2005.9,
+    "mcap": 6468.9,
+    "pe": 33.95,
+    "eps": 59.08,
+    "dma200": 1650.0,
+    "dma50": 1890.0,
+    "rs": 86,
+    "altman_z": 6.84,
+    "cfo_pat": 1.1,
+    "sales_growth_3yr": 31.3,
+    "profit_growth_3yr": 41.5,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 433.0,
+        "pat": 67.3,
+        "cfo": 78.0,
+        "fcf": 45.0,
+        "rec": 88.0,
+        "cash": 95.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 612.0,
+        "pat": 84.0,
+        "cfo": 115.0,
+        "fcf": 75.0,
+        "rec": 120.0,
+        "cash": 140.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 820.0,
+        "pat": 140.0,
+        "cfo": 165.0,
+        "fcf": 110.0,
+        "rec": 165.0,
+        "cash": 220.0,
+        "pledge": 4.5
+      },
+      {
+        "year": "TTM",
+        "rev": 980.0,
+        "pat": 190.5,
+        "cfo": 210.0,
+        "fcf": 145.0,
+        "rec": 190.0,
+        "cash": 310.0,
+        "pledge": 4.5
+      }
+    ],
+    "top5_concentration": "42.0%",
+    "single_client": "14.0% (Leading Indian 2W/3W OEM - Bajaj Auto)",
+    "order_book": "Direct supplier to 100% of major Indian auto OEMs; Walter Pack global export pipeline",
+    "upcoming_ramps": "IME (In-Mould Electronics) cockpit center consoles for upcoming EV models; premium chrome badges for global SUVs",
+    "powers": "Process Power (flawless decorative plastic engineering) & Switching Costs (sole-source styling supplier on vehicle platforms)",
+    "mgmt_anomalies": [
+      [
+        "Promoter Pledging (4.5%)",
+        "Pledge is minor and relates to working capital facilities of an operating subsidiary; zero margin-call risk."
+      ],
+      [
+        "Walter Pack Integration Synergies",
+        "Walter Pack acquisition gave SJS cutting-edge IME technology, opening high-value illuminated logos and touch panels for premium EVs."
+      ]
+    ],
+    "reverse_dcf_fcf": 145.0,
+    "kill_switches": [
+      "Domestic automotive premiumization trend reverses sharply.",
+      "Operating EBITDA margin drops below 20%.",
+      "Promoter pledging exceeds 10%."
+    ]
+  },
+  "IXIGO": {
+    "ticker": "IXIGO",
+    "name": "Le Travenues (ixigo)",
+    "sector": "Online Travel Platform, Train Ticketing & Tier 2/3 Mobility",
+    "cmp": 144.46,
+    "mcap": 6371.9,
+    "pe": 53.69,
+    "eps": 2.69,
+    "dma200": 132.0,
+    "dma50": 141.0,
+    "rs": 58,
+    "altman_z": 4.52,
+    "cfo_pat": 1.1,
+    "sales_growth_3yr": 25.0,
+    "profit_growth_3yr": 71.8,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 501.2,
+        "pat": 23.4,
+        "cfo": 48.0,
+        "fcf": 35.0,
+        "rec": 22.0,
+        "cash": 140.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 655.9,
+        "pat": 73.1,
+        "cfo": 85.0,
+        "fcf": 65.0,
+        "rec": 38.0,
+        "cash": 380.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 840.0,
+        "pat": 105.0,
+        "cfo": 115.0,
+        "fcf": 85.0,
+        "rec": 52.0,
+        "cash": 520.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 980.0,
+        "pat": 118.7,
+        "cfo": 130.0,
+        "fcf": 95.0,
+        "rec": 64.0,
+        "cash": 610.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "100.0% (Single Sovereign Partner IRCTC for rail GTV)",
+    "single_client": "100.0% (IRCTC rail ticketing concession)",
+    "order_book": "Gross Transaction Value (GTV) run-rate \u20b912,000+ Cr, primarily train and bus bookings",
+    "upcoming_ramps": "Hotel inventory monetization via AbhiBus and ConfirmTkt cross-promotions",
+    "powers": "Network Effects (largest train traveler community) & Brand (M-site organic traffic)",
+    "mgmt_anomalies": [
+      [
+        "Sovereign Supplier Disintermediation Risk",
+        "Management argued that ixigo's value-add (PNR status prediction, platform seat alerts) makes it indispensable to 200M+ Bharat users, preventing direct IRCTC disintermediation."
+      ],
+      [
+        "Airline Take-Rate Compression",
+        "Flight commissions remain under structural airline pressure; management is shifting growth emphasis to high-take-rate bus and hotel bookings."
+      ]
+    ],
+    "reverse_dcf_fcf": 95.0,
+    "kill_switches": [
+      "IRCTC reduces B2C partner convenience fee share or imposes punitive booking charges.",
+      "Quarterly GTV growth falls below 15%.",
+      "Google or MakeMyTrip aggressively undercuts rail ticketing zero-convenience fee promotions."
+    ]
+  },
+  "IONEXCHANG": {
+    "ticker": "IONEXCHANG",
+    "name": "ION Exchange",
+    "sector": "Industrial Water Treatment, Demineralization Resins & Effluent Plants",
+    "cmp": 377.5,
+    "mcap": 5536.7,
+    "pe": 50.31,
+    "eps": 7.5,
+    "dma200": 410.0,
+    "dma50": 390.0,
+    "rs": 48,
+    "altman_z": 3.82,
+    "cfo_pat": 0.86,
+    "sales_growth_3yr": 13.3,
+    "profit_growth_3yr": -11.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 1985.0,
+        "pat": 161.0,
+        "cfo": 120.0,
+        "fcf": 55.0,
+        "rec": 580.0,
+        "cash": 220.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 2315.0,
+        "pat": 178.0,
+        "cfo": 145.0,
+        "fcf": 65.0,
+        "rec": 720.0,
+        "cash": 280.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 2680.0,
+        "pat": 185.0,
+        "cfo": 110.0,
+        "fcf": -20.0,
+        "rec": 890.0,
+        "cash": 240.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 2890.0,
+        "pat": 110.1,
+        "cfo": 95.0,
+        "fcf": -40.0,
+        "rec": 960.0,
+        "cash": 210.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "35.0%",
+    "single_client": "11.0% (Sri Lanka National Water Supply Project / PSU Refinery)",
+    "order_book": "Engineering order backlog \u20b93,200+ Cr (including large international desalination and effluent projects)",
+    "upcoming_ramps": "Roha resin manufacturing facility expansion to cater to US and European industrial water export markets",
+    "powers": "Process Power (proprietary ion-exchange resin chemistry) & Brand (INDION brand leadership in India)",
+    "mgmt_anomalies": [
+      [
+        "Lumpy International Project Revenue",
+        "Management stated that political and currency delays in Sri Lanka municipal water projects temporarily impacted billings; execution normalized."
+      ],
+      [
+        "Stagnant 5-Year Profit Growth (+1.0%)",
+        "Profit growth was depressed by heavy upfront capex in chemical resin plants; management guides operating margin expansion as Roha plant ramps up."
+      ]
+    ],
+    "reverse_dcf_fcf": -40.0,
+    "kill_switches": [
+      "Operating cash flow remains negative for two consecutive fiscal years.",
+      "Chemical division resin export sales fail to ramp.",
+      "Municipal EPC payment disputes result in large bad debt provisions."
+    ]
+  },
+  "MAPMYINDIA": {
+    "ticker": "MAPMYINDIA",
+    "name": "C.E. Info Systems",
+    "sector": "Digital Maps, Geospatial APIs, Automotive Navigation & IoT Telematics",
+    "cmp": 904.7,
+    "mcap": 4959.0,
+    "pe": 35.98,
+    "eps": 25.14,
+    "dma200": 810.0,
+    "dma50": 880.0,
+    "rs": 85,
+    "altman_z": 8.42,
+    "cfo_pat": 1.41,
+    "sales_growth_3yr": 25.8,
+    "profit_growth_3yr": 8.6,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 281.5,
+        "pat": 107.5,
+        "cfo": 110.0,
+        "fcf": 85.0,
+        "rec": 75.0,
+        "cash": 380.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 379.4,
+        "pat": 134.3,
+        "cfo": 145.0,
+        "fcf": 115.0,
+        "rec": 95.0,
+        "cash": 450.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 485.0,
+        "pat": 165.0,
+        "cfo": 180.0,
+        "fcf": 140.0,
+        "rec": 125.0,
+        "cash": 520.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 560.0,
+        "pat": 137.8,
+        "cfo": 195.0,
+        "fcf": 155.0,
+        "rec": 140.0,
+        "cash": 580.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "34.0%",
+    "single_client": "10.5% (Maruti Suzuki / Leading Automotive OEM)",
+    "order_book": "Annualized Contract Value (ACV) run-rate \u20b9350+ Cr with 85%+ multi-year software renewal rate",
+    "upcoming_ramps": "3D digital twin mapping for smart cities; autonomous driving HD map validation for tier-1 OEMs",
+    "powers": "Cornered Resource (deepest proprietary 3D/HD map database of India built over 25+ years) & Network Effects",
+    "mgmt_anomalies": [
+      [
+        "Ola Maps / OpenStreetMap Competitive Noise",
+        "Management clarified that free open-source maps lack automotive-grade lane level precision, enterprise ADAS certifications, and safety compliance."
+      ],
+      [
+        "Pristine Cash Conversion",
+        "Company generates 40%+ EBITDA margins and carries \u20b9500+ Cr in pure net cash with zero debt and zero promoter pledging."
+      ]
+    ],
+    "reverse_dcf_fcf": 155.0,
+    "kill_switches": [
+      "Loss of key automotive OEM navigation contracts (Maruti, Hyundai, BMW).",
+      "Government relaxes geospatial data regulations, allowing unrestricted Google/foreign mapping monetization.",
+      "Operating EBITDA margin drops below 35%."
+    ]
+  },
+  "AHLUCONT": {
+    "ticker": "AHLUCONT",
+    "name": "Ahluwalia Contracts",
+    "sector": "Institutional Civil Engineering, Hospital & Airport Infrastructure",
+    "cmp": 555.0,
+    "mcap": 3717.8,
+    "pe": 16.52,
+    "eps": 33.6,
+    "dma200": 580.0,
+    "dma50": 550.0,
+    "rs": 65,
+    "altman_z": 4.18,
+    "cfo_pat": 1.29,
+    "sales_growth_3yr": 17.9,
+    "profit_growth_3yr": 5.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 2838.4,
+        "pat": 194.3,
+        "cfo": 210.0,
+        "fcf": 120.0,
+        "rec": 680.0,
+        "cash": 240.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 3856.0,
+        "pat": 377.0,
+        "cfo": 340.0,
+        "fcf": 210.0,
+        "rec": 890.0,
+        "cash": 320.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 4450.0,
+        "pat": 310.0,
+        "cfo": 280.0,
+        "fcf": 150.0,
+        "rec": 1050.0,
+        "cash": 390.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 4650.0,
+        "pat": 225.1,
+        "cfo": 290.0,
+        "fcf": 170.0,
+        "rec": 1120.0,
+        "cash": 450.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "45.0%",
+    "single_client": "16.0% (CPWD AIIMS Hospital Redevelopment)",
+    "order_book": "Record executable order backlog \u20b911,000+ Cr (~3.0x forward revenue coverage)",
+    "upcoming_ramps": "Execution of major terminal expansion contracts and high-spec institutional hospitals",
+    "powers": "Process Power (flawless on-time delivery record in complex institutional projects) & Scale Economies",
+    "mgmt_anomalies": [
+      [
+        "Client Segment Diversification Away from Slow Government Tenders",
+        "Management actively increased private sector institutional exposure (Brookfield, Tata, Prestige) to 55%+ of backlog to protect cash flow velocity."
+      ],
+      [
+        "Pristine Net Cash Balance Sheet",
+        "Unlike debt-laden peers, Ahluwalia maintains virtually zero net debt with strong bank guarantee limits."
+      ]
+    ],
+    "reverse_dcf_fcf": 170.0,
+    "kill_switches": [
+      "Order book backlog drops below 2.0x trailing revenue.",
+      "Net debt exceeds \u20b9200 Cr.",
+      "Significant dispute or blacklisting on a marquee public institutional contract."
+    ]
+  },
+  "SAMHI": {
+    "ticker": "SAMHI",
+    "name": "Samhi Hotels",
+    "sector": "Branded Hospitality Ownership & Asset Management (Marriott, Hyatt, IHG)",
+    "cmp": 147.66,
+    "mcap": 3283.4,
+    "pe": 7.81,
+    "eps": 18.91,
+    "dma200": 165.0,
+    "dma50": 150.0,
+    "rs": 55,
+    "altman_z": 2.85,
+    "cfo_pat": 1.4,
+    "sales_growth_3yr": 28.8,
+    "profit_growth_3yr": 0.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 738.6,
+        "pat": -338.0,
+        "cfo": 180.0,
+        "fcf": -95.0,
+        "rec": 45.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 978.0,
+        "pat": -210.0,
+        "cfo": 310.0,
+        "fcf": 120.0,
+        "rec": 62.0,
+        "cash": 220.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 1350.0,
+        "pat": 180.0,
+        "cfo": 480.0,
+        "fcf": 240.0,
+        "rec": 85.0,
+        "cash": 340.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 1580.0,
+        "pat": 420.4,
+        "cfo": 590.0,
+        "fcf": 320.0,
+        "rec": 98.0,
+        "cash": 410.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "N/A (Diversified Business Travelers)",
+    "single_client": "N/A (Corporate and retail guests across 30+ hotels)",
+    "order_book": "4,800+ operational rooms across key Indian commercial hubs (Bengaluru, Hyderabad, NCR, Pune)",
+    "upcoming_ramps": "Integration and rebranding of 960+ rooms from the acquired ACIC portfolio",
+    "powers": "Scale Economies & Process Power (asset management efficiency per room superior to legacy hotel owners)",
+    "mgmt_anomalies": [
+      [
+        "Post-IPO Debt Deleveraging",
+        "Proceeds from the IPO and strong operating cash flows reduced average cost of debt from 11.5% to 8.9%, driving exponential PAT expansion."
+      ],
+      [
+        "ACIC Portfolio Rebranding",
+        "Renovation of ACIC hotels into upper-upscale Marriott/Hyatt flags will yield 20-30% higher ARR (Average Room Rate)."
+      ]
+    ],
+    "reverse_dcf_fcf": 320.0,
+    "kill_switches": [
+      "Severe macroeconomic shock impacting business travel and hotel occupancy below 60%.",
+      "Debt-to-equity increases above 1.25x.",
+      "Average Room Rates (ARR) contract by >10% YoY."
+    ]
+  },
+  "EIEL": {
+    "ticker": "EIEL",
+    "name": "Enviro Infra Engineers",
+    "sector": "Municipal Wastewater Treatment (STP/CETP) & Urban Water Supply",
+    "cmp": 186.73,
+    "mcap": 3277.7,
+    "pe": 17.84,
+    "eps": 10.47,
+    "dma200": 155.0,
+    "dma50": 178.0,
+    "rs": 89,
+    "altman_z": 4.45,
+    "cfo_pat": 0.84,
+    "sales_growth_3yr": 45.9,
+    "profit_growth_3yr": 49.7,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 338.4,
+        "pat": 54.8,
+        "cfo": 48.0,
+        "fcf": 25.0,
+        "rec": 110.0,
+        "cash": 45.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 520.0,
+        "pat": 88.0,
+        "cfo": 75.0,
+        "fcf": 40.0,
+        "rec": 165.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 810.0,
+        "pat": 140.0,
+        "cfo": 125.0,
+        "fcf": 75.0,
+        "rec": 240.0,
+        "cash": 160.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 1050.0,
+        "pat": 183.7,
+        "cfo": 155.0,
+        "fcf": 95.0,
+        "rec": 310.0,
+        "cash": 220.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "60.0%",
+    "single_client": "18.5% (UP Jal Nigam / Namami Gange Urban Body)",
+    "order_book": "Firm executable order backlog \u20b93,800+ Cr with long-term 15-year recurring O&M revenue contracts",
+    "upcoming_ramps": "Commissioning of zero-liquid discharge STPs across Uttar Pradesh, Rajasthan, and Gujarat",
+    "powers": "Process Power (advanced SBR and MBR biological wastewater treatment IP) & Switching Costs (15-yr O&M lock-in)",
+    "mgmt_anomalies": [
+      [
+        "Working Capital Security in Government EPC",
+        "Management confirmed projects are supported by central escrow mechanisms (Namami Gange / AMRUT), minimizing state municipal payment default risks."
+      ],
+      [
+        "Long-Term High-Margin O&M Annuities",
+        "Every commissioned STP contract includes a mandatory 15-year operation & maintenance stream carrying 25%+ EBITDA margins."
+      ]
+    ],
+    "reverse_dcf_fcf": 95.0,
+    "kill_switches": [
+      "Government halts or defunds urban wastewater and sewage infrastructure programs.",
+      "Debtor days expand beyond 150 days.",
+      "Operating margin drops below 14%."
+    ]
+  },
+  "STALLION": {
+    "ticker": "STALLION",
+    "name": "Stallion India Fluorochemicals",
+    "sector": "Specialty Fluorochemicals, Refrigerant Gases & Aerosol Propellants",
+    "cmp": 210.01,
+    "mcap": 2437.9,
+    "pe": 46.84,
+    "eps": 4.48,
+    "dma200": 195.0,
+    "dma50": 208.0,
+    "rs": 69,
+    "altman_z": 3.92,
+    "cfo_pat": 0.73,
+    "sales_growth_3yr": 27.4,
+    "profit_growth_3yr": 22.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 285.0,
+        "pat": 28.0,
+        "cfo": 22.0,
+        "fcf": 10.0,
+        "rec": 55.0,
+        "cash": 35.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 395.0,
+        "pat": 39.0,
+        "cfo": 30.0,
+        "fcf": 15.0,
+        "rec": 75.0,
+        "cash": 50.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 510.0,
+        "pat": 48.0,
+        "cfo": 35.0,
+        "fcf": 18.0,
+        "rec": 98.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 590.0,
+        "pat": 52.0,
+        "cfo": 38.0,
+        "fcf": 20.0,
+        "rec": 115.0,
+        "cash": 110.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "32.0%",
+    "single_client": "10.5% (Major Consumer HVAC Brand - Voltas / Daikin)",
+    "order_book": "Annual supply contracts with major domestic air-conditioning and refrigeration OEMs",
+    "upcoming_ramps": "Commercialization of specialized electronic-grade cleaning gases for electronics packaging",
+    "powers": "Process Power (gas blending, cylinder testing, and hazardous chemical handling logistics)",
+    "mgmt_anomalies": [
+      [
+        "Chinese Refrigerant Dumping Scrutiny",
+        "Management noted domestic anti-dumping duties on R-32 and R-134a protect domestic gross margins."
+      ],
+      [
+        "Canister Filling Expansion",
+        "Company is scaling retail disposable refrigerant canisters, capturing higher margins in replacement aftermarket."
+      ]
+    ],
+    "reverse_dcf_fcf": 20.0,
+    "kill_switches": [
+      "Revocation of anti-dumping duties on imported refrigerant gases.",
+      "Substantial margin contraction in base fluorochemical lines.",
+      "Environmental violations or plant shutdowns by state pollution control boards."
+    ]
+  },
+  "UTKARSHBNK": {
+    "ticker": "UTKARSHBNK",
+    "name": "Utkarsh Small Finance Bank",
+    "sector": "Microfinance & Small Finance Banking",
+    "cmp": 13.27,
+    "mcap": 2361.4,
+    "pe": 0.0,
+    "eps": -0.8,
+    "dma200": 22.0,
+    "dma50": 16.5,
+    "rs": 25,
+    "altman_z": 0.45,
+    "cfo_pat": 0.0,
+    "sales_growth_3yr": 13.7,
+    "profit_growth_3yr": 0.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 2804.0,
+        "pat": 404.0,
+        "cfo": 380.0,
+        "fcf": 350.0,
+        "rec": 0.0,
+        "cash": 1200.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 3612.0,
+        "pat": 497.0,
+        "cfo": 420.0,
+        "fcf": 390.0,
+        "rec": 0.0,
+        "cash": 1450.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 3950.0,
+        "pat": -210.0,
+        "cfo": -150.0,
+        "fcf": -200.0,
+        "rec": 0.0,
+        "cash": 1100.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 4120.0,
+        "pat": -945.0,
+        "cfo": -480.0,
+        "fcf": -550.0,
+        "rec": 0.0,
+        "cash": 950.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "N/A (Retail MFI Borrowers)",
+    "single_client": "N/A (Micro-borrowers in Eastern UP/Bihar)",
+    "order_book": "Gross Loan Portfolio ~\u20b918,000 Cr, but unsecured MFI stress elevated",
+    "upcoming_ramps": "Efforts to transition from JLG microfinance to secured MSME and housing loans",
+    "powers": "None (Commoditized microfinance lending with high default risk)",
+    "mgmt_anomalies": [
+      [
+        "Severe MFI Slippages & Heatwave / Election Disruption",
+        "Management reported sharp spike in Gross NPAs in unsecured rural microfinance lending across UP, Bihar, and Jharkhand."
+      ],
+      [
+        "Capital Erosion",
+        "High credit provisioning eroded tier-1 capital, necessitating fresh dilutive equity capital raising."
+      ]
+    ],
+    "reverse_dcf_fcf": -550.0,
+    "kill_switches": [
+      "Gross NPA rises above 6.0%.",
+      "Return on Assets remains negative.",
+      "Capital Adequacy Ratio drops near regulatory minimum."
+    ]
+  },
+  "ASSOCHALC": {
+    "ticker": "ASSOCHALC",
+    "name": "Associated Alcohols",
+    "sector": "Distilleries, Grain Extra Neutral Alcohol (ENA) & Proprietary IMFL",
+    "cmp": 593.95,
+    "mcap": 1192.6,
+    "pe": 14.41,
+    "eps": 41.22,
+    "dma200": 510.0,
+    "dma50": 575.0,
+    "rs": 70,
+    "altman_z": 4.95,
+    "cfo_pat": 1.03,
+    "sales_growth_3yr": 17.6,
+    "profit_growth_3yr": 25.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 612.0,
+        "pat": 41.5,
+        "cfo": 48.0,
+        "fcf": 20.0,
+        "rec": 75.0,
+        "cash": 35.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 702.0,
+        "pat": 52.0,
+        "cfo": 58.0,
+        "fcf": 25.0,
+        "rec": 88.0,
+        "cash": 45.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 880.0,
+        "pat": 72.0,
+        "cfo": 70.0,
+        "fcf": 30.0,
+        "rec": 110.0,
+        "cash": 60.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 995.0,
+        "pat": 82.8,
+        "cfo": 85.0,
+        "fcf": 38.0,
+        "rec": 125.0,
+        "cash": 75.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "40.0%",
+    "single_client": "34.0% (Diageo / United Spirits Contract Manufacturing)",
+    "order_book": "Contract manufacturing agreement with Diageo; expanding proprietary IMFL retail distribution",
+    "upcoming_ramps": "Commercial ramp of newly commissioned 110 KLPD grain-based ethanol and extra neutral alcohol plant",
+    "powers": "Scale Economies (largest single-site distillery in Central India) & Process Power (low grain-to-alcohol conversion cost)",
+    "mgmt_anomalies": [
+      [
+        "Grain Raw Material Cost Inflation",
+        "Management mitigated raw material volatility by flexibly switching between broken rice and maize depending on seasonal price spreads."
+      ],
+      [
+        "Transition to Proprietary IMFL Brands",
+        "Operating margins are expanding as proprietary premium brands (Central Province, Titanium) contribute higher share than contract bottling."
+      ]
+    ],
+    "reverse_dcf_fcf": 38.0,
+    "kill_switches": [
+      "Severe state excise policy change or liquor ban in core Madhya Pradesh market.",
+      "Termination of Diageo contract manufacturing relationship.",
+      "Operating margin drops below 8.0%."
+    ]
+  },
+  "ECORECO": {
+    "ticker": "ECORECO",
+    "name": "Eco Recycling",
+    "sector": "Electronic Waste (E-Waste) Recycling, Asset Disposal & Precious Metal Recovery",
+    "cmp": 413.15,
+    "mcap": 797.2,
+    "pe": 33.19,
+    "eps": 12.45,
+    "dma200": 340.0,
+    "dma50": 395.0,
+    "rs": 92,
+    "altman_z": 7.52,
+    "cfo_pat": 0.92,
+    "sales_growth_3yr": 72.3,
+    "profit_growth_3yr": 52.3,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 22.5,
+        "pat": 6.8,
+        "cfo": 7.2,
+        "fcf": 4.5,
+        "rec": 5.5,
+        "cash": 12.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 44.0,
+        "pat": 15.2,
+        "cfo": 14.5,
+        "fcf": 9.0,
+        "rec": 9.5,
+        "cash": 22.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 82.0,
+        "pat": 28.0,
+        "cfo": 26.0,
+        "fcf": 16.0,
+        "rec": 18.0,
+        "cash": 38.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 115.0,
+        "pat": 24.0,
+        "cfo": 22.0,
+        "fcf": 14.0,
+        "rec": 24.0,
+        "cash": 48.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "40.0%",
+    "single_client": "12.5% (Major Global IT Services Campus Client)",
+    "order_book": "Annual EPR compliance contracts with global consumer electronics and IT hardware corporations",
+    "upcoming_ramps": "Commercial ramp of precious metal (gold, silver, palladium) hydrometallurgical recovery line",
+    "powers": "Process Power (proprietary e-waste dismantling & shredding IP) & Cornered Resource (certified EPR issuance authority)",
+    "mgmt_anomalies": [
+      [
+        "Informal Recycling Market Competition",
+        "Management noted that strict government enforcement of Extended Producer Responsibility (EPR) mandates is forcibly shifting volume from informal scrap dealers to certified recyclers."
+      ],
+      [
+        "Precious Metal Extraction Realization",
+        "Automated chemical extraction yields 98%+ purity precious metals, dramatically expanding gross margins over simple dismantling."
+      ]
+    ],
+    "reverse_dcf_fcf": 14.0,
+    "kill_switches": [
+      "Central government dilutes or suspends EPR recycling certificate regulations.",
+      "Operating ROCE drops below 20%.",
+      "Severe environmental compliance notice or license cancellation."
+    ]
+  },
+  "VPRPL": {
+    "ticker": "VPRPL",
+    "name": "Vishnu Prakash R Punglia",
+    "sector": "Water Supply EPC, Railway Infrastructure & Civil Contracting",
+    "cmp": 27.69,
+    "mcap": 345.1,
+    "pe": 0.0,
+    "eps": -1.2,
+    "dma200": 65.0,
+    "dma50": 38.0,
+    "rs": 18,
+    "altman_z": 0.85,
+    "cfo_pat": 0.0,
+    "sales_growth_3yr": -8.7,
+    "profit_growth_3yr": 0.0,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 1168.0,
+        "pat": 90.5,
+        "cfo": 45.0,
+        "fcf": -35.0,
+        "rec": 380.0,
+        "cash": 80.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 1480.0,
+        "pat": 122.0,
+        "cfo": -80.0,
+        "fcf": -160.0,
+        "rec": 520.0,
+        "cash": 60.0,
+        "pledge": 35.0
+      },
+      {
+        "year": "FY25",
+        "rev": 1200.0,
+        "pat": -85.0,
+        "cfo": -190.0,
+        "fcf": -240.0,
+        "rec": 610.0,
+        "cash": 25.0,
+        "pledge": 65.0
+      },
+      {
+        "year": "TTM",
+        "rev": 890.0,
+        "pat": -145.0,
+        "cfo": -210.0,
+        "fcf": -260.0,
+        "rec": 680.0,
+        "cash": 15.0,
+        "pledge": 75.29
+      }
+    ],
+    "top5_concentration": "75.0%",
+    "single_client": "30.0% (State Water Supply & Sewerage Board)",
+    "order_book": "Stalled or delayed contract execution due to working capital collapse",
+    "upcoming_ramps": "None; company fighting liquidity distress",
+    "powers": "None (Commoditized civil contracting with impaired working capital)",
+    "mgmt_anomalies": [
+      [
+        "Promoter Pledging Liquidation Crisis (75.29%)",
+        "Sharp stock price declines triggered NBFC margin calls, forcing lender sales and exacerbating price collapse."
+      ],
+      [
+        "Severe Working Capital Trap",
+        "Receivables trapped in state government projects led to liquidity crisis and severe project execution delays."
+      ]
+    ],
+    "reverse_dcf_fcf": -260.0,
+    "kill_switches": [
+      "Lenders trigger open-market liquidation of remaining pledged promoter shares.",
+      "Insolvency or bankruptcy proceedings initiated by operational creditors.",
+      "Auditor resigns citing material uncertainty regarding going concern."
+    ]
+  },
+  "ASALCBR": {
+    "ticker": "ASALCBR",
+    "name": "Associated Alcohols",
+    "sector": "Distilleries, Grain Extra Neutral Alcohol (ENA) & Proprietary IMFL",
+    "cmp": 593.95,
+    "mcap": 1192.6,
+    "pe": 14.41,
+    "eps": 41.22,
+    "dma200": 510.0,
+    "dma50": 575.0,
+    "rs": 70,
+    "altman_z": 4.95,
+    "cfo_pat": 1.03,
+    "sales_growth_3yr": 17.6,
+    "profit_growth_3yr": 25.9,
+    "fy_trend": [
+      {
+        "year": "FY23",
+        "rev": 612.0,
+        "pat": 41.5,
+        "cfo": 48.0,
+        "fcf": 20.0,
+        "rec": 75.0,
+        "cash": 35.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY24",
+        "rev": 702.0,
+        "pat": 52.0,
+        "cfo": 58.0,
+        "fcf": 25.0,
+        "rec": 88.0,
+        "cash": 45.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "FY25",
+        "rev": 880.0,
+        "pat": 72.0,
+        "cfo": 70.0,
+        "fcf": 30.0,
+        "rec": 110.0,
+        "cash": 60.0,
+        "pledge": 0.0
+      },
+      {
+        "year": "TTM",
+        "rev": 995.0,
+        "pat": 82.8,
+        "cfo": 85.0,
+        "fcf": 38.0,
+        "rec": 125.0,
+        "cash": 75.0,
+        "pledge": 0.0
+      }
+    ],
+    "top5_concentration": "40.0%",
+    "single_client": "34.0% (Diageo / United Spirits Contract Manufacturing)",
+    "order_book": "Contract manufacturing agreement with Diageo; expanding proprietary IMFL retail distribution",
+    "upcoming_ramps": "Commercial ramp of newly commissioned 110 KLPD grain-based ethanol and extra neutral alcohol plant",
+    "powers": "Scale Economies (largest single-site distillery in Central India) & Process Power (low grain-to-alcohol conversion cost)",
+    "mgmt_anomalies": [
+      [
+        "Grain Raw Material Cost Inflation",
+        "Management mitigated raw material volatility by flexibly switching between broken rice and maize depending on seasonal price spreads."
+      ],
+      [
+        "Transition to Proprietary IMFL Brands",
+        "Operating margins are expanding as proprietary premium brands (Central Province, Titanium) contribute higher share than contract bottling."
+      ]
+    ],
+    "reverse_dcf_fcf": 38.0,
+    "kill_switches": [
+      "Severe state excise policy change or liquor ban in core Madhya Pradesh market.",
+      "Termination of Diageo contract manufacturing relationship.",
+      "Operating margin drops below 8.0%."
+    ]
+  },
+  "DIXON": {
+    "ticker": "DIXON",
+    "name": "Dixon Technologies (India)",
+    "sector": "EMS, Consumer Durables & Mobile PLI",
+    "cmp": 11191.0,
+    "mcap": 68456.0,
+    "pe": 36.2,
+    "eps": 308.83,
+    "dma200": 12985.47,
+    "dma50": 12200.0,
+    "rs": 68,
+    "altman_z": 6.2,
+    "cfo_pat": 0.71,
+    "sales_growth_3yr": 59.0,
+    "profit_growth_3yr": 41.0,
+    "roce": 29.2,
+    "roe": 18.9
+  },
+  "_as_of": "2026-10-29",
+  "_note": "Offline fallback snapshot. CMP may be stale \u2014 live quote cross-check required. Loaded recs carry snapshot_as_of."
+}
