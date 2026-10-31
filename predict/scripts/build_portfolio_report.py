@@ -1302,26 +1302,27 @@ def build_stock_section(s, period):
     disqualified = "DISQUALIFIED" in s["verdict"]
 
     if disqualified or pe <= 0:
-        base_target = round(cmp * 0.5, 2)
-        base_return = -50.0
-        bull_target = round(cmp * 0.8, 2)
-        bull_return = -20.0
-        expected_target = round(cmp * 0.55, 2)
-        expected_return = -45.0
-        expected_cagr = -25.8
-        base_pe = 0.0
+        # No valuation: targets = CMP and 0% returns (never a fabricated -45% forecast)
+        bear_target = cmp
+        bear_return = 0.0
+        bull_target = cmp
+        bull_return = 0.0
+        expected_target = cmp
+        expected_return = 0.0
+        expected_cagr = 0.0
+        bear_pe = 0.0
         bull_pe = 0.0
-        fwd_pe_base = 0.0
+        fwd_pe_expected = 0.0
         fwd_pe_bull = 0.0
-        fwd_eps_base = 0.0
+        fwd_eps_bear = 0.0
         fwd_eps_bull = 0.0
-        base_exit_g = 0.0
         bull_exit_g = 0.0
-        base_prob = s["base_prob"]
+        bear_prob = 100 - s["bull_prob"]
         bull_prob = s["bull_prob"]
-        base_cagr = 0.0
+        bear_cagr = 0.0
         bull_cagr = 0.0
-        base_reason = s.get("base_reason", "Execution friction or severe credit stress")
+        expected_growth = 0.0
+        bear_reason = "Severe structural, regulatory or balance-sheet distress"
         bull_reason = s.get("bull_reason", "Turnaround or debt restructuring")
         verdict = s["verdict"]
         stage2_status = f"STAGE 4 CAUTION (Severe Downtrend | CMP ₹{cmp:.2f} < 200-DMA ₹{s['dma200']:.2f})"
@@ -1346,26 +1347,26 @@ def build_stock_section(s, period):
         if res.get("mcap"):
             mcap = res["mcap"]
         cmp = res["cmp"]
-        base_target = res["target_base"]
-        base_return = res["return_base_pct"]
+        bear_target = res["target_bear"]
+        bear_return = res["return_bear_pct"]
         bull_target = res["target_bull"]
         bull_return = res["return_bull_pct"]
         expected_target = res["expected_target"]
         expected_return = res["total_expected_return_pct"]
         expected_cagr = res["expected_cagr"]
-        base_pe = res["base_exit_pe"]
+        bear_pe = res["bear_exit_pe"]
         bull_pe = res["bull_exit_pe"]
-        fwd_pe_base = res["fwd_pe_base"]
+        fwd_pe_expected = res["fwd_pe_expected"]
         fwd_pe_bull = res["fwd_pe_bull"]
-        fwd_eps_base = res["eps_base_yr2"]
+        fwd_eps_bear = res["eps_bear_yr2"]
         fwd_eps_bull = res["eps_bull_yr2"]
-        base_cagr = res["base_cagr"] * 100.0
+        bear_cagr = res["bear_cagr"] * 100.0
         bull_cagr = res["bull_cagr"] * 100.0
-        base_exit_g = round(base_pe / 1.6, 1) if base_pe > 0 else 0.0
+        expected_growth = res["expected_growth"] * 100.0
         bull_exit_g = round(bull_pe / 1.85, 1) if bull_pe > 0 else 0.0
-        base_prob = res["base_prob"]
+        bear_prob = res["bear_prob"]
         bull_prob = res["bull_prob"]
-        base_reason = res["base_reason"]
+        bear_reason = res["bear_reason"]
         bull_reason = res["bull_reason"]
         stage2_status = res["stage2_status"]
         ears_status = res["ears_status"]
@@ -1390,7 +1391,7 @@ def build_stock_section(s, period):
  Expected Target Price (Wtd Avg):     {format_currency(expected_target)}
  Total Expected Return:               {format_pct(expected_return)} from CMP
  Annualized Expected Return (CAGR):   {format_pct(expected_cagr)} p.a.
- Dynamic Probability Allocation:      {base_prob}% Base / {bull_prob}% Bull
+ Dynamic Probability Allocation:      {bull_prob}% Bull / {bear_prob}% Bear
  Technical Trend Gate (Stage 2):      {stage2_status}
  Quarterly EARS Rating:               {ears_status}
  Cash Harvesting Target (50% Trim):   {format_currency(harvest_target)} ({format_pct(harvest_upside)})
@@ -1399,8 +1400,8 @@ def build_stock_section(s, period):
 ================================================================================
 
 --- UNDERLYING SCENARIO TARGET BREAKDOWN & EXPLANATION ---
-• Base Case Target ({base_prob}% Prob):   {format_currency(base_target)} ({format_pct(base_return)}) | Exit P/E: {base_pe:.1f}x on {base_exit_g:.1f}% growth
-  Rationale: {base_reason}
+• Bear Case Target ({bear_prob}% Prob):   {format_currency(bear_target)} ({format_pct(bear_return)}) | Exit P/E: {bear_pe:.1f}x
+  Rationale: {bear_reason}
 • Bull Case Target ({bull_prob}% Prob):   {format_currency(bull_target)} ({format_pct(bull_return)}) | Exit P/E: {bull_pe:.1f}x on {bull_exit_g:.1f}% growth
   Rationale: {bull_reason}
 ================================================================================
@@ -1411,8 +1412,8 @@ def build_stock_section(s, period):
     g2 = "🟢 PASS (Domestic / Balanced)" if s['ticker'] != 'CLEANMAX' else "🔴 FAIL (High Regulatory & Tariff Risk)"
     g3 = "🟢 STRONG MOAT" if "STRONG" in verdict or "QUALIFIED" in verdict else ("🔴 DISINTERMEDIATION / TRAP" if s['ticker'] == 'IXIGO' else "🟡 MODERATE MOAT")
     g4 = "🟢 PRISTINE" if s['altman_z'] > 2.6 and s['cfo_pat'] >= 0.7 else ("🟡 MONITOR" if s['altman_z'] >= 1.1 else "🔴 STRAINED / DISTRESS")
-    g5 = "🟢 PASS (CAGR >= 20% & Bull >= 50%)" if (bull_cagr >= 20 and bull_return >= 50.0) else "🔴 FAIL"
-    g6 = "🟢 PASS (<= 80x)" if (fwd_pe_base <= 80.0 and fwd_pe_base > 0) else ("🔴 FAIL (> 80x)" if fwd_pe_base > 80 else "N/A")
+    g5 = "🟢 PASS (CAGR >= 20% & Bull >= 50%)" if (expected_growth >= 20 and bull_return >= 50.0) else "🔴 FAIL"
+    g6 = "🟢 PASS (<= 80x)" if (fwd_pe_expected <= 80.0 and fwd_pe_expected > 0) else ("🔴 FAIL (> 80x)" if fwd_pe_expected > 80 else "N/A")
     g7 = "🟢 STAGE 2 CONFIRMED" if "STAGE 2" in stage2_status else "🔴 STAGE 4 CAUTION"
     g8 = "🟢 POSITIVE ACCEL" if "POSITIVE" in ears_status or "STEADY" in ears_status else "🔴 MODERATING / TORPEDO"
     g9 = "🟢 ACTIVATED"
@@ -1424,8 +1425,8 @@ def build_stock_section(s, period):
 | **2. Geopolitical / Regulatory Risk** | Export < 35-40%; Zero phase-out risk | Top client / domestic exposure audited | {g2} |
 | **3. Moat Test** | Anti-Disintermediation; Pricing Power intact | {s['powers']} | {g3} |
 | **4. Balance Sheet & Margins** | Net Cash or D/E < 0.3x; CFO/PAT >= 0.8x | Altman Z'' {s['altman_z']:.2f}; CFO/PAT {s['cfo_pat']:.2f}x | {g4} |
-| **5. Growth & Valuation (King Filter)**| Projected CAGR $\\ge 20\\%$ & Bull Upside $\\ge 50\\%$ | Base: {base_cagr:.1f}%, Bull: {bull_cagr:.1f}%; Bull Upside: {format_pct(bull_return)} | {g5} |
-| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x at exit speed | Base Fwd P/E: {fwd_pe_base:.1f}x; Bull Fwd P/E: {fwd_pe_bull:.1f}x | {g6} |
+| **5. Growth & Valuation (King Filter)**| Projected CAGR $\\ge 20\\%$ & Bull Upside $\\ge 50\\%$ | Prob-wtd: {expected_growth:.1f}%, Bull: {bull_cagr:.1f}%; Bull Upside: {format_pct(bull_return)} | {g5} |
+| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x at exit speed | Fwd P/E (expected EPS): {fwd_pe_expected:.1f}x; Bull Fwd P/E: {fwd_pe_bull:.1f}x | {g6} |
 | **7. Technical Trend Gate (Stage 2)** | CMP > 200-DMA & 50-DMA > 200-DMA; RS >= 70 | CMP {format_currency(cmp)} vs 200-DMA ₹{s['dma200']:,.1f}; RS {s['rs']} | {g7} |
 | **8. EARS & Torpedo Gate** | YoY PAT Acceleration & CFO/EBITDA >= 0.7x | Quarterly trajectory audited vs consensus | {g8} |
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: {format_currency(harvest_target)}; Stop: {format_currency(stop_loss)} | {g9} |
@@ -1448,13 +1449,13 @@ def build_stock_section(s, period):
     if not disqualified and pe > 0:
         val_matrix = f"""| Scenario | Horizon Net CAGR | End-Period Growth | Dynamically Derived Exit P/E | Projected FY29 EPS | Expected Target Price | Total Return (%) | Annualized CAGR (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Base Case** ({base_prob}%) | {base_cagr:.1f}% | {base_exit_g:.1f}% | **{base_pe:.1f}x** | {format_currency(fwd_eps_base)} | **{format_currency(base_target)}** | **{format_pct(base_return)}** | **{format_pct(res['cagr_base'])}** |
+| **Bear Case** ({bear_prob}%) | {bear_cagr:.1f}% | - | **{bear_pe:.1f}x** | {format_currency(fwd_eps_bear)} | **{format_currency(bear_target)}** | **{format_pct(bear_return)}** | **{format_pct(res['cagr_bear'])}** |
 | **Bull Case** ({bull_prob}%) | {bull_cagr:.1f}% | {bull_exit_g:.1f}% | **{bull_pe:.1f}x** | {format_currency(fwd_eps_bull)} | **{format_currency(bull_target)}** | **{format_pct(bull_return)}** | **{format_pct(res['cagr_bull'])}** |"""
     else:
         val_matrix = f"""| Scenario | Horizon Net CAGR | End-Period Growth | Dynamically Derived Exit P/E | Projected FY29 EPS | Expected Target Price | Total Return (%) | Annualized CAGR (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Base Case** (65%) | 0.0% | 0.0% | **0.0x** | N/A | **{format_currency(base_target)}** | **-50.0%** | **-25.8%** |
-| **Bull Case** (35%) | 0.0% | 0.0% | **0.0x** | N/A | **{format_currency(bull_target)}** | **-20.0%** | **-10.0%** |"""
+| **Bear Case** | 0.0% | - | **0.0x** | N/A | **{format_currency(bear_target)}** | **0.0%** | **0.0%** |
+| **Bull Case** | 0.0% | 0.0% | **0.0x** | N/A | **{format_currency(bull_target)}** | **0.0%** | **0.0%** |"""
 
     # Reverse DCF string
     if implied_fcf_cagr is not None:
@@ -1546,7 +1547,7 @@ def build_stock_section(s, period):
         "cmp": cmp,
         "mcap": mcap,
         "pe": pe,
-        "base_return": base_return,
+        "bear_return": bear_return,
         "bull_return": bull_return,
         "expected_return": expected_return,
         "expected_cagr": expected_cagr,
@@ -1583,13 +1584,13 @@ def main():
 
     # Build Master Summary Table
     table_lines = [
-        "| # | Company Name | NSE Ticker | CMP (₹) | Market Cap (₹ Cr) | Trailing P/E | Base 2-Yr Upside (%) | Bull 2-Yr Upside (%) | Expected 2-Yr Upside (%) | Expected CAGR (% p.a.) | Final Conviction Verdict |",
+        "| # | Company Name | NSE Ticker | CMP (₹) | Market Cap (₹ Cr) | Trailing P/E | Bear 2-Yr Return (%) | Bull 2-Yr Upside (%) | Expected 2-Yr Upside (%) | Expected CAGR (% p.a.) | Final Conviction Verdict |",
         "| :- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |"
     ]
     for r in summary_rows:
         pe_str = f"{r['pe']:.1f}x" if r['pe'] > 0 else "N/A"
         icon = "🟢" if "STRONG" in r["verdict"] else ("🔵" if "QUALIFIED" in r["verdict"] else ("🟠" if "VALUATION TRAP" in r["verdict"] else "🔴"))
-        table_lines.append(f"| {r['num']} | {r['name']} | `{r['ticker']}` | ₹{r['cmp']:,.2f} | ₹{r['mcap']:,.1f} | {pe_str} | {format_pct(r['base_return'])} | {format_pct(r['bull_return'])} | **{format_pct(r['expected_return'])}** | **{format_pct(r['expected_cagr'])}** | {icon} **{r['verdict']}** |")
+        table_lines.append(f"| {r['num']} | {r['name']} | `{r['ticker']}` | ₹{r['cmp']:,.2f} | ₹{r['mcap']:,.1f} | {pe_str} | {format_pct(r['bear_return'])} | {format_pct(r['bull_return'])} | **{format_pct(r['expected_return'])}** | **{format_pct(r['expected_cagr'])}** | {icon} **{r['verdict']}** |")
     master_table_str = "\n".join(table_lines)
 
     strong_buys = [r["ticker"] for r in summary_rows if "STRONG" in r["verdict"] and "REJECT" not in r["verdict"]]

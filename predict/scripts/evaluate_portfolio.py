@@ -46,9 +46,7 @@ def evaluate_portfolio(stocks: list, as_of_date=None, export_md=None):
         bull_growth = float(s["bull_growth"]) if ("bull_growth" in s and s["bull_growth"] is not None) else (growth * 1.25 if growth else None)
         base_exit = float(s["base_exit_growth"]) if ("base_exit_growth" in s and s["base_exit_growth"] is not None) else (growth * 0.9 if growth else None)
         bull_exit = float(s["bull_exit_growth"]) if ("bull_exit_growth" in s and s["bull_exit_growth"] is not None) else (bull_growth * 0.9 if bull_growth else None)
-        base_prob = float(s["base_prob"]) if ("base_prob" in s and s["base_prob"] is not None) else None
-        bull_prob = float(s["bull_prob"]) if ("bull_prob" in s and s["bull_prob"] is not None) else None
-        base_reason = s.get("base_reason")
+        bear_prob = float(s["bear_prob"]) if ("bear_prob" in s and s["bear_prob"] is not None) else None
         bull_reason = s.get("bull_reason")
         disqualified = s.get("disqualified", False)
 
@@ -60,17 +58,18 @@ def evaluate_portfolio(stocks: list, as_of_date=None, export_md=None):
                 "mcap": mcap or 0.0,
                 "current_pe": pe,
                 "verdict": "REJECT / DISQUALIFIED",
-                "target_base": round(cmp * 0.5, 2) if cmp > 0 else 0.0,
-                "return_base_pct": -50.0,
-                "target_bull": round(cmp * 0.8, 2) if cmp > 0 else 0.0,
-                "return_bull_pct": -20.0,
-                "expected_target": round(cmp * 0.55, 2) if cmp > 0 else 0.0,
-                "total_expected_return_pct": -45.0,
-                "expected_cagr": -25.8,
-                "base_prob": int((base_prob or 0.65) * 100),
-                "bull_prob": int((bull_prob or 0.35) * 100),
+                # No valuation: targets = CMP and 0% returns (never a fabricated -45% forecast)
+                "target_bear": cmp,
+                "return_bear_pct": 0.0,
+                "target_bull": cmp,
+                "return_bull_pct": 0.0,
+                "expected_target": cmp,
+                "total_expected_return_pct": 0.0,
+                "expected_cagr": 0.0,
+                "bear_prob": int((bear_prob or 0.50) * 100),
+                "bull_prob": 100 - int((bear_prob or 0.50) * 100),
                 "disqualified": True,
-                "base_reason": base_reason or "Severe structural, regulatory or corporate governance distress",
+                "bear_reason": "Severe structural, regulatory or corporate governance distress",
                 "bull_reason": bull_reason or "Emergency restructuring or debt workout"
             })
             continue
@@ -84,9 +83,7 @@ def evaluate_portfolio(stocks: list, as_of_date=None, export_md=None):
             bull_cagr=bull_growth,
             base_exit_growth=base_exit,
             bull_exit_growth=bull_exit,
-            base_prob=base_prob,
-            bull_prob=bull_prob,
-            base_reason=base_reason,
+            bear_prob=bear_prob,
             bull_reason=bull_reason,
             as_of_date=as_of_date
         )
@@ -113,12 +110,12 @@ def evaluate_portfolio(stocks: list, as_of_date=None, export_md=None):
     print("PORTFOLIO VALUATION SUMMARY TABLE")
     print("="*120)
     fmt = "{:<3} | {:<20} | {:>9} | {:>8} | {:>11} | {:>11} | {:>11} | {:>10} | {:<25}"
-    print(fmt.format("No", "Company", "CMP (₹)", "TTM P/E", "Base Upside", "Bull Upside", "Exp Return", "Exp CAGR", "Verdict"))
+    print(fmt.format("No", "Company", "CMP (₹)", "TTM P/E", "Bear Return", "Bull Upside", "Exp Return", "Exp CAGR", "Verdict"))
     print("-" * 120)
     for idx, r in enumerate(results, 1):
         pe_str = f"{r['current_pe']:.1f}x" if r['current_pe'] > 0 else "N/A"
         v_short = r["verdict"].split("(")[0].strip()
-        print(fmt.format(idx, r["name"][:20], f"₹{r['cmp']:.2f}", pe_str, f"{r['return_base_pct']:+.1f}%", f"{r['return_bull_pct']:+.1f}%", f"{r['total_expected_return_pct']:+.1f}%", f"{r['expected_cagr']:+.1f}%", v_short[:25]))
+        print(fmt.format(idx, r["name"][:20], f"₹{r['cmp']:.2f}", pe_str, f"{r['return_bear_pct']:+.1f}%", f"{r['return_bull_pct']:+.1f}%", f"{r['total_expected_return_pct']:+.1f}%", f"{r['expected_cagr']:+.1f}%", v_short[:25]))
     print("="*120)
 
     print(f"\nTotal Portfolio Stocks: {len(results)} | Total Market Cap: ₹{total_mcap:,.1f} Cr")

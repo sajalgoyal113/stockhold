@@ -25,7 +25,7 @@ from forward_growth_pe import (
     calibrate_stock_parameters,
     evaluate_forward_growth
 )
-from forensic_audit import run_forensic_audit
+from forensic_audit import run_forensic_audit, forensic_inputs_from_data
 from reverse_dcf import run_reverse_dcf
 from safety_guard import FinancialSafetyGuard
 from decision import build_decision_brief, format_brief_text
@@ -42,12 +42,13 @@ def run_cli_analysis(ticker: str, base_growth: Optional[float] = None,
     print(f"[*] Compounding Engine: Predict Dynamic P/E & Forensic Cash Flow Architecture")
 
     data = fetch_company_data(t_clean)
+    data["registry_ticker"] = t_clean
     calibrated = calibrate_stock_parameters(data)
 
     bg = base_growth if base_growth is not None else calibrated["base_cagr"] / 100.0
     ug = bull_growth if bull_growth is not None else calibrated["bull_cagr"] / 100.0
 
-    print(f"[*] Underwriting Rates: Base CAGR {bg*100:.1f}% | Bull CAGR {ug*100:.1f}% | Horizon: {horizon} Years")
+    print(f"[*] Underwriting Rates: Growth Anchor {bg*100:.1f}% | Bull CAGR {ug*100:.1f}% | Horizon: {horizon} Years")
     print(f"[*] Running live fundamental fetch, valuation matrix & forensic cashflow audit...\n")
 
     params = {
@@ -63,20 +64,15 @@ def run_cli_analysis(ticker: str, base_growth: Optional[float] = None,
         "bull_exit_growth": calibrated["bull_exit_g"] / 100.0,
         "base_peg": calibrated.get("base_peg", 1.60),
         "bull_peg": calibrated.get("bull_peg", 1.85),
-        "base_prob": calibrated["base_prob"] / 100.0,
-        "bull_prob": calibrated["bull_prob"] / 100.0,
+        "bear_prob": (calibrated.get("bear_prob") or 20) / 100.0,
+        "bear_cagr": (calibrated.get("bear_cagr") or 0.0) / 100.0,
+        "current_margin": calibrated.get("current_margin"),
+        "target_margin_yr2": calibrated.get("target_margin_yr2"),
         "ticker": t_clean
     }
     val = calculate_forward_pe_valuation(**params)
 
-    forensics = run_forensic_audit(
-        rev_history=data["rev_history"], pat_history=data["pat_history"],
-        cfo_history=data["cfo_history"], trend_years=data["trend_years"],
-        debtor_days=data["latest_debtor_days"], total_debt=data["latest_debt"],
-        net_worth=data["mcap_cr"] / (data["cmp"] / data["book_value"])
-        if (data["cmp"] > 0 and data["book_value"] > 0) else data["mcap_cr"] * 0.4,
-        total_assets=data["mcap_cr"] * 0.5, ebit=data["ttm_pat"] * 1.3
-    )
+    forensics = run_forensic_audit(**forensic_inputs_from_data(data))
 
     latest_fcf = data["fcf_history"][-1] if data.get("fcf_history") else 0.0
     latest_cfo = data["cfo_history"][-1] if data.get("cfo_history") else 0.0
@@ -97,10 +93,10 @@ def run_cli_analysis(ticker: str, base_growth: Optional[float] = None,
     print(f"• Company Name:            {data.get('name', t_clean)} ({t_clean})")
     print(f"• Current Market Price:    ₹{val.get('cmp'):,.2f} (Market Cap: ₹{val.get('mcap_cr', 0):,.1f} Cr)")
     print(f"• Audited TTM EPS:         ₹{val.get('ttm_eps'):.2f} (Trailing P/E: {val.get('trailing_pe', val.get('current_pe', 0)):.1f}x)")
-    print(f"• Base Case Target:        ₹{val.get('target_base'):,.2f} ({val.get('return_base_pct'):+.1f}%, Exit P/E: {val.get('base_exit_pe')}x)")
+    print(f"• Bear Case Target:        ₹{val.get('target_bear'):,.2f} ({val.get('return_bear_pct'):+.1f}%, Exit P/E: {val.get('bear_exit_pe')}x)")
     print(f"• Bull Case Target:        ₹{val.get('target_bull'):,.2f} ({val.get('return_bull_pct'):+.1f}%, Exit P/E: {val.get('bull_exit_pe')}x)")
     print(f"• Probability-Wtd Target:  ₹{val.get('expected_target'):,.2f} ({val.get('total_expected_return_pct'):+.1f}%, Expected CAGR: {val.get('expected_cagr'):+.1f}%)")
-    print(f"• Dynamic Probability:     {int(val.get('base_prob', 0.55)*100)}% Base / {int(val.get('bull_prob', 0.45)*100)}% Bull")
+    print(f"• Dynamic Probability:     {val.get('bull_prob')}% Bull / {val.get('bear_prob')}% Bear (growth anchor {val.get('anchor_cagr', 0)*100:.1f}%)")
     print(f"• 4-Yr CFO/PAT Conversion: {forensics.get('cum_cfo_pat_ratio')}x (Status: {forensics.get('cfo_status')}, Debtor: {forensics.get('debtor_days')}d)")
     print(f"• Altman Z'' Solvency:     {forensics.get('altman_z')} ({forensics.get('z_status')})")
     print(f"• Reverse DCF Implied:     {dcf.get('implied_cagr')}% 10-Yr FCF CAGR priced in ({dcf.get('assessment')})")
@@ -159,7 +155,7 @@ def _cohort_helper(recs: list) -> Dict[str, Any]:
 def main():
     parser = argparse.ArgumentParser(description="StockHold Institutional Equity Analyst CLI")
     parser.add_argument("ticker", nargs="?", default="PERSISTENT", help="NSE/BSE stock ticker (e.g. PERSISTENT, DIXON, HAL, TDPOWERSYS)")
-    parser.add_argument("--base-growth", type=float, default=None, help="Base case expected CAGR (e.g. 0.20)")
+    parser.add_argument("--base-growth", type=float, default=None, help="Growth anchor (central estimate) CAGR (e.g. 0.20)")
     parser.add_argument("--bull-growth", type=float, default=None, help="Bull case expected CAGR (e.g. 0.28)")
     parser.add_argument("--horizon", type=int, default=2, help="Target horizon in years (default: 2)")
     parser.add_argument("--decision", action="store_true", help="Print a one-screen deterministic buy-or-not brief")

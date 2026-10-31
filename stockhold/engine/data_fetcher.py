@@ -356,25 +356,86 @@ def fetch_company_data(ticker: str):
         pe = round(cmp / ttm_eps, 1)
 
     # 6. Extract 4-Year Trend Metrics for Forensics
-    trend_years = pl_headers[-5:-1] if pl_headers and len(pl_headers) >= 5 else (pl_headers or ["FY23", "FY24", "FY25", "FY26"])
-    # Clean year names
-    trend_years = [y.replace("Mar ", "FY") for y in trend_years if any(c.isdigit() for c in y)][-4:]
+    # The P&L table has a TTM column (Screener may append "Compounded Growth" header columns
+    # after it); cash-flow has annual columns only. Use the last 4 FULL fiscal years before TTM
+    # from both so CFO/PAT compares the same periods.
+    ttm_idx = next((i for i, h in enumerate(pl_headers or []) if str(h).strip().upper() == "TTM"), None)
+    pl_slice = slice(ttm_idx - 4, ttm_idx) if ttm_idx is not None and ttm_idx >= 4 else slice(-4, None)
+    trend_years = [str(y).split("\n")[0].strip().replace("Mar ", "FY") for y in (pl_headers or [])[pl_slice]]
+    trend_years = [y for y in trend_years if any(c.isdigit() for c in y)]
     if len(trend_years) < 4:
         trend_years = ["FY23", "FY24", "FY25", "FY26"]
-
-    rev_history = [clean_num(v) for v in pl_data.get("Sales", [])[-4:]]
-    pat_history = [clean_num(v) for v in pl_data.get("Net Profit", [])[-4:]]
+    rev_history = [clean_num(v) for v in pl_data.get("Sales", [])[pl_slice]]
+    pat_history = [clean_num(v) for v in pl_data.get("Net Profit", [])[pl_slice]]
     cfo_history = [clean_num(v) for v in cf_data.get("Cash from Operating Activity", [])[-4:]]
     fcf_history = [clean_num(v) for v in cf_data.get("Free Cash Flow", [])[-4:]]
     
-    # Borrowings and Cash from Balance sheet
+    # Borrowings from Balance sheet (GROSS debt: Screener does not split out cash)
     borrowings_arr = [clean_num(v) for v in bs_data.get("Borrowings", [])]
     latest_debt = borrowings_arr[-1] if borrowings_arr else 0.0
+
+    # Real balance-sheet / P&L inputs for the Altman Z'' score (None when unavailable)
+    def _last(rows, key):
+        vals = rows.get(key) or []
+        return clean_num(vals[-1]) if vals else None
+    bs_total_assets = _last(bs_data, "Total Assets")
+    bs_equity_capital = _last(bs_data, "Equity Capital")
+    bs_reserves = _last(bs_data, "Reserves")
+    bs_other_assets = _last(bs_data, "Other Assets")
+    bs_other_liabilities = _last(bs_data, "Other Liabilities")
+    last_fy = (lambda key: (clean_num(pl_data[key][pl_slice][-1]) if pl_data.get(key) and pl_data[key][pl_slice] else None))
+    pbt_fy = last_fy("Profit before tax")
+    interest_fy = last_fy("Interest")
+    ebit_fy = (pbt_fy + (interest_fy or 0.0)) if pbt_fy is not None else None
     
     # Debtor days
     debtor_days_arr = [clean_num(v) for v in rat_data.get("Debtor Days", [])]
     latest_debtor_days = debtor_days_arr[-1] if debtor_days_arr else 60.0
     
+    # 6b. Concall documents (transcript / PPT links, newest first) for guidance extraction
+    concalls = []
+    try:
+        con_div = soup.find("div", class_="concalls")
+        for li in (con_div.find_all("li") if con_div else []):
+            date_div = li.find("div")
+            item = {"date": date_div.text.strip() if date_div else ""}
+            for a in li.find_all("a"):
+                label = a.text.strip().lower()
+                if label.startswith("transcript"):
+                    item["transcript"] = a.get("href")
+                elif label == "ppt":
+                    item["ppt"] = a.get("href")
+            concalls.append(item)
+    except Exception:
+        concalls = []
+
+    # 6c. Peer net margins (Screener peers table: NP Qtr / Sales Qtr), the company itself excluded.
+    # Used as a steady-state margin reference for companies with no profitable history.
+    peer_npms, peer_names = [], []
+    m_wid = re.search(r"data-warehouse-id=\"(\d+)\"", html)
+    if m_wid:
+        try:
+            pr = _HTTP_SESSION.get(f"https://www.screener.in/api/company/{m_wid.group(1)}/peers/", timeout=4)
+            if pr.status_code == 200:
+                psoup = BeautifulSoup(pr.text, "html.parser")
+                prow = psoup.find_all("tr")
+                heads = [re.sub(r"\s+", " ", th.text).strip().lower() for th in (prow[0].find_all("th") if prow else [])]
+                i_np = next((i for i, h in enumerate(heads) if h.startswith("np qtr")), None)
+                i_sq = next((i for i, h in enumerate(heads) if h.startswith("sales qtr")), None)
+                i_mc = next((i for i, h in enumerate(heads) if h.startswith("mar cap")), None)
+                for tr in prow[1:]:
+                    tds = [td.text.strip() for td in tr.find_all("td")]
+                    if i_np is None or i_sq is None or len(tds) <= max(i_np, i_sq):
+                        continue
+                    if i_mc is not None and mcap_cr > 0 and abs(clean_num(tds[i_mc]) - mcap_cr) / mcap_cr < 0.02:
+                        continue  # the company itself
+                    npq, sq = clean_num(tds[i_np]), clean_num(tds[i_sq])
+                    if sq > 0 and tds[i_np]:
+                        peer_npms.append(round(npq / sq, 4))
+                        peer_names.append(tds[1] if len(tds) > 1 else "")
+        except Exception:
+            pass
+
     # 7. Price Chart History (from Screener Chart API)
     chart_df = pd.DataFrame()
     if company_id:
@@ -437,6 +498,15 @@ def fetch_company_data(ticker: str):
         "fcf_history": fcf_history,
         "latest_debt": latest_debt,
         "latest_debtor_days": latest_debtor_days,
+        "total_assets": bs_total_assets,
+        "equity_capital": bs_equity_capital,
+        "reserves": bs_reserves,
+        "other_assets": bs_other_assets,
+        "other_liabilities": bs_other_liabilities,
+        "ebit": ebit_fy,
+        "concalls": concalls,
+        "peer_npms": peer_npms,
+        "peer_names": peer_names,
         "chart_df": chart_df,
         "sales_growth_3yr": growth_ranges.get("sales_growth_3yr"),
         "sales_growth_5yr": growth_ranges.get("sales_growth_5yr"),

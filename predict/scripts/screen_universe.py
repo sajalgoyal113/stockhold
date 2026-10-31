@@ -45,7 +45,7 @@ def screen_candidates(tickers: list):
             cmp = res.get("cmp", 0.0) or 0.0
             mcap = res.get("mcap", 0.0) or 0.0
             pe = res.get("trailing_pe", 0.0) or 0.0
-            fwd_pe = res.get("fwd_pe_base", 0.0) or 0.0
+            fwd_pe = res.get("fwd_pe_expected", 0.0) or 0.0
             bull_up = res.get("return_bull_pct", 0.0) or 0.0
             exp_cagr = res.get("expected_cagr", 0.0) or 0.0
             verdict = res.get("verdict", "")

@@ -20,7 +20,7 @@ import inspect
 import streamlit.components.v1 as components
 from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
 from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
-from engine.forensics import run_forensic_audit
+from engine.forensics import run_forensic_audit, forensic_inputs_from_data
 from engine.reverse_dcf import run_reverse_dcf
 from engine.ai_analyst import generate_ai_analysis
 from engine.stock_universe import get_indexed_stock_options, extract_ticker_from_string
@@ -497,6 +497,8 @@ if not query_ticker:
 # STATE 2: STOCK PAGE (When ?ticker=XYZ is provided in URL)
 # =========================================================================
 ticker = query_ticker
+if not ticker:
+    st.stop()
 
 # Strict single-scrollbar viewport lock & mobile-responsive CSS
 st.html("""
@@ -626,7 +628,11 @@ with st.spinner(f"Analyzing institutional filings and concall disclosures for {t
             st.rerun()
         st.stop()
 
+if "data" not in locals() or not data:
+    st.stop()
+
 # Dynamically calibrate model parameters to the company's specific growth momentum & cash conversion
+data["registry_ticker"] = str(ticker).upper().replace(" ", "").replace("-", "")
 calibrated = calibrate_stock_parameters(data)
 
 # --- SIDEBAR PARAMETERS ---
@@ -686,42 +692,41 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     base_cagr = st.slider(
-        "Base Case CAGR (%):",
-        min_value=5.0,
+        "Growth Anchor CAGR (%) (central estimate; sets bear growth & weight):",
+        min_value=-10.0,
         max_value=60.0,
-        value=float(max(5.0, min(60.0, float(calibrated["base_cagr"])))),
+        value=float(max(-10.0, min(60.0, float(calibrated["base_cagr"])))),
         step=0.5,
         key=f"base_cagr_{ticker}"
     ) / 100.0
 
     bull_cagr = st.slider(
         "Bull Case CAGR (%):",
-        min_value=10.0,
+        min_value=-10.0,
         max_value=80.0,
-        value=float(max(10.0, min(80.0, float(calibrated["bull_cagr"])))),
+        value=float(max(-10.0, min(80.0, float(calibrated["bull_cagr"])))),
         step=0.5,
         key=f"bull_cagr_{ticker}"
     ) / 100.0
 
     col_eg1, col_eg2 = st.columns(2)
-    base_exit_g = col_eg1.number_input("Base Exit Growth (%):", value=float(calibrated["base_exit_g"]), step=1.0, key=f"base_eg_{ticker}") / 100.0
+    base_exit_g = col_eg1.number_input("Anchor Exit Growth (%) (sets bear exit P/E):", value=float(calibrated["base_exit_g"]), step=1.0, key=f"base_eg_{ticker}") / 100.0
     bull_exit_g = col_eg2.number_input("Bull Exit Growth (%):", value=float(calibrated["bull_exit_g"]), step=1.0, key=f"bull_eg_{ticker}") / 100.0
 
     col_p1, col_p2 = st.columns(2)
-    base_peg = col_p1.number_input("Base PEG:", value=float(calibrated.get("base_peg", 1.60)), step=0.05, key=f"base_peg_{ticker}")
+    base_peg = col_p1.number_input("Anchor PEG (sets bear exit P/E):", value=float(calibrated.get("base_peg", 1.60)), step=0.05, key=f"base_peg_{ticker}")
     bull_peg = col_p2.number_input("Bull PEG:", value=float(calibrated.get("bull_peg", 1.85)), step=0.05, key=f"bull_peg_{ticker}")
 
-    prob_split = st.slider(
-        "Base Case Probability Weight (%):",
-        min_value=20,
+    bear_split = st.slider(
+        "Bear Case Probability Weight (%):",
+        min_value=0,
         max_value=80,
-        value=int(max(20, min(80, int(calibrated["base_prob"])))),
+        value=int(max(0, min(80, int(calibrated.get("bear_prob", 30))))),
         step=5,
-        help="Calibrated dynamically to founder credibility, cash flow hygiene (CFO/PAT), and guidance track record.",
-        key=f"prob_{ticker}"
+        help="Probability that growth stalls and the multiple de-rates; Bull gets the rest. Default: the weight that makes probability-weighted growth equal the growth anchor, raised for fragility and weak momentum.",
+        key=f"bear_prob_{ticker}"
     )
-    base_prob = prob_split / 100.0
-    bull_prob = (100 - prob_split) / 100.0
+    bear_prob = bear_split / 100.0
 
     st.markdown("---")
     force_recompile = st.checkbox(
@@ -764,8 +769,9 @@ val_params = {
     "bull_exit_growth": bull_exit_g,
     "base_peg": base_peg,
     "bull_peg": bull_peg,
-    "base_prob": base_prob,
-    "bull_prob": bull_prob,
+    "bear_prob": bear_prob,
+    "bull_prob": 1.0 - bear_prob,
+    "bear_cagr": calibrated.get("bear_cagr", 0.0) / 100.0,
     "base_reason": calibrated.get("base_reason"),
     "bull_reason": calibrated.get("bull_reason"),
     "dilution_pct_annual": calibrated.get("dilution", 0.0),
@@ -791,17 +797,7 @@ if "base_reason" not in val_res:
 if "bull_reason" not in val_res:
     val_res["bull_reason"] = calibrated.get("bull_reason", "Flawless execution, market share consolidation, and strong operational leverage")
 
-forensic_res = run_forensic_audit(
-    rev_history=data["rev_history"],
-    pat_history=data["pat_history"],
-    cfo_history=data["cfo_history"],
-    trend_years=data["trend_years"],
-    debtor_days=data["latest_debtor_days"],
-    total_debt=data["latest_debt"],
-    net_worth=data["mcap_cr"] / (data["cmp"] / data["book_value"]) if (data["cmp"] > 0 and data["book_value"] > 0) else data["mcap_cr"] * 0.4,
-    total_assets=data["mcap_cr"] * 0.5,
-    ebit=data["ttm_pat"] * 1.3
-)
+forensic_res = run_forensic_audit(**forensic_inputs_from_data(data))
 
 # Normalize FCF for platform/expansion compounders
 latest_fcf = data["fcf_history"][-1] if data.get("fcf_history") else 0.0
@@ -844,7 +840,7 @@ else:
     @st.cache_data(ttl=86400, show_spinner=False)
     def _get_cached_ai_synthesis(
         t_sym: str, cmp_val: float, mcap_val: float, eps_val: float, pe_val: float,
-        base_t: float, bull_t: float, cfo_pat: float, d_days: int, alt_z: float,
+        bear_t: float, bull_t: float, cfo_pat: float, d_days: int, alt_z: float,
         imp_cagr: float, api_k: str
     ) -> dict:
         return generate_ai_analysis(data, val_res, forensic_res, rev_dcf_res, api_key=api_k)
@@ -857,7 +853,7 @@ else:
             round(mcap, 0),
             round(ttm_eps, 2),
             round(pe, 1),
-            round(val_res.get("target_base", 0.0), 1),
+            round(val_res.get("target_bear", 0.0), 1),
             round(val_res.get("target_bull", 0.0), 1),
             round(forensic_res.get("cum_cfo_pat_ratio", 0.0), 2),
             int(forensic_res.get("debtor_days") or 0),
@@ -938,7 +934,7 @@ with st.sidebar:
 
 
 # --- PROGRAMMATIC SEO METADATA & SCHEMA.ORG STRUCTURED DATA ---
-seo_desc = f"{data['name']} ({ticker}) 2-Year Target Price is ₹{val_res['expected_target']:,.2f} ({'+' if val_res['total_expected_return_pct']>=0 else ''}{val_res['total_expected_return_pct']:.1f}% Upside from CMP ₹{cmp:,.2f}). Base Case: ₹{val_res['target_base']:,.2f} | Bull Case: ₹{val_res['target_bull']:,.2f}. Institutional 2-year forward P/E valuation, reverse DCF, and 7 Powers moat audit."
+seo_desc = f"{data['name']} ({ticker}) 2-Year Target Price is ₹{val_res['expected_target']:,.2f} ({'+' if val_res['total_expected_return_pct']>=0 else ''}{val_res['total_expected_return_pct']:.1f}% Upside from CMP ₹{cmp:,.2f}). Bear Case: ₹{val_res['target_bear']:,.2f} | Bull Case: ₹{val_res['target_bull']:,.2f}. Institutional 2-year forward P/E valuation, reverse DCF, and 7 Powers moat audit."
 st.html(f"""
 <head>
     <title>{data['name']} ({ticker}) Share Price Target 2026-2027 & 2-Yr Valuation | StockHold</title>
@@ -980,10 +976,10 @@ st.html(f"""
         }},
         {{
           "@type": "Question",
-          "name": "What is the Bull Case vs Base Case target price for {ticker}?",
+          "name": "What is the Bull Case vs Bear Case target price for {ticker}?",
           "acceptedAnswer": {{
             "@type": "Answer",
-            "text": "In the Bull Case, the target price is ₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}% upside at an exit P/E of {val_res['bull_exit_pe']}x). In the Base Case, the target price is ₹{val_res['target_base']:,.2f} ({'+' if val_res['return_base_pct']>=0 else ''}{val_res['return_base_pct']:.1f}% at an exit P/E of {val_res['base_exit_pe']}x)."
+            "text": "In the Bull Case, the target price is ₹{val_res['target_bull']:,.2f} (+{val_res['return_bull_pct']:.1f}% upside at an exit P/E of {val_res['bull_exit_pe']}x). In the Bear Case, the target price is ₹{val_res['target_bear']:,.2f} ({'+' if val_res['return_bear_pct']>=0 else ''}{val_res['return_bear_pct']:.1f}% at an exit P/E of {val_res['bear_exit_pe']}x)."
           }}
         }},
         {{

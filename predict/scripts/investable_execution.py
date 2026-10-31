@@ -306,7 +306,7 @@ def execute_investable(closes: list, p0: float, p1: float, bull_target: float,
                     f"70% held to Rs.{p1:.1f} (net of {ENTRY_COST_PCT:.1f}%+{EXIT_COST_PCT:.1f}% costs)"
                 )
 
-        if stop_close is not None and bh_return < -10.0:
+        if stop_close is not None:  # stop fires whenever hit; final return is unknown at that time
             realized = ((stop_close * exit_mult - cost_base) / cost_base) * 100
             return round(realized, 1), (
                 f"Close-only trailing stop at Rs.{stop_close:.1f} "
@@ -341,7 +341,7 @@ def execute_investable(closes: list, p0: float, p1: float, bull_target: float,
             f"Investable harvest: sold 50% at close Rs.{harvest_close:.1f} "
             f"(net of {ENTRY_COST_PCT:.1f}%+{EXIT_COST_PCT:.1f}% costs), held 50% to Rs.{p1:.1f}"
         )
-    if stop_close is not None and bh_return < -10.0:
+    if stop_close is not None:  # stop fires whenever hit; final return is unknown at that time
         realized = ((stop_close * exit_mult - cost_base) / cost_base) * 100
         return round(realized, 1), (
             f"Close-only trailing stop at Rs.{stop_close:.1f} "

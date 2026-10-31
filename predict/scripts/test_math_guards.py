@@ -2,7 +2,7 @@
 """scripts/test_math_guards.py
 
 Focused regression tests for the Oct-2026 logic-discrepancy fixes:
-1. Horizon-aware CAGR annualization (H1: 2 yrs, H2: 3 yrs) — was hardcoded **0.5.
+1. Fixed 2-year horizon (no H1/H2 calendar cliff) + review regressions.
 2. Reverse-DCF Gordon guard (wacc <= g_term) — was ZeroDivisionError / negative TV.
 3. Reverse-DCF negative-FCF honesty — was floored to +1 Cr, inventing an implied CAGR.
 4. Forensic Altman honesty — was fabricated 5.5 SAFE when inputs were missing.
@@ -86,22 +86,76 @@ def run_valuation(as_of_date):
     )
 
 
-# 1. Horizon-aware annualization ---------------------------------------------
-# May-2026 -> H1 regime (comp_years_yr2 == 2); Nov-2026 -> H2 (== 3).
+# 1. Fixed 2-year horizon (replaces the H1/H2 2y-vs-3y roll-forward) -----------
+# May and Nov must both annualize over exactly 2.0 years, and Sep 30 vs Oct 1
+# must give (near) identical answers: no calendar cliff.
 res_h1 = run_valuation("2026-05-15")
 res_h2 = run_valuation("2026-11-15")
-check("h1 horizon is 2y", res_h1.get("comp_years_yr2") == 2, str(res_h1.get("comp_years_yr2")))
-check("h2 horizon is 3y", res_h2.get("comp_years_yr2") == 3, str(res_h2.get("comp_years_yr2")))
-
-for label, res in (("h1", res_h1), ("h2", res_h2)):
-    yrs = res["comp_years_yr2"]
-    for ret_key, cagr_key in (("return_base_pct", "cagr_base"),
+for label, res in (("may", res_h1), ("nov", res_h2)):
+    check(f"{label} horizon is fixed 2.0y", res.get("horizon_years") == 2.0, str(res.get("horizon_years")))
+    for ret_key, cagr_key in (("return_bear_pct", "cagr_bear"),
                               ("return_bull_pct", "cagr_bull"),
                               ("total_expected_return_pct", "expected_cagr")):
-        expect = ((1.0 + res[ret_key] / 100.0) ** (1.0 / yrs) - 1.0) * 100.0
-        check(f"{label} {cagr_key} uses {yrs}y horizon",
+        expect = ((1.0 + res[ret_key] / 100.0) ** (1.0 / 2.0) - 1.0) * 100.0
+        check(f"{label} {cagr_key} annualized over 2y",
               abs(res[cagr_key] - expect) < 0.2,
               f"got {res[cagr_key]}, want {expect:.2f}")
+_sep = run_valuation("2026-09-30")
+_oct = run_valuation("2026-10-01")
+check("no Sep30 -> Oct1 calendar cliff",
+      abs(_sep["expected_target"] - _oct["expected_target"]) / _sep["expected_target"] < 0.01
+      and _sep["verdict"].split(" (")[0] == _oct["verdict"].split(" (")[0],
+      f"{_sep['expected_target']} vs {_oct['expected_target']}")
+
+# 1b. Review regressions: shrinking / missing data / cheap / thin-margin / parity ----
+def _synthetic(tk, **kw):
+    base = dict(ticker=tk, cmp=100.0, mcap_cr=5000.0, ttm_eps=5.0, pe=20.0, roce=20.0, roe=16.0,
+                ttm_sales=2000.0, ttm_pat=250.0, shares_cr=50.0, latest_debt=200.0,
+                latest_debtor_days=60, cfo_history=[200, 220, 240, 260],
+                pat_history=[200, 220, 240, 250], is_live=True)
+    base.update(kw)
+    fgp_mod._DATA_CACHE[tk] = base
+    return evaluate_forward_growth(tk, as_of_date="2026-10-31")
+
+check("watchdog clean", fgp_mod.verify_methodology_integrity() == [],
+      str(fgp_mod.verify_methodology_integrity()))
+_r = _synthetic("SYNSHRINK", sales_growth_3yr=-10.0, profit_growth_3yr=-20.0)
+check("shrinking business is not a BUY", "BUY" not in _r["verdict"], _r["verdict"])
+_r = _synthetic("SYNNODATA")
+check("missing growth data -> no valuation", _r.get("no_valuation") is True and "INSUFFICIENT" in _r["verdict"], _r["verdict"])
+_r = _synthetic("SYNCHEAP", pe=8.0, ttm_eps=12.5, sales_growth_3yr=5.0, profit_growth_3yr=4.0, roce=13.0)
+check("cheap slow grower gets no free re-rating", _r["bull_exit_pe"] <= 8.0 * 1.60 and "BUY" not in _r["verdict"],
+      f"{_r['bull_exit_pe']} {_r['verdict']}")
+_r = _synthetic("SYNDIST", ttm_sales=20000.0, ttm_pat=200.0, ttm_eps=4.0, pe=25.0,
+                sales_growth_3yr=15.0, profit_growth_3yr=10.0, roce=14.0)
+check("thin-margin slow grower is not a platform", "Regime 1" in _r["regime_desc"], _r["regime_desc"])
+_r = _synthetic("SYNBANK", name="Example Small Finance Bank Ltd", sales_growth_3yr=25.0, profit_growth_3yr=25.0)
+check("lenders are not valued with P/E-growth", _r.get("no_valuation") is True and "NOT APPLICABLE" in _r["verdict"], _r["verdict"])
+_r = _synthetic("SYNNOTREND", sales_growth_3yr=30.0, profit_growth_3yr=35.0, roce=30.0, pe=25.0, ttm_eps=4.0)
+check("no price data -> trend UNKNOWN, never confirmed", _r["stage2_status"].startswith("TREND UNKNOWN"), _r["stage2_status"])
+check("two scenarios: bear below expected below bull, probabilities sum to 100",
+      _r["target_bear"] < _r["expected_target"] < _r["target_bull"] and _r["bear_prob"] > 0
+      and _r["bear_prob"] + _r["bull_prob"] == 100 and "target_base" not in _r,
+      f"{_r['target_bear']} {_r['expected_target']} {_r['target_bull']} {_r['bear_prob']}/{_r['bull_prob']}")
+_cal_t = calibrate_first_principles(dict(fgp_mod._DATA_CACHE["SYNNOTREND"]))
+_imp = 100 * fgp_mod.implied_bear_prob(_cal_t["base_cagr"], _cal_t["bull_cagr"], _cal_t["bear_cagr"])
+check("bear weight starts at the anchor-implied level (expected growth = anchor before risk add-ons)",
+      _cal_t["bear_prob"] >= min(60, max(20, round(_imp))) and "base_prob" not in _cal_t,
+      f"bear {_cal_t['bear_prob']} vs implied {_imp:.1f}")
+_cal = calibrate_first_principles(dict(fgp_mod._DATA_CACHE["SYNNOTREND"]))
+_w = fgp_mod.calculate_forward_pe_valuation(
+    cmp=100.0, mcap_cr=5000.0, ttm_eps=4.0, ttm_sales=2000.0, ttm_pat=250.0,
+    base_cagr=_cal["base_cagr"] / 100, bull_cagr=_cal["bull_cagr"] / 100,
+    base_exit_growth=_cal["base_exit_g"] / 100, bull_exit_growth=_cal["bull_exit_g"] / 100,
+    base_peg=_cal["base_peg"], bull_peg=_cal["bull_peg"], bear_prob=_cal["bear_prob"] / 100,
+    ticker="SYNNOTREND", as_of_date=fgp_mod.datetime(2026, 10, 31))
+check("CLI and web/decision paths give identical targets",
+      _w["target_bull"] == _r["target_bull"] and _w["target_bear"] == _r["target_bear"]
+      and _w["expected_target"] == _r["expected_target"],
+      f"web {_w['target_bull']}/{_w['expected_target']} vs cli {_r['target_bull']}/{_r['expected_target']}")
+_sr2, _sn2 = execute_investable([100, 80, 300], 100, 300, 500, True)
+check("stop-loss fires even if the stock later recovers (no hindsight)",
+      "trailing stop" in _sn2 and _sr2 < 0, f"{_sr2} {_sn2}")
 
 # 2. Gordon guard --------------------------------------------------------------
 check("implied growth None when wacc<=g_term",
@@ -131,12 +185,12 @@ check("missing balance sheet -> altman_z None, not fake SAFE",
       res.get("altman_z") is None and "SAFE" not in str(res.get("z_status")))
 
 # 5. Safety guard ------------------------------------------------------------------
-val = {"target_base": 150.0, "target_bull": 200.0, "cmp": 100.0,
+val = {"target_bear": 80.0, "target_bull": 200.0, "cmp": 100.0,
        "ttm_eps": 5.0, "trailing_pe": 20.0, "expected_cagr": 22.5,
        "return_bull_pct": 100.0, "verdict": "STRONG HIGH-GROWTH BUY",
        "stage2_status": "STAGE 2 CONFIRMED"}
-good_text = "Base target ₹150 (50% upside). Bull target ₹200. TTM EPS ₹5."
-bad_text = "Base target ₹9999 (massive upside). Bull target ₹8888."
+good_text = "Bear target ₹80 (-20%). Bull target ₹200. TTM EPS ₹5."
+bad_text = "Bear target ₹9999 (massive upside). Bull target ₹8888."
 check("guard passes consistent synthesis",
       FinancialSafetyGuard.audit_synthesis(val, good_text)["passes_guard"])
 bad = FinancialSafetyGuard.audit_synthesis(val, bad_text)
@@ -200,10 +254,13 @@ import json as _j, os as _o
 _gp = _o.path.join(_REPO_ROOT, "data", "guidance_registry.json")
 try:
     _g = _j.load(open(_gp))
-    check("guidance registry explicit, empty by default",
-          isinstance(_g.get("_entries"), dict) and len(_g.get("_entries")) == 0, str(_g.keys()))
+    _ents = _g.get("_entries") or {}
+    check("guidance registry entries carry provenance (as_of + quotes + sources)",
+          isinstance(_ents, dict) and all(e.get("as_of") and all(t.get("quote") for t in e.get("track_record", []))
+                                          and (e.get("sources") or not e.get("current_guidance"))
+                                          for e in _ents.values()), str(list(_ents)[:3]))
 except Exception as e:
-    check("guidance registry explicit, empty by default", False, str(e))
+    check("guidance registry entries carry provenance (as_of + quotes + sources)", False, str(e))
 
 # 9b. Single-stock decision brief (pure builder, synthetic inputs) -------------------
 try:
@@ -218,10 +275,10 @@ check("verdict mapping",
       decision_from_verdict("STRONG HIGH-GROWTH BUY") == "BUY"
       and decision_from_verdict("APPROVED (QUALIFIED BUY)") == "ACCUMULATE ON DIPS"
       and decision_from_verdict("REJECTED (VALUATION TRAP / PE > 50x)") == "AVOID")
-_syn_val = {"target_base": 150.0, "target_bull": 200.0, "cmp": 100.0,
+_syn_val = {"target_bear": 80.0, "target_bull": 200.0, "cmp": 100.0,
             "ttm_eps": 5.0, "trailing_pe": 20.0, "expected_target": 170.0,
             "total_expected_return_pct": 70.0, "expected_cagr": 30.4,
-            "return_base_pct": 50.0, "return_bull_pct": 100.0,
+            "return_bear_pct": -20.0, "return_bull_pct": 100.0,
             "verdict": "STRONG HIGH-GROWTH BUY",
             "stage2_status": "STAGE 2 CONFIRMED", "trailing_stop_loss": 85.0}
 _syn_for = {"cum_cfo_pat_ratio": 1.1, "debtor_days": 45, "altman_z": None,
@@ -329,5 +386,120 @@ check("staged harvest moonbag executes 3-tranche ladder",
       "3-Tranche Moonbag" in _staged_note and _staged_ret > 50.0,
       f"{_staged_ret} {_staged_note}")
 
-print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
+
+
+# 11. Guidance with track record ------------------------------------------------------
+import guidance_fetcher as gf_mod  # noqa: E402
+from datetime import datetime as _dt  # noqa: E402
+_g_cal = calibrate_first_principles({"ticker": "SYNGUIDE", "sales_growth_3yr": 15.0, "profit_growth_3yr": 15.0,
+                                     "roce": 25.0, "roe": 22.0, "mcap": 5000.0, "cfo_history": [100], "pat_history": [100]},
+                                    guided_cagr=0.30)
+# Base = guidance x prior reliability, pulled halfway toward the reported-numbers anchor (15% x 0.90 decay).
+_g_exp_base = min(30.0 * fgp_mod.PRIOR_GUIDANCE_RELIABILITY, (30.0 * fgp_mod.PRIOR_GUIDANCE_RELIABILITY + 15.0 * 0.90) / 2.0)
+check("guidance sets bull; base = guidance x prior reliability, blended with reported numbers",
+      _g_cal["bull_cagr"] == 30.0 and abs(_g_cal["base_cagr"] - _g_exp_base) < 0.11,
+      f"{_g_cal['base_cagr']} / {_g_cal['bull_cagr']}")
+_stall = calibrate_first_principles({"ticker": "SYNSTALL", "sales_growth_3yr": 24.0, "sales_growth_ttm": 6.0,
+                                     "profit_growth_3yr": 20.0, "roce": 26.0, "roe": 22.0, "mcap": 15000.0,
+                                     "cfo_history": [100], "pat_history": [100]})
+check("stalled sales (3Y 24%, TTM 6%) blend into the anchor and raise bear weight",
+      abs(_stall["base_cagr"] - 15.0 * 0.85) < 0.11 and _stall["decelerating"] and _stall["bear_prob"] >= 30,
+      f"{_stall['base_cagr']} bear {_stall['bear_prob']}")
+check("no revenue guidance is flagged, never assumed",
+      _stall["guidance_status"] == "MISSING" and any(f.startswith("guidance->") for f in _stall["sparse_fields"]))
+check("exit growth follows guided growth (consistent exit P/E)",
+      abs(_g_cal["base_exit_g"] - min(25.0, _g_cal["base_cagr"] * 0.8)) < 0.11, str(_g_cal["base_exit_g"]))
+
+_syn_pl = {"pl_headers": ["Mar 2023", "Mar 2024", "Mar 2025", "Mar 2026", "TTM"],
+           "pl_data": {"Sales": ["1000", "1200", "1500", "1800", "1900"], "OPM %": ["10%", "11%", "12%", "12%", "12%"],
+                       "Net Profit": ["60", "80", "100", "120", "125"], "Depreciation": ["30", "30", "35", "40", "40"],
+                       "Interest": ["10", "10", "10", "10", "10"], "Other Income": ["5", "5", "5", "5", "5"]}}
+_bc = [(_dt(2024, 5, 15), [{"metric": "revenue_growth", "value": 40.0, "period_fy": 2025, "quote": "q1", "method": "llm-reviewed",
+                            "call_date": "2024-05", "source": "u"},
+                           {"metric": "ebitda_margin", "value": 10.0, "period_fy": 2025, "quote": "q2", "method": "llm-reviewed",
+                            "call_date": "2024-05", "source": "u"}]),
+       (_dt(2026, 8, 15), [{"metric": "revenue_growth", "value": 30.0, "period_fy": 2027, "quote": "q3", "method": "llm-reviewed",
+                            "call_date": "2026-08", "source": "u"}])]
+_e = gf_mod.assemble_entry("SYN", _syn_pl, _bc, today=_dt(2026, 10, 31))
+check("track record: missed revenue promise lowers growth reliability only",
+      _e["track_record_n"] == 1 and _e["reliability"] < 0.75 and _e["margin_reliability"] > 0.75
+      and _e["guided_rev_cagr"] == 30.0,
+      f"{_e['reliability']} {_e['margin_reliability']} {_e['guided_rev_cagr']}")
+
+# 12. Regime 3: turnaround / recovery need evidence -----------------------------------
+def _r3(tk, q_pat, q_sales, **kw):
+    base = dict(ticker=tk, cmp=100.0, mcap_cr=5000.0, shares_cr=50.0, roce=14.0, roe=12.0,
+                latest_debt=100.0, latest_debtor_days=60, is_live=True, book_value=40.0,
+                pl_headers=["Mar 2019", "Mar 2020", "Mar 2021", "Mar 2022", "Mar 2023", "Mar 2024", "Mar 2025", "Mar 2026", "TTM"],
+                pl_data={"Sales": ["800", "900", "1000", "1100", "1200", "1300", "1500", "1800", "1900"],
+                         "Net Profit": ["80", "90", "100", "110", "100", "40", "20", "15", "19"]},
+                q_data={"Sales": [str(x) for x in q_sales], "Net Profit": [str(x) for x in q_pat]},
+                q_headers=[f"Q{i}" for i in range(len(q_pat))],
+                cfo_history=[60, 40, 30, 50], pat_history=[100, 40, 20, 15], sales_growth_ttm=12.0)
+    base.update(kw)
+    fgp_mod._DATA_CACHE[tk] = base
+    return evaluate_forward_growth(tk, as_of_date="2026-10-31")
+
+_t = _r3("SYNTURN", q_pat=[2, 3, 4, 4, 3, 4, 5, 7], q_sales=[420, 430, 440, 450, 460, 470, 480, 490],
+         sales_growth_3yr=17.0, profit_growth_3yr=-30.0, ttm_sales=1900.0, ttm_pat=19.0, ttm_eps=0.38, pe=263.0)
+check("depressed margins with improving quarters but falling 3Y PAT -> recovery path",
+      _t.get("margin_path") in ("recovery", "turnaround") and "Regime 3" in _t.get("regime_desc", ""), str(_t.get("regime_desc")))
+check("regime 3 bear below expected and uses normalized P/E",
+      _t["target_bear"] < _t["expected_target"] and _t.get("normalized_pe") and _t["bear_prob"] >= 30,
+      f"{_t['target_bear']} {_t['expected_target']} {_t.get('normalized_pe')} bear {_t['bear_prob']}")
+_n = _r3("SYNNOEVID", q_pat=[6, 6, 5, 5, 4, 4, 3, 3], q_sales=[420, 430, 440, 450, 460, 470, 480, 490],
+         sales_growth_3yr=17.0, profit_growth_3yr=-30.0, ttm_sales=1900.0, ttm_pat=19.0, ttm_eps=0.38, pe=263.0)
+check("depressed margins WITHOUT evidence -> no Regime 3", not _n.get("margin_path"), str(_n.get("regime_desc")))
+_l = _r3("SYNLOSS", q_pat=[-10, -8, -6, -5, -4, -2, 1, 3], q_sales=[420, 430, 440, 450, 470, 490, 510, 530],
+         sales_growth_3yr=20.0, profit_growth_3yr=10.0, ttm_sales=2000.0, ttm_pat=-2.0, ttm_eps=-0.04, pe=0.0)
+check("loss-making turnaround with evidence is valued (not auto-disqualified)",
+      not _l.get("no_valuation") and _l.get("margin_path") == "turnaround", str(_l.get("verdict"))[:90])
+_l2 = _r3("SYNLOSS2", q_pat=[-2, -3, -4, -5, -6, -7, -8, -9], q_sales=[420, 430, 440, 450, 470, 490, 510, 530],
+          sales_growth_3yr=20.0, profit_growth_3yr=10.0, ttm_sales=2000.0, ttm_pat=-30.0, ttm_eps=-0.6, pe=0.0)
+check("loss-making with worsening quarters stays no-valuation", _l2.get("no_valuation") is True, str(_l2.get("verdict"))[:90])
+
+print(f"\n{len(PASS)} passed, {len(FAIL)} failed (incl. guidance & Regime 3)")
+# 13. Revenue recovery / peers margin source / extreme-P/E guard ----------------------
+_rc = calibrate_first_principles({"ticker": "SYNREVREC", "sales_growth_3yr": 2.0, "sales_growth_ttm": 24.0,
+                                  "profit_growth_3yr": 5.0, "mcap": 5000.0, "roce": 15.0,
+                                  "q_data": {"Sales": ["100", "110", "120", "130", "125", "140", "150", "160"]}})
+check("revenue recovery blends 3Y and TTM growth when last 2Q are up YoY",
+      "REVENUE RECOVERY" in _rc["rationale"] and _rc["base_cagr"] > 2.0 * 0.9, _rc["rationale"][-160:])
+_rc2 = calibrate_first_principles({"ticker": "SYNNOREC", "sales_growth_3yr": 2.0, "sales_growth_ttm": 24.0,
+                                   "profit_growth_3yr": 5.0, "mcap": 5000.0, "roce": 15.0,
+                                   "q_data": {"Sales": ["100", "110", "120", "130", "140", "100", "100", "100"]}})
+check("no revenue-recovery credit without quarterly YoY evidence", "REVENUE RECOVERY" not in _rc2["rationale"])
+# Recent-quarter recovery: a TTM window holding a trough must not hide the last 2 quarters,
+# but a rebound off the trough (base effect) only counts as the 2-year CAGR.
+_cy_q = ["292", "321", "362", "258", "389", "444", "428", "278", "311", "303", "369", "374", "393"]
+_cy = calibrate_first_principles({"ticker": "SYNTROUGH", "sales_growth_3yr": 15.0, "sales_growth_ttm": -2.0,
+                                  "profit_growth_3yr": 32.0, "mcap": 5000.0, "roce": 15.0,
+                                  "q_data": {"Sales": _cy_q}})
+check("trough in TTM: last 2Q momentum used, capped by 2Y CAGR (base-effect guard)",
+      "RECENT-QUARTER RECOVERY" in _cy["rationale"] and abs(_cy["base_cagr"] - (15.0 + 8.9) / 2 * 1.25 * 0.9) < 0.2
+      and not _cy["decelerating"], f"{_cy['base_cagr']} {_cy['rationale'][-200:]}")
+_hi = calibrate_first_principles({"ticker": "SYNHIREC", "sales_growth_3yr": 15.0, "sales_growth_ttm": 18.0,
+                                  "profit_growth_3yr": 15.0, "mcap": 5000.0, "roce": 15.0,
+                                  "q_data": {"Sales": ["100", "100", "100", "100", "120", "120", "120", "120",
+                                                       "150", "150", "160", "170"]}})
+check("recovery fires above 3Y 10% when guarded recent growth beats 3Y by 10+ pts",
+      "REVENUE RECOVERY" in _hi["rationale"] and _hi["base_cagr"] > 15.0 * 0.9, f"{_hi['base_cagr']}")
+_nb = calibrate_first_principles({"ticker": "SYNNOBASE", "sales_growth_3yr": 15.0, "sales_growth_ttm": 0.0,
+                                  "profit_growth_3yr": 15.0, "mcap": 5000.0, "roce": 15.0,
+                                  "q_data": {"Sales": ["100", "100", "100", "100", "80", "80", "130", "130"]}})
+check("no 2Y base: recent growth averaged with TTM (unknown is not good)",
+      "no 2Y base" in _nb["rationale"] and abs(_nb["base_cagr"] - (15.0 + 15.0) / 2 * 0.9) < 0.2, f"{_nb['base_cagr']}")
+_pe = _r3("SYNPEER", q_pat=[-10, -8, -6, -5, -4, -2, 1, 3], q_sales=[420, 430, 440, 450, 470, 490, 510, 530],
+          sales_growth_3yr=20.0, profit_growth_3yr=10.0, ttm_sales=2000.0, ttm_pat=-2.0, ttm_eps=-0.04, pe=0.0,
+          pl_data={"Sales": ["800", "900", "1000", "1100", "1200", "1300", "1500", "1800", "1900"],
+                   "Net Profit": ["-80", "-90", "-100", "-60", "-40", "-30", "-20", "-15", "-2"]},
+          peer_npms=[0.08, 0.10, 0.12, -0.05])
+check("no profitable history -> steady-state margin from profitable peers (haircut)",
+      _pe.get("ss_margin_source") == "peers" and abs((_pe.get("ss_margin") or 0) - 0.10 * 0.8) < 1e-6,
+      f"{_pe.get('ss_margin_source')} {_pe.get('ss_margin')}")
+_x = _synthetic("SYNHIGHPE", ttm_sales=20000.0, ttm_pat=100.0, ttm_eps=2.0, pe=250.0, cmp=500.0,
+                sales_growth_3yr=30.0, profit_growth_3yr=20.0)
+check("extreme P/E on thin margins with no margin evidence -> no valuation", _x.get("no_valuation") is True, _x["verdict"][:80])
+
+print(f"\n{len(PASS)} passed, {len(FAIL)} failed (final)")
 sys.exit(1 if FAIL else 0)

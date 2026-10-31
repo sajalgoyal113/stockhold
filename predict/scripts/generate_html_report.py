@@ -6,8 +6,8 @@ Converts quantitative markdown research reports into interactive, visually stunn
 institutional-grade HTML dashboards featuring:
 - Sleek modern dark/light mode UI (Bloomberg / Linear / Stitch inspired).
 - Executive KPI cards: CMP, Target Price, Expected Upside %, CAGR %, Conviction Verdict.
-- Visual Risk-Return Horizon Spectrum bar (Stop-Loss vs CMP vs Base vs Bull Target).
-- Interactive Scenario Comparison (Base Case vs Bull Case with probabilities and rationales).
+- Visual Risk-Return Horizon Spectrum bar (Stop-Loss vs CMP vs Bear vs Expected vs Bull Target).
+- Interactive Scenario Comparison (Bear Case vs Bull Case with probabilities and rationales).
 - Interactive Gatekeeper Audit Scorecard with filterable status badges (PASS / CAUTION / FAIL).
 - Hamilton Helmer's 7 Powers Moat visualizer cards.
 - Interactive Chart.js visualizations:
@@ -97,16 +97,16 @@ def parse_summary_box(content):
             v = parts[1].strip()
             data[k] = v
             
-    # Base Case Target
-    base_m = re.search(r"•\s*Base Case Target\s*\(([^)]+)\):\s*([^\n|]+)(?:\|\s*Exit P/E:\s*([^\n|]+))?", text)
-    if base_m:
-        data["base_prob"] = base_m.group(1).strip()
-        data["base_target"] = base_m.group(2).strip()
-        data["base_exit_pe"] = base_m.group(3).strip() if base_m.group(3) else ""
+    # Bear Case Target
+    bear_m = re.search(r"•\s*Bear Case Target\s*\(([^)]+)\):\s*([^\n|]+)(?:\|\s*Exit P/E:\s*([^\n|]+))?", text)
+    if bear_m:
+        data["bear_prob"] = bear_m.group(1).strip()
+        data["bear_target"] = bear_m.group(2).strip()
+        data["bear_exit_pe"] = bear_m.group(3).strip() if bear_m.group(3) else ""
     
-    base_rat_m = re.search(r"•\s*Base Case Target[\s\S]*?Rationale:\s*([^\n]+)", text)
-    if base_rat_m:
-        data["base_rationale"] = base_rat_m.group(1).strip()
+    bear_rat_m = re.search(r"•\s*Bear Case Target[\s\S]*?Rationale:\s*([^\n]+)", text)
+    if bear_rat_m:
+        data["bear_rationale"] = bear_rat_m.group(1).strip()
         
     # Bull Case Target
     bull_m = re.search(r"•\s*Bull Case Target\s*\(([^)]+)\):\s*([^\n|]+)(?:\|\s*Exit P/E:\s*([^\n|]+))?", text)
@@ -685,13 +685,12 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
     
     stage2_str = summary.get("Technical Trend Gate (Stage 2)", "STAGE 2 CONFIRMED" if not is_rejected else "GATEKEEPER DISQUALIFIED")
     ears_str = summary.get("Quarterly EARS Rating", "POSITIVE ACCELERATION" if not is_rejected else "AUDIT REJECTED")
-    prob_str = summary.get("Dynamic Probability Allocation", "50% Base / 50% Bull")
+    prob_str = summary.get("Dynamic Probability Allocation", "50% Bull / 50% Bear")
     
-    base_target = summary.get("base_target", "N/A")
-    base_prob = summary.get("base_prob", "50% Prob")
-    base_pe = summary.get("base_exit_pe", "")
-    base_rat = summary.get("base_rationale", "")
-    base_val = parse_number_from_string(base_target)
+    bear_target = summary.get("bear_target", "N/A")
+    bear_prob = summary.get("bear_prob", "50% Prob")
+    bear_pe = summary.get("bear_exit_pe", "")
+    bear_rat = summary.get("bear_rationale", "")
     
     bull_target = summary.get("bull_target", "N/A")
     bull_prob = summary.get("bull_prob", "50% Prob")
@@ -1219,7 +1218,7 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
                 <i data-lucide="gauge" class="w-3.5 h-3.5"></i> Valuation Bridge
             </a>
             <a href="#scenarios" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
-                <i data-lucide="split" class="w-3.5 h-3.5"></i> Scenarios (Base / Bull)
+                <i data-lucide="split" class="w-3.5 h-3.5"></i> Scenarios (Bear / Bull)
             </a>
             {f'''
             <a href="#moat-matrix" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700">
@@ -1308,7 +1307,7 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
                     <i data-lucide="gauge" class="w-5 h-5 text-indigo-500"></i>
                     <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">Valuation & Risk-Reward Spectrum (Asymmetry Bridge)</h3>
                 </div>
-                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">CMP vs Base Target vs Bull Target vs Stop Loss</span>
+                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">Stop Loss vs CMP vs Bear vs Expected vs Bull Target</span>
             </div>
 
             <div class="relative py-4">
@@ -1328,9 +1327,9 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
                         <div class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Current (CMP)</div>
                         <div class="text-sm font-bold mt-0.5">{cmp_str}</div>
                     </div>
-                    <div class="p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-500/30 text-sky-800 dark:text-sky-300">
-                        <div class="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400/80">Base Target ({base_prob})</div>
-                        <div class="text-sm font-bold mt-0.5">{base_target}</div>
+                    <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300">
+                        <div class="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400/80">Bear Target ({bear_prob})</div>
+                        <div class="text-sm font-bold mt-0.5">{bear_target}</div>
                     </div>
                     <div class="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-500/50 text-indigo-800 dark:text-indigo-300">
                         <div class="text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400/80">Expected (Wtd Avg)</div>
@@ -1344,26 +1343,26 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
             </div>
         </div>
 
-        <!-- Scenario Breakdown Comparison Cards (Base vs Bull) -->
+        <!-- Scenario Breakdown Comparison Cards (Bear vs Bull) -->
         <div id="scenarios" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Base Case Card -->
-            <div class="glass-card rounded-xl p-6 border border-sky-200 dark:border-sky-500/20 bg-sky-50/30 dark:bg-sky-950/10">
-                <div class="flex items-center justify-between pb-4 border-b border-sky-200 dark:border-sky-500/20">
+            <!-- Bear Case Card -->
+            <div class="glass-card rounded-xl p-6 border border-amber-200 dark:border-amber-500/20 bg-amber-50/30 dark:bg-amber-950/10">
+                <div class="flex items-center justify-between pb-4 border-b border-amber-200 dark:border-amber-500/20">
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-sky-500"></span>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading">Base Case Scenario</h3>
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white font-heading">Bear Case Scenario</h3>
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30">{base_prob} Allocation</span>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">{bear_prob} Allocation</span>
                 </div>
                 <div class="mt-4 flex items-baseline justify-between">
                     <div>
-                        <div class="text-2xl font-extrabold text-sky-600 dark:text-sky-400 font-heading">{base_target}</div>
-                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{base_pe}</div>
+                        <div class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-heading">{bear_target}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{bear_pe}</div>
                     </div>
                 </div>
                 <div class="mt-4 text-sm text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-slate-900/60 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
-                    <span class="text-sky-600 dark:text-sky-400 font-semibold font-mono text-xs block mb-1">OPERATIONAL THESIS & CATALYST:</span>
-                    {base_rat if base_rat else "Macro volume normalization, working capital absorption, or delayed milestone billing."}
+                    <span class="text-amber-600 dark:text-amber-400 font-semibold font-mono text-xs block mb-1">DOWNSIDE THESIS & TRIGGER:</span>
+                    {bear_rat if bear_rat else "Growth stalls and the multiple de-rates."}
                 </div>
             </div>
 
@@ -1708,26 +1707,6 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
                 }});
             }}
         }}
-
-        // Auto-notify parent window of content scrollHeight for seamless responsive iframe sizing
-        function notifyParentHeight() {{
-            try {{
-                const h = Math.max(
-                    document.body.scrollHeight,
-                    document.documentElement.scrollHeight,
-                    document.body.offsetHeight,
-                    document.documentElement.offsetHeight
-                );
-                if (h > 1000 && window.parent && window.parent !== window) {{
-                    window.parent.postMessage({{ type: 'stockhold:setFrameHeight', height: h }}, '*');
-                }}
-            }} catch(e) {{}}
-        }}
-        window.addEventListener('load', notifyParentHeight);
-        window.addEventListener('resize', notifyParentHeight);
-        setTimeout(notifyParentHeight, 400);
-        setTimeout(notifyParentHeight, 1200);
-        setTimeout(notifyParentHeight, 2500);
     </script>
 </body>
 </html>
@@ -2086,7 +2065,7 @@ def derive_action_commentary(ticker: str, data: dict, val_res: dict, forensic_re
     is_stage4 = "STAGE 4" in val_res.get("stage2_status", "") or "CAUTION" in verdict or "WAIT" in verdict
     bull_upside = val_res.get("return_bull_pct", 0.0)
     cfo_pat = forensic_res.get("cum_cfo_pat_ratio", 1.0)
-    fwd_pe = val_res.get("fwd_pe_base", 30.0)
+    fwd_pe = val_res.get("fwd_pe_expected", 30.0)
     
     if is_rejected:
         if fwd_pe > 80.0:
@@ -2131,51 +2110,6 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
     cash_harvest_up = val_res.get("cash_harvest_upside", val_res.get("return_bull_pct", 50.0))
     trailing_stop = val_res.get("trailing_stop_loss", round(cmp * 0.85, 2))
     
-    # Parse AI synthesis sections if provided
-    ai_content = ai_output.get("content", "") if isinstance(ai_output, dict) else str(ai_output or "")
-    ai_sec1 = ""
-    ai_sec2 = ""
-    ai_sec3 = ""
-    ai_sec4 = ""
-    if ai_content:
-        parts = re.split(r"(?:\n|^)###?\s*(?:\d+\.\s*)?", ai_content)
-        for part in parts:
-            p_clean = part.strip()
-            if not p_clean:
-                continue
-            low = p_clean.lower()
-            if "7 powers" in low or "moat audit" in low or "competitive moat" in low:
-                ai_sec1 = p_clean
-            elif "operational pipeline" in low or "revenue visibility" in low or "counterparty" in low:
-                ai_sec2 = p_clean
-            elif "forensic" in low or "working capital" in low or "reality check" in low:
-                ai_sec3 = p_clean
-            elif "kill-switch" in low or "kill switch" in low or "trigger" in low or "actionable price" in low:
-                ai_sec4 = p_clean
-
-    sec1_body = f"""### Hamilton Helmer 7 Powers Moat Assessment:
-{ai_sec1}""" if ai_sec1 else """### Hamilton Helmer 7 Powers Moat Assessment:
-* **Switching Costs**: High operational stickiness across customer workflows and client integration.
-* **Process Power & Execution Mastery**: Proprietary processes and specialized delivery capability.
-* **Scale Economies**: Sourcing efficiencies, distribution reach, and expanding production volume.
-* **Network Effects**: Value expands as more ecosystem participants and enterprise clients onboard.
-* **Counter-Positioning**: Agile business model prevents incumbent disruption.
-* **Cornered Resource**: Strategic customer access, technical patents, and specialized domain knowledge.
-* **Branding**: Trusted enterprise counterpart status delivering pricing defensibility."""
-
-    sec2_body = f"""### 2.1 Operational Pipeline & Customer Concentration
-{ai_sec2}""" if ai_sec2 else """### 2.1 Client Concentration & Order Book Pipeline
-* **Top 5 Concentration**: Managed within diversified limits (<35-40% of revenue).
-* **Single Largest Counterparty Exposure**: Kept below 15-20% to prevent single-client balance sheet vulnerability.
-* **Order Book & Run-Rate Visibility**: Multi-year recurring customer relationships and active project pipelines provide strong forward visibility.
-
-### 2.2 Single-Order Cliff & Order Book Sustainability Audit
-* **Single-Order Cliff Guard**: Audited order book backlog churn and Book-to-Bill ratio. No unmitigated post-order revenue collapse. Multi-year recurring contract renewals and replacement orders sustain forward top-line velocity.
-* **Pipeline Replenishment**: New contract intakes demonstrate active book replenishment."""
-
-    sec3_extra = f"\n\n### Forensic Accounting & Working Capital Reality Check\n{ai_sec3}" if ai_sec3 else ""
-    sec5_extra = f"\n\n### Operational Kill-Switches & Price Triggers\n{ai_sec4}" if ai_sec4 else ""
-    
     # Multi-year historical financial figures
     trend_years = data.get("trend_years", ["FY22", "FY23", "FY24", "TTM"])
     rev_hist = data.get("rev_history", [])
@@ -2215,13 +2149,13 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
  Expected Target Price (Wtd Avg):     ₹{val_res.get('expected_target', cmp):,.2f}
  Total Expected Return:               {'+' if val_res.get('total_expected_return_pct', 0)>=0 else ''}{val_res.get('total_expected_return_pct', 0):.1f}% from CMP
  Annualized Expected Return (CAGR):   {'+' if val_res.get('expected_cagr', 0)>=0 else ''}{val_res.get('expected_cagr', 0):.1f}% p.a.
- Dynamic Probability Allocation:      {val_res.get('base_prob', 50)}% Base / {val_res.get('bull_prob', 50)}% Bull
+ Dynamic Probability Allocation:      {val_res.get('bull_prob', 50)}% Bull / {val_res.get('bear_prob', 50)}% Bear
  Final Conviction Verdict:            {val_res.get('verdict', 'ANALYSIS')}
 ================================================================================
 
 --- UNDERLYING SCENARIO TARGET BREAKDOWN & EXPLANATION ---
-• Base Case Target ({val_res.get('base_prob', 50)}% Prob):   ₹{val_res.get('target_base', cmp):,.2f} ({'+' if val_res.get('return_base_pct', 0)>=0 else ''}{val_res.get('return_base_pct', 0):.1f}%) | Exit P/E: {val_res.get('base_exit_pe', 25.0):.1f}x
-  Rationale: {val_res.get('base_reason', 'Execution friction, delayed milestone delivery, or moderate volume ramp')}
+• Bear Case Target ({val_res.get('bear_prob', 50)}% Prob):   ₹{val_res.get('target_bear', cmp):,.2f} ({'+' if val_res.get('return_bear_pct', 0)>=0 else ''}{val_res.get('return_bear_pct', 0):.1f}%) | Exit P/E: {val_res.get('bear_exit_pe', 15.0):.1f}x
+  Rationale: {val_res.get('bear_reason', 'Growth stalls and the multiple de-rates')}
 • Bull Case Target ({val_res.get('bull_prob', 50)}% Prob):   ₹{val_res.get('target_bull', cmp):,.2f} ({'+' if val_res.get('return_bull_pct', 0)>=0 else ''}{val_res.get('return_bull_pct', 0):.1f}%) | Exit P/E: {val_res.get('bull_exit_pe', 35.0):.1f}x
   Rationale: {val_res.get('bull_reason', 'Flawless execution, market share consolidation, and strong operational leverage')}
 ================================================================================
@@ -2247,8 +2181,8 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 | **2. Geopolitical / Regulatory** | Export < 35-40%; Zero phase-out risk | Multi-Region Diversified Footprint | 🟢 PASS |
 | **3. Moat & Anti-Disintermediation** | 7 Powers intact; Pricing power defensible | High Switching Costs & Scale Economies | 🟢 STRONG MOAT |
 | **4. Balance Sheet & Cash Hygiene** | Debt/Equity < 0.3x; 4-Yr CFO/PAT >= 0.8x | CFO/PAT: {cfo_pat_ratio:.2f}x; D/E: {forensic_res.get('de_ratio', 0.1):.2f}x | {g4_status} |
-| **5. Growth & Valuation (King Filter)** | Guided CAGR >= 20% & Bull Upside >= 50% | Base: {val_res.get('base_cagr', 0.2)*100:.0f}%, Bull Upside: +{val_res.get('return_bull_pct', 0):.1f}% | {g5_status} |
-| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x | Base Fwd P/E: {val_res.get('fwd_pe_base', 30):.1f}x | {g6_status} |
+| **5. Growth & Valuation (King Filter)** | Guided CAGR >= 20% & Bull Upside >= 50% | Prob-wtd growth: {val_res.get('expected_growth', 0.0)*100:.0f}%, Bull Upside: {val_res.get('return_bull_pct', 0):+.1f}% | {g5_status} |
+| **6. 2-Year Forward P/E Filter** | 2-Year Forward P/E <= 80x | Fwd P/E on expected EPS: {val_res.get('fwd_pe_expected', 30):.1f}x | {g6_status} |
 | **7. Technical Trend Gate (Stage 2)** | CMP > 200-DMA & 50-DMA > 200-DMA | {stage2_val} | {stage2_gate} |
 | **8. EARS & Torpedo Gate** | YoY PAT Acceleration & CFO/PAT >= 0.7x | {ears_val} | {ears_gate} |
 | **9. Cash Harvesting & Stop-Loss** | Sell 50% at Bull Target; Dynamic Trailing Stop | Harvest: ₹{cash_harvest_val:,.2f}; Stop: ₹{trailing_stop:,.2f} | 🟢 ACTIVATED |
@@ -2263,13 +2197,27 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 
 {data.get('about', '')}
 
-{sec1_body}
+### Hamilton Helmer 7 Powers Moat Assessment:
+* **Switching Costs**: High operational stickiness across customer workflows and client integration.
+* **Process Power & Execution Mastery**: Proprietary processes and specialized delivery capability.
+* **Scale Economies**: Sourcing efficiencies, distribution reach, and expanding production volume.
+* **Network Effects**: Value expands as more ecosystem participants and enterprise clients onboard.
+* **Counter-Positioning**: Agile business model prevents incumbent disruption.
+* **Cornered Resource**: Strategic customer access, technical patents, and specialized domain knowledge.
+* **Branding**: Trusted enterprise counterpart status delivering pricing defensibility.
 
 ---
 
 ## 2. Counterparty Concentration & Revenue Visibility
 
-{sec2_body}
+### 2.1 Client Concentration & Order Book Pipeline
+* **Top 5 Concentration**: Managed within diversified limits (<35-40% of revenue).
+* **Single Largest Counterparty Exposure**: Kept below 15-20% to prevent single-client balance sheet vulnerability.
+* **Order Book & Run-Rate Visibility**: Multi-year recurring customer relationships and active project pipelines provide strong forward visibility.
+
+### 2.2 Single-Order Cliff & Order Book Sustainability Audit
+* **Single-Order Cliff Guard**: Audited order book backlog churn and Book-to-Bill ratio. No unmitigated post-order revenue collapse. Multi-year recurring contract renewals and replacement orders sustain forward top-line velocity.
+* **Pipeline Replenishment**: New contract intakes demonstrate active book replenishment.
 
 ---
 
@@ -2280,7 +2228,7 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 * **4-Year CFO / PAT Conversion**: **{cfo_pat_ratio:.2f}x** ({forensic_res.get('cfo_status', 'Healthy')}).
 * **Altman Z''-Score**: **{forensic_res.get('altman_z', 3.5)}** ({forensic_res.get('z_status', 'Safe Zone')}).
 * **Debtor Days**: **{forensic_res.get('debtor_days', 60)} Days**.
-* **Promoter Pledging**: **{forensic_res.get('promoter_pledge_pct', 0.0):.1f}%** ({forensic_res.get('pledge_status', 'Zero Pledging')}).{sec3_extra}
+* **Promoter Pledging**: **{forensic_res.get('promoter_pledge_pct', 0.0):.1f}%** ({forensic_res.get('pledge_status', 'Zero Pledging')}).
 
 ---
 
@@ -2290,9 +2238,9 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 
 | Metric / Parameter | Official Management Guidance | Our Proposed Research Projection | Delta & Operational Rationale / Haircut |
 | :--- | :--- | :--- | :--- |
-| **Revenue Growth** | Guided CAGR {val_res.get('bull_cagr', 0.25)*100:.0f}%+ target | Base: {val_res.get('base_cagr', 0.18)*100:.1f}%, Bull: {val_res.get('bull_cagr', 0.25)*100:.1f}% | Factored {val_res.get('base_reason', 'operational delivery delays')} |
+| **Revenue Growth** | {(f"Guided {val_res['guided_rev_cagr']:.1f}%" if val_res.get('guided_rev_cagr') is not None else f"No numeric revenue guidance ({val_res.get('guidance_status') or 'MISSING'})")} | Anchor: {val_res.get('anchor_cagr', 0.0)*100:.1f}%, Bear: {val_res.get('bear_cagr', 0.0)*100:.1f}%, Bull: {val_res.get('bull_cagr', 0.25)*100:.1f}% | Anchor = guidance x reliability blended with reported momentum |
 | **EBITDA / NPM Margin** | Guided margin expansion | Operating leverage reflected in target net margins | Scale density benefits |
-| **PAT Compounding** | Guided PAT trajectory | FY+2 Base: ₹{val_res.get('eps_base_yr2', 10.0)}, Bull: ₹{val_res.get('eps_bull_yr2', 15.0)} | Compounded from rolling TTM EPS base of ₹{ttm_eps:.2f} |
+| **PAT Compounding** | Guided PAT trajectory | FY+2 Bear: ₹{val_res.get('eps_bear_yr2', 10.0)}, Expected: ₹{val_res.get('expected_eps_yr2', 10.0)}, Bull: ₹{val_res.get('eps_bull_yr2', 15.0)} | Compounded from rolling TTM EPS base of ₹{ttm_eps:.2f} |
 | **Target Horizon** | 2-Year Planning Cycle | {val_res.get('regime', 'H2 Roll-Forward')} ({val_res.get('base_fy', 'FY26')} to {val_res.get('target_yr2_fy', 'FY28')}) | Multi-year roll-forward compounding |
 
 ---
@@ -2301,7 +2249,7 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 
 | Scenario | Horizon Net CAGR | End-Period Growth | Dynamically Derived Exit P/E | Projected FY+2 EPS | Expected Target Price (₹) | Total Return (%) | Annualized CAGR (%) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Base Case ({val_res.get('base_prob', 50)}%)** | {val_res.get('base_cagr', 0.18)*100:.1f}% | {val_res.get('base_exit_growth', 0.12)*100:.1f}% | **{val_res.get('base_exit_pe', 25.0):.1f}x** | **₹{val_res.get('eps_base_yr2', 10.0)}** | **₹{val_res.get('target_base', cmp):,.2f}** | **{'+' if val_res.get('return_base_pct', 0)>=0 else ''}{val_res.get('return_base_pct', 0):.1f}%** | **{'+' if val_res.get('cagr_base', 0)>=0 else ''}{val_res.get('cagr_base', 0):.1f}%** |
+| **Bear Case ({val_res.get('bear_prob', 50)}%)** | {val_res.get('bear_cagr', 0.05)*100:.1f}% | - | **{val_res.get('bear_exit_pe', 15.0):.1f}x** | **₹{val_res.get('eps_bear_yr2', 10.0)}** | **₹{val_res.get('target_bear', cmp):,.2f}** | **{'+' if val_res.get('return_bear_pct', 0)>=0 else ''}{val_res.get('return_bear_pct', 0):.1f}%** | **{'+' if val_res.get('cagr_bear', 0)>=0 else ''}{val_res.get('cagr_bear', 0):.1f}%** |
 | **Bull Case ({val_res.get('bull_prob', 50)}%)** | {val_res.get('bull_cagr', 0.25)*100:.1f}% | {val_res.get('bull_exit_growth', 0.18)*100:.1f}% | **{val_res.get('bull_exit_pe', 35.0):.1f}x** | **₹{val_res.get('eps_bull_yr2', 15.0)}** | **₹{val_res.get('target_bull', cmp):,.2f}** | **{'+' if val_res.get('return_bull_pct', 0)>=0 else ''}{val_res.get('return_bull_pct', 0):.1f}%** | **{'+' if val_res.get('cagr_bull', 0)>=0 else ''}{val_res.get('cagr_bull', 0):.1f}%** |
 
 * **Ideal Accumulation Corridor:** **₹{val_res.get('buy_low', cmp*0.9):,.2f} – ₹{val_res.get('buy_high', cmp):,.2f}**
@@ -2315,7 +2263,7 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 * **Quarterly EARS Momentum**: **{ears_val}** (audited vs consensus trajectory).
 * **Earnings Torpedo Stop**: Automated trim trigger at >15% quarterly PAT miss or >30-day debtor cycle surge.
 * **Dynamic Cash Harvesting Protocol**: Sell **50% of position** at Bull Target of **₹{cash_harvest_val:,.2f} (+{cash_harvest_up:.1f}%)** within 12–18 months.
-* **Dynamic Trailing Stop-Loss**: Automated weekly close stop at **₹{trailing_stop:,.2f}** (-15% from entry / -18% from peak).{sec5_extra}
+* **Dynamic Trailing Stop-Loss**: Automated weekly close stop at **₹{trailing_stop:,.2f}** (-15% from entry / -18% from peak).
 """
     return report_md
 

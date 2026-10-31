@@ -25,3 +25,8 @@ __pycache__/
 predict/reports/*.html
 predict/reports/*.md
 !predict/reports/.gitkeep
+
+# Concall Transcript Caches
+predict/data/transcripts/
+stockhold/data/transcripts/
+

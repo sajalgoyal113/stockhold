@@ -5,9 +5,10 @@ calibrated valuation + forensics + reverse-DCF + safety guard, anchored
 with historical base rates from scripts/pit_calibration.json.
 
 Deliberately NOT an AI chat: every number is computed, the guard checks
-internal consistency, and the base-rate box states what the system has
-actually demonstrated (loss avoidance, 16/17 approved positive) and what
-it has not (winner-picking: rejects averaged higher).
+internal consistency, and forensic / reverse-DCF red flags can only make
+the decision more cautious. The base-rate box is context, not validation:
+the historical backtests were hand-picked samples with a hindsight stop-loss
+(since fixed), and in them rejected names often outperformed approved ones.
 """
 
 import os
@@ -21,26 +22,26 @@ if _SCRIPT_DIR not in sys.path:
 _REPO_ROOT = os.path.dirname(_SCRIPT_DIR)
 
 try:
-    from forward_growth_pe import calculate_forward_pe_valuation, calibrate_stock_parameters
+    from forward_growth_pe import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
 except ImportError:
     try:
-        from valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+        from valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
     except ImportError:
         try:
-            from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+            from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
         except ImportError:
-            from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+            from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
 
 try:
-    from forensic_audit import run_forensic_audit
+    from forensic_audit import run_forensic_audit, forensic_inputs_from_data
 except ImportError:
     try:
-        from forensics import run_forensic_audit
+        from forensics import run_forensic_audit, forensic_inputs_from_data
     except ImportError:
         try:
-            from engine.forensics import run_forensic_audit
+            from engine.forensics import run_forensic_audit, forensic_inputs_from_data
         except ImportError:
-            from stockhold.engine.forensics import run_forensic_audit
+            from stockhold.engine.forensics import run_forensic_audit, forensic_inputs_from_data
 
 try:
     from data_fetcher import fetch_company_data
@@ -104,7 +105,7 @@ def load_base_rates(path: str = CALIBRATION_PATH) -> Dict[str, Any]:
                 sd = json.load(open(fp))
                 for r in sd.get("records", []):
                     is_app = bool(r.get("is_approved"))
-                    ret = float(r.get("strategy_return") if is_app else r.get("bh_return") or 0.0)
+                    ret = float((r.get("strategy_return") if is_app else r.get("bh_return")) or 0.0)
                     smallcap_recs.append({
                         "ticker": r["ticker"],
                         "window": w,
@@ -150,11 +151,40 @@ def _cohort(recs: list) -> Dict[str, Any]:
 
 def decision_from_verdict(verdict: str) -> str:
     v = (verdict or "").upper()
+    if "NO VALUATION" in v or "INSUFFICIENT DATA" in v or "NOT APPLICABLE" in v:
+        return "NO CALL"
     if "REJECT" in v or "DISQUALIFIED" in v or "AVOID" in v:
         return "AVOID"
+    if "WATCHLIST" in v:
+        return "WAIT"
     if "STRONG" in v:
         return "BUY"
     return "ACCUMULATE ON DIPS"
+
+
+def forensic_overrides(decision: str, forensic_res: dict, dcf_res: dict, val_res: dict):
+    """Forensics and reverse-DCF can only make a decision MORE cautious.
+    Returns (decision, list_of_reasons)."""
+    reasons = []
+    if decision not in ("BUY", "ACCUMULATE ON DIPS"):
+        return decision, reasons
+    cfo_pat = forensic_res.get("cum_cfo_pat_ratio")
+    if cfo_pat is not None and cfo_pat < 0.50:
+        reasons.append(f"4Y CFO/PAT {cfo_pat}x < 0.50x (profits not converting to cash)")
+    if (forensic_res.get("de_ratio") or 0.0) > 1.0:
+        reasons.append(f"Debt/Equity {forensic_res.get('de_ratio')}x > 1.0x")
+    az = forensic_res.get("altman_z")
+    if az is not None and az < 1.10:
+        reasons.append(f"Altman Z'' {az} in distress zone")
+    if reasons:
+        return "AVOID", reasons
+    implied = dcf_res.get("implied_cagr")
+    bull_g = val_res.get("bull_cagr")
+    if implied is not None and bull_g is not None and implied > bull_g * 100:
+        reasons.append(f"Reverse-DCF: price implies {implied}% 10Y FCF CAGR, above the bull-case "
+                       f"{bull_g*100:.1f}% EPS CAGR (market already prices more than our bull case)")
+        return ("ACCUMULATE ON DIPS" if decision == "BUY" else "WAIT"), reasons
+    return decision, reasons
 
 
 def build_brief_from_parts(data: dict, calibrated: dict, val_res: dict,
@@ -164,9 +194,10 @@ def build_brief_from_parts(data: dict, calibrated: dict, val_res: dict,
     ticker = data.get("ticker", "?")
     cmp = float(data.get("cmp", 0.0) or 0.0)
     verdict = val_res.get("verdict", "")
-    decision = decision_from_verdict(verdict)
+    decision, override_reasons = forensic_overrides(
+        decision_from_verdict(verdict), forensic_res, dcf_res, val_res)
 
-    canonical = (f"Base target Rs.{val_res.get('target_base')} Bull target "
+    canonical = (f"Bear target Rs.{val_res.get('target_bear')} Bull target "
                  f"Rs.{val_res.get('target_bull')} TTM EPS Rs.{val_res.get('ttm_eps')}. "
                  f"{val_res.get('stage2_status', '')}")
     guard = FinancialSafetyGuard.audit_synthesis(val_res, canonical)
@@ -187,20 +218,46 @@ def build_brief_from_parts(data: dict, calibrated: dict, val_res: dict,
     debtor = forensic_res.get("debtor_days")
     kill_switches = [
         f"Price: exit if it closes below Rs.{stop} (trailing stop).",
-        f"Growth: exit if YoY sales growth prints below 12% for two straight quarters.",
+        f"Growth: exit if YoY sales growth prints below {KILL_SWITCH_SALES_YOY:.0f}% for two straight quarters.",
         (f"Working capital: exit if debtor days expand 25+ days above today's {debtor}d."
          if debtor else "Working capital: exit on debtor-day expansion without cash conversion."),
     ]
     caveats = []
+    if calibrated.get("guided_rev_cagr") is not None:
+        caveats.append(f"GUIDANCE: management guides {calibrated['guided_rev_cagr']:.1f}% revenue growth "
+                       f"(as of {calibrated.get('guidance_as_of')}); delivery reliability "
+                       f"{calibrated.get('guidance_reliability', 0):.2f} from {calibrated.get('guidance_track_n', 0)} scored promise(s).")
+    elif calibrated.get("guidance_status") == "REVIEWED: NONE GIVEN":
+        caveats.append("NO REVENUE GUIDANCE GIVEN: concalls were reviewed and management did not quantify growth; "
+                       "targets rest on reported numbers only.")
+    elif calibrated.get("guidance_status") in ("MISSING", "MARGIN ONLY"):
+        caveats.append(f"NO REVENUE GUIDANCE ({calibrated.get('guidance_status')}): growth targets rest on reported numbers only. "
+                       "Read the latest concall and register guidance before acting.")
+    if val_res.get("kill_switch_note"):
+        caveats.append(f"KILL SWITCH ALREADY TRIPPED: {val_res['kill_switch_note']}.")
+    if calibrated.get("decelerating") or calibrated.get("margin_compressing"):
+        caveats.append("MOMENTUM: " + ", ".join(x for x, on in (("sales decelerating vs 3Y CAGR", calibrated.get("decelerating")),
+                                                               ("margins compressing", calibrated.get("margin_compressing"))) if on)
+                       + " (growth anchor haircut, bear weight raised).")
+    if calibrated.get("margin_path"):
+        caveats.append(f"REGIME 3 {str(calibrated['margin_path']).upper()}: valued on margin normalization to "
+                       f"{(calibrated.get('ss_margin') or 0)*100:.1f}% ({calibrated.get('ss_margin_source')}); "
+                       f"evidence: {calibrated.get('margin_evidence')}.")
+    elif calibrated.get("depressed_no_evidence"):
+        caveats.append("DEPRESSED MARGINS without recovery evidence: valued on current earnings (no normalization credit).")
     if calibrated.get("sparse_anchor"):
         caveats.append("SPARSE INPUTS: " + "; ".join(calibrated.get("sparse_fields", [])))
+    for r in override_reasons:
+        caveats.append("DECISION OVERRIDE: " + r)
     if forensic_res.get("altman_z") is None:
-        caveats.append("Altman UNAVAILABLE: priced in the fragile tier, not as safe.")
+        caveats.append("Altman UNAVAILABLE: solvency not scored (treated as neutral, neither safe nor fragile).")
+    caveats.append("BASE RATES: historical cohorts come from hand-picked samples and a 2023-26 bull market; "
+                   "they are not evidence the model beats the index.")
     if not guard.get("passes_guard"):
         caveats.append("GUARD FLAG: " + "; ".join(guard.get("violations", [])))
     upside = float(val_res.get("total_expected_return_pct") or 0.0)
     rationale_bits = [
-        f"Base Rs.{val_res.get('target_base')} ({val_res.get('return_base_pct')}%) / "
+        f"Bear Rs.{val_res.get('target_bear')} ({val_res.get('return_bear_pct')}%) / "
         f"Bull Rs.{val_res.get('target_bull')} ({val_res.get('return_bull_pct')}%)",
         f"Expected Rs.{val_res.get('expected_target')} ({upside:+.1f}%) at "
         f"{val_res.get('expected_cagr')}% CAGR",
@@ -223,6 +280,7 @@ def build_decision_brief(ticker: str, base_cagr: Optional[float] = None,
     """Live brief: fetch -> calibrate -> value -> audit -> base rates."""
     t = (ticker or "").upper().strip()
     data = fetch_company_data(t)
+    data["registry_ticker"] = t
     calibrated = calibrate_stock_parameters(data)
     params = {"cmp": data["cmp"], "mcap_cr": data["mcap_cr"],
               "ttm_eps": data["ttm_eps"],
@@ -231,21 +289,17 @@ def build_decision_brief(ticker: str, base_cagr: Optional[float] = None,
               "shares_cr": data.get("shares_cr", 0.0),
               "base_cagr": base_cagr if base_cagr is not None else calibrated["base_cagr"] / 100.0,
               "bull_cagr": bull_cagr if bull_cagr is not None else calibrated["bull_cagr"] / 100.0,
+              "bear_cagr": (calibrated.get("bear_cagr") or 0.0) / 100.0,
+              "bear_prob": (calibrated.get("bear_prob") or 20) / 100.0,
+              "current_margin": calibrated.get("current_margin"),
+              "target_margin_yr2": calibrated.get("target_margin_yr2"),
               "base_exit_growth": calibrated["base_exit_g"] / 100.0,
               "bull_exit_growth": calibrated["bull_exit_g"] / 100.0,
               "base_peg": calibrated.get("base_peg", 1.60),
               "bull_peg": calibrated.get("bull_peg", 1.85),
-              "base_prob": calibrated["base_prob"] / 100.0,
-              "bull_prob": calibrated["bull_prob"] / 100.0,
               "ticker": t}
     val_res = calculate_forward_pe_valuation(**params)
-    forensic_res = run_forensic_audit(
-        rev_history=data["rev_history"], pat_history=data["pat_history"],
-        cfo_history=data["cfo_history"], trend_years=data["trend_years"],
-        debtor_days=data["latest_debtor_days"], total_debt=data["latest_debt"],
-        net_worth=data["mcap_cr"] / (data["cmp"] / data["book_value"])
-        if (data["cmp"] > 0 and data["book_value"] > 0) else data["mcap_cr"] * 0.4,
-        total_assets=data["mcap_cr"] * 0.5, ebit=data["ttm_pat"] * 1.3)
+    forensic_res = run_forensic_audit(**forensic_inputs_from_data(data))
     latest_fcf = data["fcf_history"][-1] if data.get("fcf_history") else 0.0
     latest_cfo = data["cfo_history"][-1] if data.get("cfo_history") else 0.0
     if latest_fcf > 0:
@@ -276,17 +330,19 @@ def format_brief_text(brief: Dict[str, Any]) -> str:
     sc_a = _cohort(brief.get("base_rates", {}).get("smallcap_approved", []))
     sc_r = _cohort(brief.get("base_rates", {}).get("smallcap_rejected", []))
     if a.get("n"):
-        lines += ["", f"Base rates ({a['n']} approved historically across 177 evaluations): "
-                      f"{a['hit_rate']}% positive gains, mean {a['mean']:+.1f}%."]
+        n_total = a["n"] + (r.get("n") or 0)
+        lines += ["", f"Base rates ({a['n']} approved of {n_total} historical evaluations): "
+                      f"{a['hit_rate']}% positive, mean {a['mean']:+.1f}%"
+                      + (f" vs rejected mean {r['mean']:+.1f}% (n={r['n']})." if r.get("n") else ".")]
         if sc_a.get("n"):
-            spread = sc_a['mean'] - sc_r['mean']
-            lines.append(f"Flaw-Corrected Smallcap 250 Engine ({sc_a['n']} approved): "
-                         f"{sc_a['hit_rate']}% win rate, mean realized {sc_a['mean']:+.1f}% (net of slippage/costs); "
-                         f"outperforming rejected basket by {spread:+.1f}% spread and benchmark by +114.9% alpha.")
+            spread = sc_a['mean'] - (sc_r.get('mean') or 0.0)
+            lines.append(f"Smallcap samples ({sc_a['n']} approved): {sc_a['hit_rate']}% positive, "
+                         f"mean {sc_a['mean']:+.1f}%, spread vs rejected {spread:+.1f}pp "
+                         f"(hand-picked names, no index comparison).")
         if u.get("n"):
             lines.append(f"Names with similar upside: {u['n']} names, "
                          f"{u['hit_rate']}% positive, mean {u['mean']:+.1f}%.")
-        lines.append("Deterministic quantitative execution net of transaction costs. Size accordingly.")
+        lines.append("Historical samples are small and biased; not proof of an edge. Size accordingly.")
     else:
         lines.append("Base rates unavailable: no calibrated history loaded.")
     return "\n".join(lines)

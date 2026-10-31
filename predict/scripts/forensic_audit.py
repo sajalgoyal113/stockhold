@@ -41,7 +41,7 @@ def evaluate_altman_z_em(working_capital, total_assets, retained_earnings, ebit,
       Z'' < 1.10: Distress Zone
     """
     if total_assets <= 0 or total_liabilities <= 0:
-        return None, "Invalid inputs"
+        return None, "Invalid inputs", "UNAVAILABLE"
     x1 = working_capital / total_assets
     x2 = retained_earnings / total_assets
     x3 = ebit / total_assets
@@ -143,6 +143,40 @@ def print_forensic_report(ticker, years, cfo_vals, pat_vals, revenue_vals, recei
     print(f"================================================================================\n")
 
 
+def forensic_inputs_from_data(data: dict) -> dict:
+    """Builds run_forensic_audit kwargs from data_fetcher output using reported line items.
+
+    Working capital is approximated as Screener 'Other Assets' - 'Other Liabilities'
+    (Screener does not separate current from non-current items); retained earnings =
+    Reserves; book equity = Equity Capital + Reserves; EBIT = PBT + Interest (last FY).
+    Any missing item leaves the Altman score UNAVAILABLE instead of fabricating it.
+    """
+    eq_cap = data.get("equity_capital")
+    reserves = data.get("reserves")
+    if eq_cap is not None and reserves is not None:
+        net_worth = eq_cap + reserves
+    elif data.get("cmp", 0) > 0 and data.get("book_value", 0) > 0:
+        net_worth = data["mcap_cr"] / (data["cmp"] / data["book_value"])
+    else:
+        net_worth = 0.0
+    other_a, other_l = data.get("other_assets"), data.get("other_liabilities")
+    total_assets = data.get("total_assets") or 0.0
+    return {
+        "rev_history": data.get("rev_history", []),
+        "pat_history": data.get("pat_history", []),
+        "cfo_history": data.get("cfo_history", []),
+        "trend_years": data.get("trend_years", []),
+        "debtor_days": data.get("latest_debtor_days", 60.0),
+        "total_debt": data.get("latest_debt", 0.0),
+        "net_worth": net_worth,
+        "total_assets": total_assets,
+        "ebit": data.get("ebit"),
+        "working_capital": (other_a - other_l) if (other_a is not None and other_l is not None) else None,
+        "retained_earnings": reserves,
+        "total_liabilities": (total_assets - net_worth) if total_assets > 0 and net_worth > 0 else None,
+    }
+
+
 def run_forensic_audit(
     rev_history: list,
     pat_history: list,
@@ -153,7 +187,10 @@ def run_forensic_audit(
     net_worth: float = 0.0,
     total_assets: float = 0.0,
     ebit: float = 0.0,
-    promoter_pledge_pct: float = 0.0
+    promoter_pledge_pct: float = 0.0,
+    working_capital: float = None,
+    retained_earnings: float = None,
+    total_liabilities: float = None
 ) -> dict:
     """
     Programmatic interface for full forensic accounting audit.
@@ -199,13 +236,13 @@ def run_forensic_audit(
         debt_color = "red"
 
     # 4. Altman Z''-Score (Emerging Markets)
-    # NOTE: working capital / retained earnings / liabilities are estimated
-    # from aggregates (not full balance-sheet line items), so the score is
-    # indicative. Never fabricate a SAFE score when inputs are missing.
-    if total_assets > 0:
-        working_capital = total_assets * 0.20
-        retained_earnings = net_worth * 0.80
-        total_liab = max(1.0, total_assets - net_worth) if total_assets > net_worth else total_assets * 0.40
+    # Computed ONLY from real balance-sheet inputs (see forensic_inputs_from_data).
+    # Working capital, retained earnings and liabilities are never invented from
+    # fixed fractions of assets; if any is missing the score is UNAVAILABLE.
+    have_inputs = (total_assets and total_assets > 0 and working_capital is not None
+                   and retained_earnings is not None and ebit is not None)
+    if have_inputs:
+        total_liab = total_liabilities if total_liabilities is not None else max(1.0, total_assets - net_worth)
         altman_z, zone, z_status = evaluate_altman_z_em(
             working_capital=working_capital,
             total_assets=total_assets,

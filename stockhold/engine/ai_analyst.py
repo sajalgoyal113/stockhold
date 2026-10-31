@@ -60,11 +60,17 @@ def generate_ai_analysis(company_data: dict, valuation_result: dict, forensics_r
     
     # If API key is available, attempt direct REST API call first
     if len(api_k) > 10:
+        target_bear = valuation_result.get('target_bear', valuation_result.get('target_base', 0.0))
+        ret_bear = valuation_result.get('return_bear_pct', valuation_result.get('return_base_pct', 0.0))
+        target_exp = valuation_result.get('expected_target', cmp)
+        ret_exp = valuation_result.get('total_expected_return_pct', 0.0)
+        target_bull = valuation_result.get('target_bull', cmp)
+        ret_bull = valuation_result.get('return_bull_pct', 0.0)
         prompt = f"""You are an institutional equity research director evaluating an Indian listed company (NSE/BSE).
 Company: {name} ({ticker})
 About: {about}
 Current Market Price (CMP): ₹{cmp} | Market Cap: ₹{mcap} Cr | P/E: {pe}x | TTM EPS: ₹{ttm_eps}
-Valuation Results: Base Case Target: ₹{valuation_result.get('target_base')} ({valuation_result.get('return_base_pct')}%), Bull Case Target: ₹{valuation_result.get('target_bull')} ({valuation_result.get('return_bull_pct')}%)
+Valuation Results: Bear Case Target: ₹{target_bear} ({ret_bear}%), Probability-Weighted Target: ₹{target_exp} ({ret_exp}%), Bull Case Target: ₹{target_bull} ({ret_bull}%)
 Forensics: 4-Yr CFO/PAT: {forensics_result.get('cum_cfo_pat_ratio')}x, Debtor Days: {forensics_result.get('debtor_days')} days, Altman Z'': {forensics_result.get('altman_z')}
 Reverse DCF: Implied 10-Yr FCF CAGR priced in: {reverse_dcf_result.get('implied_cagr')}%
 

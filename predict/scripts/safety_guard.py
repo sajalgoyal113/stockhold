@@ -28,13 +28,13 @@ class FinancialSafetyGuard:
     def audit_synthesis(valuation_data: Dict[str, Any], synthesis_text: str) -> Dict[str, Any]:
         violations: List[str] = []
         text = synthesis_text or ""
-        expected_base_target = valuation_data.get("target_base") or valuation_data.get("target_price_base")
+        expected_bear_target = valuation_data.get("target_bear") or valuation_data.get("target_price_bear")
         expected_bull_target = valuation_data.get("target_bull") or valuation_data.get("target_price_bull")
 
         # 1. Target-price match within 1%: every deterministic target cited in
         # the synthesis must appear (within tolerance) in the text numbers.
         cited = FinancialSafetyGuard._numbers_in_text(text)
-        for label, expected in (("base", expected_base_target), ("bull", expected_bull_target)):
+        for label, expected in (("bear", expected_bear_target), ("bull", expected_bull_target)):
             if not expected:
                 continue
             try:
@@ -94,7 +94,7 @@ class FinancialSafetyGuard:
             "violations": violations,
             "verified_invariants": [
                 f"TTM EPS Anchored: ₹{valuation_data.get('ttm_eps')}",
-                f"Base Target Price Verified: ₹{expected_base_target}",
+                f"Bear Target Price Verified: ₹{expected_bear_target}",
                 f"Bull Target Price Verified: ₹{expected_bull_target}",
                 f"Expected CAGR Verified: {valuation_data.get('expected_cagr')}%",
             ],

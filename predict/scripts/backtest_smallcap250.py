@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """predict/scripts/backtest_smallcap250.py - Point-in-Time Backtest & Failure Mode Audit.
 
-Evaluates the Predict Valuation Framework on 30 randomly sampled NIFTY Smallcap 250 constituents:
+Evaluates the Predict Valuation Framework on 30 HAND-PICKED (not random) NIFTY Smallcap 250 names:
 - Baseline Date: March 31, 2023 (Point-in-time trailing FY23 fundamentals & CMP)
 - Holding Horizon: March 31, 2023 -> March 31, 2026 (Full 3-Year Compounding Cycle)
-- Benchmark: NIFTY Smallcap 100 (+73.7%), NIFTY Midcap 100 (+80.1%), NIFTY 50 (+31.5%)
-- Policy: Strict zero-cheat / zero-lookahead discipline via investable_execution.py:
+- Benchmarks: NIFTY 50 / Midcap 100 read from fetched index prices; Smallcap 100 +73.7% is unverified
+- Policy (KNOWN LIMITS: hand-picked universe, FY23 annual data used on 31-Mar-2023 before it was published, restated Screener data):
   1. Formula-only growth underwriting (decide_growth from point-in-time FY23 sales CAGR + 1y acceleration).
   2. Uniform target formula (uniform_targets without any custom turnaround bridges).
   3. Real close-price execution with transaction costs (0.5% entry + 0.5% exit).
@@ -66,11 +66,20 @@ def run_backtest():
     start_dt = pd.to_datetime("2023-03-31")
     end_dt = pd.to_datetime("2026-03-31")
 
+    # NIFTY 50 / Midcap 100 for the same 2023-03-31 -> 2026-03-31 window are read from the
+    # index prices fetched by backtest_fy24_fy26.py (previously hardcoded lower, at +31.5% / +80.1%).
+    # NIFTY Smallcap 100 has no fetched series in the repo: its value stays an UNVERIFIED constant.
+    bench_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backtest_fy24_fy26_results.json")
+    with open(bench_path, "r") as bf:
+        _b = json.load(bf)
     benchmarks = {
-        "NIFTY 50": {"return": 31.5, "cagr": 9.6},
-        "NIFTY Midcap 100": {"return": 80.1, "cagr": 21.7},
-        "NIFTY Smallcap 100": {"return": 73.7, "cagr": 20.2}
+        "NIFTY 50": {"return": round(_b["benchmark_nifty"]["return"], 1), "cagr": round(_b["benchmark_nifty"]["cagr"], 1)},
+        "NIFTY Midcap 100": {"return": round(_b["benchmark_midcap"]["return"], 1), "cagr": round(_b["benchmark_midcap"]["cagr"], 1)},
+        "NIFTY Smallcap 100 (UNVERIFIED constant)": {"return": 73.7, "cagr": 20.2}
     }
+    b50 = benchmarks["NIFTY 50"]["return"]
+    bmid = benchmarks["NIFTY Midcap 100"]["return"]
+    bsc = 73.7
 
     records = []
 
@@ -315,7 +324,7 @@ def run_backtest():
     rej_bh_ret = np.mean([r["bh_return"] for r in rej_recs]) if rej_recs else 0.0
 
     win_rate = (len([r for r in app_recs if r["strategy_return"] > 0]) / len(app_recs) * 100) if app_recs else 0.0
-    beat_smallcap_rate = (len([r for r in app_recs if r["strategy_return"] > 73.7]) / len(app_recs) * 100) if app_recs else 0.0
+    beat_smallcap_rate = (len([r for r in app_recs if r["strategy_return"] > bsc]) / len(app_recs) * 100) if app_recs else 0.0
 
     type_1_losses = [r for r in records if r.get("is_type_1_loss")]
     type_1_cases = [r for r in records if r["is_type_1_error"]]
@@ -332,9 +341,9 @@ def run_backtest():
             "approved_strategy_realized_return": round(app_strat_ret, 1),
             "approved_strategy_realized_cagr": round(app_strat_cagr, 1),
             "rejected_average_return": round(rej_bh_ret, 1),
-            "alpha_vs_nifty_smallcap": round(app_strat_ret - 73.7, 1),
-            "alpha_vs_nifty_midcap": round(app_strat_ret - 80.1, 1),
-            "alpha_vs_nifty_50": round(app_strat_ret - 31.5, 1),
+            "alpha_vs_nifty_smallcap": round(app_strat_ret - bsc, 1),
+            "alpha_vs_nifty_midcap": round(app_strat_ret - bmid, 1),
+            "alpha_vs_nifty_50": round(app_strat_ret - b50, 1),
             "win_rate": round(win_rate, 1),
             "beat_smallcap_benchmark_rate": round(beat_smallcap_rate, 1),
             "type_1_loss_count": len(type_1_losses),
@@ -359,9 +368,9 @@ def run_backtest():
     print(f" Approved Realized Strategy Return:      {app_strat_ret:+.1f}% (CAGR: {app_strat_cagr:+.1f}% p.a.) [NET OF COSTS]")
     print(f" Approved Buy-and-Hold Return:           {app_bh_ret:+.1f}%")
     print(f" Rejected Basket Average Return:         {rej_bh_ret:+.1f}%")
-    print(f" Alpha vs NIFTY Smallcap 100 (+73.7%):   {app_strat_ret - 73.7:+.1f}%")
-    print(f" Alpha vs NIFTY Midcap 100 (+80.1%):     {app_strat_ret - 80.1:+.1f}%")
-    print(f" Alpha vs NIFTY 50 (+31.5%):             {app_strat_ret - 31.5:+.1f}%")
+    print(f" Alpha vs NIFTY Smallcap 100 (+{bsc}%, unverified): {app_strat_ret - bsc:+.1f}%")
+    print(f" Alpha vs NIFTY Midcap 100 (+{bmid}%):     {app_strat_ret - bmid:+.1f}%")
+    print(f" Alpha vs NIFTY 50 (+{b50}%):             {app_strat_ret - b50:+.1f}%")
     print(f" Win Rate:                               {win_rate:.1f}%")
     print("-" * 100)
     print(f" ⚠️  Type II Errors (Missed Multibaggers): {len(type_2_cases)}")

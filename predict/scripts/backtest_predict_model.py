@@ -460,12 +460,16 @@ def run_comprehensive_backtest():
             # 2. Risk Management: Profit Harvesting & Stop Loss
             enhanced_ret = realized_return_pct
             if enhanced_approved:
-                # Early bull profit taking: if max price reached Bull Target, lock in 50%
-                if max_p >= target_bull:
-                    enhanced_ret = 0.5 * upside_bull_pct + 0.5 * realized_return_pct
-                # Stop loss: cut loss if path drawdown exceeded -18%
-                elif min_p < p0 * 0.82:
-                    enhanced_ret = max(realized_return_pct, -18.0)
+                # Walk the path in time order: whichever of bull target / -18% stop is hit
+                # FIRST decides the exit (no peeking at the final price).
+                path = sub_c.sort_values("Date")["Price"].tolist() if not sub_c.empty else []
+                for px in path:
+                    if px >= target_bull:
+                        enhanced_ret = 0.5 * upside_bull_pct + 0.5 * realized_return_pct
+                        break
+                    if px <= p0 * 0.82:
+                        enhanced_ret = ((px - p0) / p0) * 100
+                        break
 
             records.append({
                 "ticker": ticker,
