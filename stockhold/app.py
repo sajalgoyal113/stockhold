@@ -931,14 +931,16 @@ if existing_html:
         "ticker": ticker,
         "title": Path(existing_path).stem.replace("_", " ").title()
     }
-    md_dossier = ""
+    md_path = Path(existing_path).with_suffix(".md")
+    md_dossier = md_path.read_text(encoding="utf-8") if md_path.is_file() else ""
     is_curated = True
     report_source_path = existing_path
     ai_output = {
         "source": "Published Institutional Coverage Desk",
         "content": "Institutional equity research dossier from coverage universe"
     }
-    action_commentary = derive_action_commentary(ticker, data, val_res, forensic_res)
+    m_comm = re.search(r'Why (?:Buy|Avoid|Watchlist|Accumulate)[^<]*</span>\s*</div>\s*<p[^>]*>(.*?)</p>', existing_html, re.DOTALL | re.IGNORECASE)
+    action_commentary = m_comm.group(1).strip() if m_comm else derive_action_commentary(ticker, data, val_res, forensic_res)
 else:
     @st.cache_data(ttl=86400, show_spinner=False)
     def _get_cached_ai_synthesis(
