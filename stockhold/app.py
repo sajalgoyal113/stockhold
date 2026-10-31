@@ -8,6 +8,11 @@ for _p in [_CURRENT_DIR, _ROOT_DIR, os.path.join(_ROOT_DIR, "predict", "scripts"
     if os.path.isdir(_p) and _p not in sys.path:
         sys.path.insert(0, _p)
 
+# Clear stale cached engine modules from in-memory sys.modules on hot-reloads
+for _mod in list(sys.modules.keys()):
+    if _mod == "engine" or _mod.startswith("engine."):
+        sys.modules.pop(_mod, None)
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -18,18 +23,71 @@ from datetime import datetime, timedelta
 import inspect
 
 import streamlit.components.v1 as components
-from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
-from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
-from engine.forensics import run_forensic_audit, forensic_inputs_from_data
-from engine.reverse_dcf import run_reverse_dcf
-from engine.ai_analyst import generate_ai_analysis
-from engine.stock_universe import get_indexed_stock_options, extract_ticker_from_string
-from engine.html_reporter import (
-    generate_html_for_stock,
-    find_existing_html_report,
-    derive_action_commentary,
-    build_institutional_markdown_dossier
-)
+
+try:
+    from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
+    from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+    from engine.forensics import run_forensic_audit, forensic_inputs_from_data
+    from engine.reverse_dcf import run_reverse_dcf
+    from engine.ai_analyst import generate_ai_analysis
+    from engine.stock_universe import get_indexed_stock_options, extract_ticker_from_string
+    from engine.html_reporter import (
+        generate_html_for_stock,
+        find_existing_html_report,
+        derive_action_commentary,
+        build_institutional_markdown_dossier
+    )
+except ImportError:
+    # Direct fallback if sys.path resolves differently
+    import importlib
+    for _mod in list(sys.modules.keys()):
+        if _mod == "engine" or _mod.startswith("engine."):
+            sys.modules.pop(_mod, None)
+    from stockhold.engine.data_fetcher import fetch_company_data, get_top_trending_stocks
+    from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+    try:
+        from stockhold.engine.forensics import run_forensic_audit, forensic_inputs_from_data
+    except ImportError:
+        import stockhold.engine.forensics as _f_mod
+        importlib.reload(_f_mod)
+        run_forensic_audit = _f_mod.run_forensic_audit
+        forensic_inputs_from_data = getattr(_f_mod, "forensic_inputs_from_data", None)
+    from stockhold.engine.reverse_dcf import run_reverse_dcf
+    from stockhold.engine.ai_analyst import generate_ai_analysis
+    from stockhold.engine.stock_universe import get_indexed_stock_options, extract_ticker_from_string
+    from stockhold.engine.html_reporter import (
+        generate_html_for_stock,
+        find_existing_html_report,
+        derive_action_commentary,
+        build_institutional_markdown_dossier
+    )
+
+if "forensic_inputs_from_data" not in locals() or forensic_inputs_from_data is None:
+    def forensic_inputs_from_data(data: dict) -> dict:
+        eq_cap = data.get("equity_capital")
+        reserves = data.get("reserves")
+        if eq_cap is not None and reserves is not None:
+            net_worth = eq_cap + reserves
+        elif data.get("cmp", 0) > 0 and data.get("book_value", 0) > 0:
+            net_worth = data["mcap_cr"] / (data["cmp"] / data["book_value"])
+        else:
+            net_worth = 0.0
+        other_a, other_l = data.get("other_assets"), data.get("other_liabilities")
+        total_assets = data.get("total_assets") or 0.0
+        return {
+            "rev_history": data.get("rev_history", []),
+            "pat_history": data.get("pat_history", []),
+            "cfo_history": data.get("cfo_history", []),
+            "trend_years": data.get("trend_years", []),
+            "debtor_days": data.get("latest_debtor_days", 60.0),
+            "total_debt": data.get("latest_debt", 0.0),
+            "net_worth": net_worth,
+            "total_assets": total_assets,
+            "ebit": data.get("ebit"),
+            "working_capital": (other_a - other_l) if (other_a is not None and other_l is not None) else None,
+            "retained_earnings": reserves,
+            "total_liabilities": (total_assets - net_worth) if total_assets > 0 and net_worth > 0 else None,
+        }
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -499,6 +557,7 @@ if not query_ticker:
 ticker = query_ticker
 if not ticker:
     st.stop()
+    sys.exit(0)
 
 # Strict single-scrollbar viewport lock & mobile-responsive CSS
 st.html("""
@@ -630,6 +689,7 @@ with st.spinner(f"Analyzing institutional filings and concall disclosures for {t
 
 if "data" not in locals() or not data:
     st.stop()
+    sys.exit(0)
 
 # Dynamically calibrate model parameters to the company's specific growth momentum & cash conversion
 data["registry_ticker"] = str(ticker).upper().replace(" ", "").replace("-", "")

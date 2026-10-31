@@ -12,6 +12,11 @@ for _p in [_STOCKHOLD, _ROOT, _PREDICT]:
     if os.path.isdir(_p) and _p not in sys.path:
         sys.path.insert(0, _p)
 
+# Clear stale cached engine modules from in-memory sys.modules on hot-reloads
+for _mod in list(sys.modules.keys()):
+    if _mod == "engine" or _mod.startswith("engine."):
+        sys.modules.pop(_mod, None)
+
 _app_path = os.path.join(_STOCKHOLD, "app.py")
 __file__ = _app_path
 with open(_app_path, "r", encoding="utf-8") as _f:
