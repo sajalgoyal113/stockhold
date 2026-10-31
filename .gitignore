@@ -16,13 +16,14 @@ __pycache__/
 # OS & Temporary Artifacts
 .DS_Store
 *.png
+*.html
 .system_generated/
 .idea/
 .vscode/
 
-# Research Reports & Master Portal (Tracked for Web App Parity)
-!predict/reports/*.html
-!predict/reports/*.md
+# Research Reports & Generated Dossiers
+predict/reports/*.html
+predict/reports/*.md
 !predict/reports/.gitkeep
 
 # Concall Transcript Caches
