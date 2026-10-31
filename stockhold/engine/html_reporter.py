@@ -1708,6 +1708,26 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
                 }});
             }}
         }}
+
+        // Auto-notify parent window of content scrollHeight for seamless responsive iframe sizing
+        function notifyParentHeight() {{
+            try {{
+                const h = Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.offsetHeight
+                );
+                if (h > 1000 && window.parent && window.parent !== window) {{
+                    window.parent.postMessage({{ type: 'stockhold:setFrameHeight', height: h }}, '*');
+                }}
+            }} catch(e) {{}}
+        }}
+        window.addEventListener('load', notifyParentHeight);
+        window.addEventListener('resize', notifyParentHeight);
+        setTimeout(notifyParentHeight, 400);
+        setTimeout(notifyParentHeight, 1200);
+        setTimeout(notifyParentHeight, 2500);
     </script>
 </body>
 </html>
@@ -2111,6 +2131,51 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
     cash_harvest_up = val_res.get("cash_harvest_upside", val_res.get("return_bull_pct", 50.0))
     trailing_stop = val_res.get("trailing_stop_loss", round(cmp * 0.85, 2))
     
+    # Parse AI synthesis sections if provided
+    ai_content = ai_output.get("content", "") if isinstance(ai_output, dict) else str(ai_output or "")
+    ai_sec1 = ""
+    ai_sec2 = ""
+    ai_sec3 = ""
+    ai_sec4 = ""
+    if ai_content:
+        parts = re.split(r"(?:\n|^)###?\s*(?:\d+\.\s*)?", ai_content)
+        for part in parts:
+            p_clean = part.strip()
+            if not p_clean:
+                continue
+            low = p_clean.lower()
+            if "7 powers" in low or "moat audit" in low or "competitive moat" in low:
+                ai_sec1 = p_clean
+            elif "operational pipeline" in low or "revenue visibility" in low or "counterparty" in low:
+                ai_sec2 = p_clean
+            elif "forensic" in low or "working capital" in low or "reality check" in low:
+                ai_sec3 = p_clean
+            elif "kill-switch" in low or "kill switch" in low or "trigger" in low or "actionable price" in low:
+                ai_sec4 = p_clean
+
+    sec1_body = f"""### Hamilton Helmer 7 Powers Moat Assessment:
+{ai_sec1}""" if ai_sec1 else """### Hamilton Helmer 7 Powers Moat Assessment:
+* **Switching Costs**: High operational stickiness across customer workflows and client integration.
+* **Process Power & Execution Mastery**: Proprietary processes and specialized delivery capability.
+* **Scale Economies**: Sourcing efficiencies, distribution reach, and expanding production volume.
+* **Network Effects**: Value expands as more ecosystem participants and enterprise clients onboard.
+* **Counter-Positioning**: Agile business model prevents incumbent disruption.
+* **Cornered Resource**: Strategic customer access, technical patents, and specialized domain knowledge.
+* **Branding**: Trusted enterprise counterpart status delivering pricing defensibility."""
+
+    sec2_body = f"""### 2.1 Operational Pipeline & Customer Concentration
+{ai_sec2}""" if ai_sec2 else """### 2.1 Client Concentration & Order Book Pipeline
+* **Top 5 Concentration**: Managed within diversified limits (<35-40% of revenue).
+* **Single Largest Counterparty Exposure**: Kept below 15-20% to prevent single-client balance sheet vulnerability.
+* **Order Book & Run-Rate Visibility**: Multi-year recurring customer relationships and active project pipelines provide strong forward visibility.
+
+### 2.2 Single-Order Cliff & Order Book Sustainability Audit
+* **Single-Order Cliff Guard**: Audited order book backlog churn and Book-to-Bill ratio. No unmitigated post-order revenue collapse. Multi-year recurring contract renewals and replacement orders sustain forward top-line velocity.
+* **Pipeline Replenishment**: New contract intakes demonstrate active book replenishment."""
+
+    sec3_extra = f"\n\n### Forensic Accounting & Working Capital Reality Check\n{ai_sec3}" if ai_sec3 else ""
+    sec5_extra = f"\n\n### Operational Kill-Switches & Price Triggers\n{ai_sec4}" if ai_sec4 else ""
+    
     # Multi-year historical financial figures
     trend_years = data.get("trend_years", ["FY22", "FY23", "FY24", "TTM"])
     rev_hist = data.get("rev_history", [])
@@ -2198,27 +2263,13 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 
 {data.get('about', '')}
 
-### Hamilton Helmer 7 Powers Moat Assessment:
-* **Switching Costs**: High operational stickiness across customer workflows and client integration.
-* **Process Power & Execution Mastery**: Proprietary processes and specialized delivery capability.
-* **Scale Economies**: Sourcing efficiencies, distribution reach, and expanding production volume.
-* **Network Effects**: Value expands as more ecosystem participants and enterprise clients onboard.
-* **Counter-Positioning**: Agile business model prevents incumbent disruption.
-* **Cornered Resource**: Strategic customer access, technical patents, and specialized domain knowledge.
-* **Branding**: Trusted enterprise counterpart status delivering pricing defensibility.
+{sec1_body}
 
 ---
 
 ## 2. Counterparty Concentration & Revenue Visibility
 
-### 2.1 Client Concentration & Order Book Pipeline
-* **Top 5 Concentration**: Managed within diversified limits (<35-40% of revenue).
-* **Single Largest Counterparty Exposure**: Kept below 15-20% to prevent single-client balance sheet vulnerability.
-* **Order Book & Run-Rate Visibility**: Multi-year recurring customer relationships and active project pipelines provide strong forward visibility.
-
-### 2.2 Single-Order Cliff & Order Book Sustainability Audit
-* **Single-Order Cliff Guard**: Audited order book backlog churn and Book-to-Bill ratio. No unmitigated post-order revenue collapse. Multi-year recurring contract renewals and replacement orders sustain forward top-line velocity.
-* **Pipeline Replenishment**: New contract intakes demonstrate active book replenishment.
+{sec2_body}
 
 ---
 
@@ -2229,7 +2280,7 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 * **4-Year CFO / PAT Conversion**: **{cfo_pat_ratio:.2f}x** ({forensic_res.get('cfo_status', 'Healthy')}).
 * **Altman Z''-Score**: **{forensic_res.get('altman_z', 3.5)}** ({forensic_res.get('z_status', 'Safe Zone')}).
 * **Debtor Days**: **{forensic_res.get('debtor_days', 60)} Days**.
-* **Promoter Pledging**: **{forensic_res.get('promoter_pledge_pct', 0.0):.1f}%** ({forensic_res.get('pledge_status', 'Zero Pledging')}).
+* **Promoter Pledging**: **{forensic_res.get('promoter_pledge_pct', 0.0):.1f}%** ({forensic_res.get('pledge_status', 'Zero Pledging')}).{sec3_extra}
 
 ---
 
@@ -2264,7 +2315,7 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 * **Quarterly EARS Momentum**: **{ears_val}** (audited vs consensus trajectory).
 * **Earnings Torpedo Stop**: Automated trim trigger at >15% quarterly PAT miss or >30-day debtor cycle surge.
 * **Dynamic Cash Harvesting Protocol**: Sell **50% of position** at Bull Target of **₹{cash_harvest_val:,.2f} (+{cash_harvest_up:.1f}%)** within 12–18 months.
-* **Dynamic Trailing Stop-Loss**: Automated weekly close stop at **₹{trailing_stop:,.2f}** (-15% from entry / -18% from peak).
+* **Dynamic Trailing Stop-Loss**: Automated weekly close stop at **₹{trailing_stop:,.2f}** (-15% from entry / -18% from peak).{sec5_extra}
 """
     return report_md
 

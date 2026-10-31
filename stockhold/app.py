@@ -518,6 +518,7 @@ iframe {
     width: 100% !important;
     border: none !important;
     border-radius: 12px;
+    overflow: auto !important;
 }
 
 /* 3. Mobile Responsiveness: Keep top navbar clean and unstacked on mobile */
@@ -543,6 +544,30 @@ iframe {
     }
 }
 </style>
+
+<script>
+// Auto-resize embedded report iframes to their true DOM scrollHeight
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'stockhold:setFrameHeight' && e.data.height) {
+        const targetH = Math.max(8500, e.data.height + 60);
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(function(iframe) {
+            iframe.style.height = targetH + 'px';
+            iframe.height = targetH;
+            const parent = iframe.closest('div[data-testid="stCustomComponentV1"]');
+            if (parent) {
+                parent.style.height = targetH + 'px';
+                parent.style.maxHeight = 'none';
+            }
+            const elContainer = iframe.closest('div[data-testid="stElementContainer"]');
+            if (elContainer) {
+                elContainer.style.height = targetH + 'px';
+                elContainer.style.maxHeight = 'none';
+            }
+        });
+    }
+});
+</script>
 """)
 
 # Top Compact Navbar: StockHold Logo on Left, Search on Right, ZERO Trending Stocks
@@ -984,8 +1009,13 @@ st.html(f"""
 """)
 
 # --- EMBEDDED INSTITUTIONAL HTML RESEARCH REPORT ---
-report_height = max(2800, min(8000, int(len(html_report_str) / 24) + 400))
-components.html(html_report_str, height=report_height, scrolling=False)
+# Dynamic calculation based on rendered elements + generous safety floor + scrolling=True
+section_count = html_report_str.count('<section class="report-section') or html_report_str.count("<section") or 5
+table_count = html_report_str.count("<table") or 4
+chart_count = html_report_str.count("<canvas") or 1
+calculated_px = 3500 + (section_count * 1150) + (table_count * 380) + (chart_count * 400)
+report_height = max(8800, min(16000, calculated_px))
+components.html(html_report_str, height=report_height, scrolling=True)
 
 # --- CRAWLABLE STOCK DIRECTORY FOOTER (FOR GOOGLEBOT SITEMAP & INDEXING) ---
 render_footer()
