@@ -23,7 +23,8 @@ from data_fetcher import fetch_company_data
 from forward_growth_pe import (
     calculate_forward_pe_valuation,
     calibrate_stock_parameters,
-    evaluate_forward_growth
+    evaluate_forward_growth,
+    prepare_valuation_params
 )
 from forensic_audit import run_forensic_audit, forensic_inputs_from_data
 from reverse_dcf import run_reverse_dcf
@@ -51,25 +52,12 @@ def run_cli_analysis(ticker: str, base_growth: Optional[float] = None,
     print(f"[*] Underwriting Rates: Growth Anchor {bg*100:.1f}% | Bull CAGR {ug*100:.1f}% | Horizon: {horizon} Years")
     print(f"[*] Running live fundamental fetch, valuation matrix & forensic cashflow audit...\n")
 
-    params = {
-        "cmp": data["cmp"],
-        "mcap_cr": data["mcap_cr"],
-        "ttm_eps": data["ttm_eps"],
-        "ttm_sales": data.get("ttm_sales", 0.0),
-        "ttm_pat": data.get("ttm_pat", 0.0),
-        "shares_cr": data.get("shares_cr", 0.0),
-        "base_cagr": bg,
-        "bull_cagr": ug,
-        "base_exit_growth": calibrated["base_exit_g"] / 100.0,
-        "bull_exit_growth": calibrated["bull_exit_g"] / 100.0,
-        "base_peg": calibrated.get("base_peg", 1.60),
-        "bull_peg": calibrated.get("bull_peg", 1.85),
-        "bear_prob": (calibrated.get("bear_prob") or 20) / 100.0,
-        "bear_cagr": (calibrated.get("bear_cagr") or 0.0) / 100.0,
-        "current_margin": calibrated.get("current_margin"),
-        "target_margin_yr2": calibrated.get("target_margin_yr2"),
-        "ticker": t_clean
-    }
+    params = prepare_valuation_params(
+        data=data,
+        calibrated=calibrated,
+        base_cagr_override=bg,
+        bull_cagr_override=ug,
+    )
     val = calculate_forward_pe_valuation(**params)
 
     forensics = run_forensic_audit(**forensic_inputs_from_data(data))

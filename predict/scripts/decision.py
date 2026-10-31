@@ -22,15 +22,15 @@ if _SCRIPT_DIR not in sys.path:
 _REPO_ROOT = os.path.dirname(_SCRIPT_DIR)
 
 try:
-    from forward_growth_pe import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
+    from forward_growth_pe import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params, KILL_SWITCH_SALES_YOY
 except ImportError:
     try:
-        from valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
+        from valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params, KILL_SWITCH_SALES_YOY
     except ImportError:
         try:
-            from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
+            from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params, KILL_SWITCH_SALES_YOY
         except ImportError:
-            from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, KILL_SWITCH_SALES_YOY
+            from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params, KILL_SWITCH_SALES_YOY
 
 try:
     from forensic_audit import run_forensic_audit, forensic_inputs_from_data
@@ -282,22 +282,12 @@ def build_decision_brief(ticker: str, base_cagr: Optional[float] = None,
     data = fetch_company_data(t)
     data["registry_ticker"] = t
     calibrated = calibrate_stock_parameters(data)
-    params = {"cmp": data["cmp"], "mcap_cr": data["mcap_cr"],
-              "ttm_eps": data["ttm_eps"],
-              "ttm_sales": data.get("ttm_sales", 0.0),
-              "ttm_pat": data.get("ttm_pat", 0.0),
-              "shares_cr": data.get("shares_cr", 0.0),
-              "base_cagr": base_cagr if base_cagr is not None else calibrated["base_cagr"] / 100.0,
-              "bull_cagr": bull_cagr if bull_cagr is not None else calibrated["bull_cagr"] / 100.0,
-              "bear_cagr": (calibrated.get("bear_cagr") or 0.0) / 100.0,
-              "bear_prob": (calibrated.get("bear_prob") or 20) / 100.0,
-              "current_margin": calibrated.get("current_margin"),
-              "target_margin_yr2": calibrated.get("target_margin_yr2"),
-              "base_exit_growth": calibrated["base_exit_g"] / 100.0,
-              "bull_exit_growth": calibrated["bull_exit_g"] / 100.0,
-              "base_peg": calibrated.get("base_peg", 1.60),
-              "bull_peg": calibrated.get("bull_peg", 1.85),
-              "ticker": t}
+    params = prepare_valuation_params(
+        data=data,
+        calibrated=calibrated,
+        base_cagr_override=base_cagr,
+        bull_cagr_override=bull_cagr,
+    )
     val_res = calculate_forward_pe_valuation(**params)
     forensic_res = run_forensic_audit(**forensic_inputs_from_data(data))
     latest_fcf = data["fcf_history"][-1] if data.get("fcf_history") else 0.0

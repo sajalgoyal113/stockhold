@@ -337,7 +337,13 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None, **
     if not guidance_data.get("guided_rev_cagr") and not guidance_data.get("guided_pat_margin") \
             and company_data.get("concalls") and os.environ.get("STOCKS_NO_GUIDANCE_FETCH") != "1":
         try:
-            from guidance_fetcher import get_guidance
+            try:
+                from guidance_fetcher import get_guidance
+            except ImportError:
+                try:
+                    from engine.guidance_fetcher import get_guidance
+                except ImportError:
+                    from stockhold.engine.guidance_fetcher import get_guidance
             auto_g = get_guidance(ticker, data=company_data) or {}
             if auto_g:
                 guidance_data = {**auto_g, **guidance_data}
@@ -711,6 +717,20 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None, **
             bull_reason = str(guidance_data["bull_reason"])
         rationale = f"Unified Registry Derivation ({guidance_data.get('notes', 'Registered institutional guidance')}) -> {bull_prob}% Bull / {bear_prob}% Bear"
 
+    guidance_quote = None
+    if guidance_data.get("current_guidance"):
+        for it in guidance_data["current_guidance"]:
+            if it.get("quote"):
+                guidance_quote = it["quote"]
+                break
+    if not guidance_quote and guidance_data.get("track_record"):
+        for tr in guidance_data["track_record"]:
+            if tr.get("quote"):
+                guidance_quote = tr["quote"]
+                break
+    if not guidance_quote and guidance_data.get("notes"):
+        guidance_quote = guidance_data["notes"]
+
     return {
         "base_cagr": base_cagr,
         "bull_cagr": bull_cagr,
@@ -742,6 +762,9 @@ def calibrate_first_principles(company_data: dict, guided_cagr: float = None, **
         "altman_missing": altman_missing,
         "insufficient_data": insufficient_data,
         "guidance_status": guidance_status,
+        "is_guidance_anchored": (guidance_status == "REVENUE"),
+        "guidance_quote": guidance_quote,
+        "guidance_method": guidance_data.get("method"),
         "decelerating": decelerating,
         "margin_compressing": margin_compressing,
         "guidance_reliability": reliability,
@@ -1646,6 +1669,94 @@ def generate_summary_card(res: dict) -> str:
  Dynamic Trailing Stop-Loss:          ₹{res.get('trailing_stop_loss', 0.0):,.2f} (-15.0% Capital Protection)
  Final Conviction Verdict:            {res.get('verdict', 'N/A')}
 ================================================================================"""
+
+
+def prepare_valuation_params(
+    data: dict,
+    calibrated: dict,
+    base_cagr_override: float = None,
+    bull_cagr_override: float = None,
+    base_exit_growth_override: float = None,
+    bull_exit_growth_override: float = None,
+    base_peg_override: float = None,
+    bull_peg_override: float = None,
+    bear_prob_override: float = None,
+    regime_override: str = "Auto",
+    as_of_date: datetime = None
+) -> dict:
+    """
+    Canonical valuation parameter preparation shared identically across:
+    - Master CLI (predict/scripts/run_cli.py)
+    - Institutional Decision Engine (predict/scripts/decision.py)
+    - Web Dashboard (stockhold/app.py)
+
+    Guarantees parameter symmetry, eliminates falsy-zero traps on bear probability,
+    and extracts technical indicators DMA200/DMA50 directly from chart history.
+    """
+    clean_ticker = (data.get("ticker") or data.get("registry_ticker") or "STOCK").upper().strip()
+
+    # 1. Resolve bear probability cleanly without treating 0 as falsy
+    if bear_prob_override is not None:
+        bp = float(bear_prob_override)
+    elif calibrated.get("bear_prob") is not None:
+        bp = float(calibrated["bear_prob"]) / 100.0
+    else:
+        bp = 0.20
+    if bp > 1.0:
+        bp /= 100.0
+    bear_prob = min(1.0, max(0.0, bp))
+    bull_prob = 1.0 - bear_prob
+
+    # 2. Extract technical indicators DMA200/DMA50 from chart history
+    dma200 = None
+    dma50 = None
+    cdf = data.get("chart_df")
+    if isinstance(cdf, pd.DataFrame) and not cdf.empty:
+        if "DMA200" in cdf.columns and pd.notnull(cdf["DMA200"].iloc[-1]):
+            dma200 = float(cdf["DMA200"].iloc[-1])
+        if "DMA50" in cdf.columns and pd.notnull(cdf["DMA50"].iloc[-1]):
+            dma50 = float(cdf["DMA50"].iloc[-1])
+
+    # 3. Prime global cache to avoid redundant secondary network calls
+    if clean_ticker:
+        global _DATA_CACHE
+        _DATA_CACHE[clean_ticker] = data
+
+    # 4. Resolve growth and exit inputs with clean fallbacks
+    base_cagr = base_cagr_override if base_cagr_override is not None else (calibrated.get("base_cagr", 20.0) / 100.0)
+    bull_cagr = bull_cagr_override if bull_cagr_override is not None else (calibrated.get("bull_cagr", 25.0) / 100.0)
+    base_exit_g = base_exit_growth_override if base_exit_growth_override is not None else (calibrated.get("base_exit_g", 16.0) / 100.0)
+    bull_exit_g = bull_exit_growth_override if bull_exit_growth_override is not None else (calibrated.get("bull_exit_g", 20.0) / 100.0)
+    base_peg = base_peg_override if base_peg_override is not None else float(calibrated.get("base_peg", 1.60))
+    bull_peg = bull_peg_override if bull_peg_override is not None else float(calibrated.get("bull_peg", 1.85))
+
+    return {
+        "cmp": data["cmp"],
+        "mcap_cr": data["mcap_cr"],
+        "ttm_eps": data["ttm_eps"],
+        "ttm_sales": data.get("ttm_sales", 0.0),
+        "ttm_pat": data.get("ttm_pat", 0.0),
+        "shares_cr": data.get("shares_cr", 0.0),
+        "base_cagr": base_cagr,
+        "bull_cagr": bull_cagr,
+        "base_exit_growth": base_exit_g,
+        "bull_exit_growth": bull_exit_g,
+        "base_peg": base_peg,
+        "bull_peg": bull_peg,
+        "bear_prob": bear_prob,
+        "bull_prob": bull_prob,
+        "bear_cagr": (calibrated.get("bear_cagr") or 0.0) / 100.0,
+        "base_reason": calibrated.get("base_reason"),
+        "bull_reason": calibrated.get("bull_reason"),
+        "dilution_pct_annual": calibrated.get("dilution", 0.0),
+        "current_margin": calibrated.get("current_margin"),
+        "target_margin_yr2": calibrated.get("target_margin_yr2"),
+        "regime_override": regime_override,
+        "ticker": clean_ticker,
+        "dma200": dma200,
+        "dma50": dma50,
+        "as_of_date": as_of_date,
+    }
 
 
 def calculate_forward_pe_valuation(

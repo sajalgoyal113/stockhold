@@ -1118,7 +1118,7 @@ def generate_html_from_markdown(content, filename="report.md", output_path=None)
         }}
     </style>
 </head>
-<body class="min-h-screen font-sans antialiased bg-[#0A0E17] text-slate-100 dark:bg-[#0A0E17] dark:text-slate-100 selection:bg-indigo-500 selection:text-white pb-20 transition-colors duration-200">
+<body class="min-h-screen font-sans antialiased bg-[#0A0E17] text-slate-100 dark:bg-[#0A0E17] dark:text-slate-100 selection:bg-indigo-500 selection:text-white pb-20 transition-colors duration-200" data-ticker="{ticker_str}" data-cmp="{cmp_val}" data-verdict="{verdict_str}">
 
     <!-- Top Sticky Header Navigation -->
     <header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#0A0E17]/90 backdrop-blur-md transition-colors">
@@ -2268,8 +2268,12 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
     return report_md
 
 
-def find_existing_html_report(ticker: str, reports_dir: str = None):
-    """Checks if a compiled institutional HTML research report exists for the given ticker."""
+def find_existing_html_report(ticker: str, reports_dir: str = None, current_cmp: float = None, max_drift_pct: float = 0.02):
+    """
+    Checks if a compiled institutional HTML research report exists for the given ticker.
+    If current_cmp is provided, validates that the report's CMP has not drifted by more than max_drift_pct (default 2%).
+    Returns (html_str, file_path) if valid and not stale, otherwise (None, None).
+    """
     r_dir = Path(reports_dir if reports_dir else _REPORTS_DIR)
     if not r_dir.exists():
         return None, None
@@ -2279,12 +2283,38 @@ def find_existing_html_report(ticker: str, reports_dir: str = None):
         if html_file.name == "index.html":
             continue
         try:
-            head = html_file.read_text(encoding="utf-8", errors="ignore")[:3500]
-            if f"({t_clean})" in head or f"NSE: {t_clean}" in head or f'data-ticker="{t_clean}"' in head:
-                return html_file.read_text(encoding="utf-8"), str(html_file)
-            fn = html_file.stem.lower()
-            if t_clean.lower() in fn.replace("_", ""):
-                return html_file.read_text(encoding="utf-8"), str(html_file)
+            head = html_file.read_text(encoding="utf-8", errors="ignore")[:4000]
+            is_match = (
+                f"({t_clean})" in head or
+                f"NSE: {t_clean}" in head or
+                f'data-ticker="{t_clean}"' in head or
+                t_clean.lower() in html_file.stem.lower().replace("_", "")
+            )
+            if not is_match:
+                continue
+
+            # Stale report price drift verification (Solution 3)
+            if current_cmp is not None and current_cmp > 0:
+                report_cmp = None
+                dc_m = re.search(r'data-cmp=["\']([0-9.]+)["\']', head)
+                if dc_m:
+                    report_cmp = float(dc_m.group(1))
+                else:
+                    summary = parse_summary_box(head)
+                    if summary.get("CMP"):
+                        report_cmp = parse_number_from_string(summary["CMP"])
+                    else:
+                        cmp_m = re.search(r"CMP[:\s]+₹?\s*([0-9,.]+)", head)
+                        if cmp_m:
+                            report_cmp = parse_number_from_string(cmp_m.group(1))
+
+                if report_cmp and report_cmp > 0:
+                    drift = abs(current_cmp - report_cmp) / report_cmp
+                    if drift > max_drift_pct:
+                        print(f"[*] Pre-compiled report for {t_clean} is STALE (Report CMP ₹{report_cmp:,.2f} vs Live CMP ₹{current_cmp:,.2f}, drift {drift*100:+.1f}% > {max_drift_pct*100:.0f}%). Invalidating static report for live recalculation.")
+                        return None, None
+
+            return html_file.read_text(encoding="utf-8"), str(html_file)
         except Exception:
             continue
             
@@ -2351,8 +2381,9 @@ def generate_html_for_stock(data: dict, val_res: dict, forensic_res: dict, rev_d
     Returns (html_str, meta, md_dossier, is_curated_file, source_path)
     """
     ticker = data.get("ticker", "STOCK").upper().strip()
+    cmp_val = data.get("cmp", 0.0)
     if not force_regenerate:
-        existing_html, existing_path = find_existing_html_report(ticker)
+        existing_html, existing_path = find_existing_html_report(ticker, current_cmp=cmp_val)
         if existing_html:
             meta = parse_metadata(existing_html, Path(existing_path).name)
             meta["is_curated"] = True

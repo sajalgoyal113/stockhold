@@ -26,7 +26,7 @@ import streamlit.components.v1 as components
 
 try:
     from engine.data_fetcher import fetch_company_data, get_top_trending_stocks
-    from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+    from engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params
     from engine.forensics import run_forensic_audit, forensic_inputs_from_data
     from engine.reverse_dcf import run_reverse_dcf
     from engine.ai_analyst import generate_ai_analysis
@@ -44,7 +44,7 @@ except ImportError:
         if _mod == "engine" or _mod.startswith("engine."):
             sys.modules.pop(_mod, None)
     from stockhold.engine.data_fetcher import fetch_company_data, get_top_trending_stocks
-    from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters
+    from stockhold.engine.valuation import calculate_forward_pe_valuation, calibrate_stock_parameters, prepare_valuation_params
     try:
         from stockhold.engine.forensics import run_forensic_audit, forensic_inputs_from_data
     except ImportError:
@@ -666,17 +666,43 @@ with nav_right:
             st.query_params["ticker"] = chosen
             st.rerun()
 
-# --- DATA FETCHING & PROCESSING ---
-@st.cache_data(ttl=1800, show_spinner=False)
-def load_company(symbol: str):
+# --- DATA FETCHING & PROCESSING (MARKET-HOURS AWARE CACHING) ---
+def get_market_cache_bucket() -> tuple:
+    """
+    Returns (cache_bucket, is_market_open) based on Indian Standard Time (IST).
+    - Market Open (Mon-Fri 09:15-15:30 IST): 60-second cache bucket for live prices.
+    - Market Closed / Weekends: 1800-second (30-minute) cache bucket to conserve resources.
+    """
+    import datetime, zoneinfo
+    try:
+        now_ist = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Kolkata"))
+    except Exception:
+        now_ist = datetime.datetime.utcnow() + datetime.timedelta(hours=5, minutes=30)
+
+    is_market_open = (
+        now_ist.weekday() < 5 and (
+            (now_ist.hour == 9 and now_ist.minute >= 15) or
+            (10 <= now_ist.hour < 15) or
+            (now_ist.hour == 15 and now_ist.minute <= 30)
+        )
+    )
+    ts = int(now_ist.timestamp())
+    bucket = ts // 60 if is_market_open else ts // 1800
+    return bucket, is_market_open
+
+
+@st.cache_data(ttl=1800, max_entries=100, show_spinner=False)
+def load_company(symbol: str, cache_bucket: int):
     company_data = fetch_company_data(symbol)
     if not company_data or company_data.get("cmp", 0) <= 0:
         raise ValueError(f"Invalid market data retrieved for {symbol}")
     return company_data
 
+cache_bucket, is_market_open = get_market_cache_bucket()
+
 with st.spinner(f"Analyzing institutional filings and concall disclosures for {ticker}..."):
     try:
-        data = load_company(ticker)
+        data = load_company(ticker, cache_bucket)
     except Exception as e:
         st.error(f"⚠️ Unable to load financial model for '{ticker}'. This might happen due to temporary network timeouts or an unrecognized ticker.")
         col_r1, col_r2 = st.columns([1, 1])
@@ -742,6 +768,42 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("**📈 Compounding Assumptions**")
+
+    # Underwriting Foundation Callout: Management Guidance vs First-Principles
+    is_guidance_active = bool(calibrated.get("is_guidance_anchored"))
+    g_rev = calibrated.get("guided_rev_cagr")
+    g_rel = calibrated.get("guidance_reliability", 0.75)
+    g_as_of = calibrated.get("guidance_as_of", "")
+    g_quote = calibrated.get("guidance_quote", "")
+
+    if is_guidance_active and g_rev is not None:
+        quote_snippet = f'<div style="font-size: 0.73rem; color: #94a3b8; font-style: italic; margin-top: 6px; border-left: 2px solid #00f5a0; padding-left: 6px;">"{g_quote[:180]}..." — Concall ({g_as_of})</div>' if g_quote else ""
+        badge_html = f"""
+        <div style="background: rgba(0, 245, 160, 0.08); border: 1px solid rgba(0, 245, 160, 0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="background: rgba(0, 245, 160, 0.2); color: #00f5a0; border: 1px solid rgba(0, 245, 160, 0.5); padding: 2px 7px; border-radius: 9999px; font-weight: 700; font-size: 0.72rem;">🟢 MANAGEMENT GUIDANCE ACTIVE</span>
+                <span style="font-size: 0.72rem; color: #94a3b8; font-family: monospace;">{g_as_of}</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #f1f5f9; line-height: 1.4;">
+                Forward model anchored to disclosed guidance of <b>+{g_rev:.1f}% Revenue CAGR</b> discounted by historical delivery score (<b>{g_rel:.2f}x</b>).
+            </div>
+            {quote_snippet}
+        </div>
+        """
+    else:
+        sales_3y = data.get("sales_growth_3yr")
+        profit_3y = data.get("profit_growth_3yr")
+        badge_html = f"""
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="margin-bottom: 6px;">
+                <span style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); padding: 2px 7px; border-radius: 9999px; font-weight: 700; font-size: 0.72rem;">⚪ FIRST-PRINCIPLES DERIVATION</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">
+                No quantitative revenue targets in latest concalls. Deterministically derived from audited <b>Sales 3Y ({sales_3y if sales_3y is not None else 'N/A'}%)</b>, <b>PAT 3Y ({profit_3y if profit_3y is not None else 'N/A'}%)</b> & <b>ROCE ({calibrated.get('roce', 'N/A')}%)</b>.
+            </div>
+        </div>
+        """
+    st.markdown(badge_html, unsafe_allow_html=True)
     st.markdown(f"""
     <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.8rem; line-height: 1.4;">
         <b style="color: #a5b4fc;">✨ Dynamic Calibration ({data['ticker']}):</b><br>
@@ -806,42 +868,18 @@ mcap = data["mcap_cr"]
 ttm_eps = data["ttm_eps"]
 pe = data["pe"]
 
-# Extract DMA200 and DMA50 from chart history for Technical Stage 2 Trend Confirmation Gate
-dma200 = None
-dma50 = None
-if isinstance(data.get("chart_df"), pd.DataFrame) and not data["chart_df"].empty:
-    cdf = data["chart_df"]
-    if "DMA200" in cdf.columns and pd.notnull(cdf["DMA200"].iloc[-1]):
-        dma200 = float(cdf["DMA200"].iloc[-1])
-    if "DMA50" in cdf.columns and pd.notnull(cdf["DMA50"].iloc[-1]):
-        dma50 = float(cdf["DMA50"].iloc[-1])
-
-val_params = {
-    "cmp": cmp,
-    "mcap_cr": mcap,
-    "ttm_eps": ttm_eps,
-    "ttm_sales": data.get("ttm_sales", 0.0),
-    "ttm_pat": data.get("ttm_pat", 0.0),
-    "shares_cr": data.get("shares_cr", 0.0),
-    "base_cagr": base_cagr,
-    "bull_cagr": bull_cagr,
-    "base_exit_growth": base_exit_g,
-    "bull_exit_growth": bull_exit_g,
-    "base_peg": base_peg,
-    "bull_peg": bull_peg,
-    "bear_prob": bear_prob,
-    "bull_prob": 1.0 - bear_prob,
-    "bear_cagr": calibrated.get("bear_cagr", 0.0) / 100.0,
-    "base_reason": calibrated.get("base_reason"),
-    "bull_reason": calibrated.get("bull_reason"),
-    "dilution_pct_annual": calibrated.get("dilution", 0.0),
-    "current_margin": calibrated.get("current_margin"),
-    "target_margin_yr2": calibrated.get("target_margin_yr2"),
-    "regime_override": selected_regime_override,
-    "ticker": ticker,
-    "dma200": dma200,
-    "dma50": dma50,
-}
+val_params = prepare_valuation_params(
+    data=data,
+    calibrated=calibrated,
+    base_cagr_override=base_cagr,
+    bull_cagr_override=bull_cagr,
+    base_exit_growth_override=base_exit_g,
+    bull_exit_growth_override=bull_exit_g,
+    base_peg_override=base_peg,
+    bull_peg_override=bull_peg,
+    bear_prob_override=bear_prob,
+    regime_override=selected_regime_override,
+)
 
 # Defensive signature check to guarantee zero runtime TypeError on hot-reloads
 sig = inspect.signature(calculate_forward_pe_valuation)
@@ -877,8 +915,8 @@ rev_dcf_res = run_reverse_dcf(
     fcf_0=base_fcf_input
 )
 
-# Check if curated institutional report already exists
-existing_html, existing_path = find_existing_html_report(ticker) if not force_recompile else (None, None)
+# Check if curated institutional report already exists (with automatic price drift validation)
+existing_html, existing_path = find_existing_html_report(ticker, current_cmp=cmp) if not force_recompile else (None, None)
 
 if existing_html:
     html_report_str = existing_html
@@ -951,11 +989,21 @@ if not _kill_lines:
 _badge = ("GUARD PASS — targets match deterministic math" if _guard_ok
           else "GUARD FLAG — " + "; ".join(_guard.get("violations", [])[:2]))
 _badge_color = "#00f5a0" if _guard_ok else "#ffb703"
+
+_is_guided = bool(calibrated.get("is_guidance_anchored"))
+_g_cagr = calibrated.get("guided_rev_cagr")
+_guidance_chip = (
+    f"<span style='font-size: 0.78rem; font-weight: 700; color: #00f5a0;'>| 🟢 Guidance Anchored (+{_g_cagr:.1f}%)</span>"
+    if _is_guided and _g_cagr is not None
+    else "<span style='font-size: 0.78rem; font-weight: 700; color: #94a3b8;'>| ⚪ First-Principles Derivation</span>"
+)
+
 st.html(f"""
 <div class="glass-card" style="padding: 14px 16px; margin: 6px 0 12px 0;">
   <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
     <span style="font-size: 0.78rem; font-weight: 700; color: {_badge_color};">{_badge}</span>
     <span style="font-size: 0.78rem; color: #94a3b8;">| {val_res.get('verdict', '')}</span>
+    {_guidance_chip}
     <span style="font-size: 0.78rem; color: #94a3b8;">| {ai_output.get('source', 'Institutional Valuation Desk') if isinstance(ai_output, dict) else 'Algorithmic Desk'}</span>
     {"<span style='font-size: 0.78rem; font-weight: 700; color: #ffb703;'>| Altman UNAVAILABLE — fragile-tier penalty applied</span>" if _altman_missing else ""}
     {"<span style='font-size: 0.78rem; font-weight: 700; color: #ffb703;'>| SPARSE INPUTS — " + calibrated.get('rationale', '').split(']')[0].replace('[SPARSE INPUTS: ', '') + "</span>" if _sparse else ""}

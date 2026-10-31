@@ -1,6 +1,6 @@
 {
  "_schema": "guidance_registry v2: _entries[TICKER] = auto-extracted concall guidance (guided_rev_cagr %, guided_pat_margin fraction, reliability, track_record, sources) or a manual override with base_cagr/bull_cagr/exit fields + source + as_of.",
- "_as_of": "2026-10-31",
+ "_as_of": "2026-11-01",
  "_entries": {
   "AHLUCONT": {
    "as_of": "2026-08-15",
@@ -333,7 +333,7 @@
      "value": 13.5,
      "period_fy": 2027,
      "period_inferred": false,
-     "quote": "at a blended level the EBITDA margins could be in the range of 19 % to 20% with profitability\u2019s in the range of somewhere around 13 % to 14%.",
+     "quote": "at a blended level the EBITDA margins could be in the range of 19 % to 20% with profitability’s in the range of somewhere around 13 % to 14%.",
      "method": "llm-reviewed",
      "call_date": "2026-08",
      "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bc46700d-475d-4647-8630-bf6a26ffeb01.pdf"
@@ -447,7 +447,7 @@
      "actual": 50.8,
      "ratio": 0.924,
      "call_date": "2025-02",
-     "quote": "the annual operating revenue growth would exceed 55% on year-on-year basis and an expansion in terms of profitability for year FY \u201925.",
+     "quote": "the annual operating revenue growth would exceed 55% on year-on-year basis and an expansion in terms of profitability for year FY ’25.",
      "method": "llm-reviewed"
     },
     {
@@ -770,7 +770,7 @@
      "value": 24.5,
      "period_fy": 2027,
      "period_inferred": false,
-     "quote": "We continue t o expect EBITDA margins to return to the 24% \u201325% range on a pre -Ind AS basis by the end of the year.",
+     "quote": "We continue t o expect EBITDA margins to return to the 24% –25% range on a pre -Ind AS basis by the end of the year.",
      "method": "llm-reviewed",
      "call_date": "2026-08",
      "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8970d382-3968-4128-9b4c-cddf4546db10.pdf"
@@ -1080,7 +1080,7 @@
      "actual": -16.08,
      "ratio": -0.919,
      "call_date": "2024-07",
-     "quote": "Sarfaraz Ahmed: Can\u2019t tell about the numbers, but yes, growth will be 15% to 20%.",
+     "quote": "Sarfaraz Ahmed: Can’t tell about the numbers, but yes, growth will be 15% to 20%.",
      "method": "llm-reviewed"
     },
     {
@@ -1325,6 +1325,58 @@
     "https://b.zmtcdn.com/investor-relations/Q1FY26-earnings-call-transcript.pdf"
    ],
    "notes": "Verified concall guidance: 35% revenue CAGR with steady-state PAT margin expanding to 4.5% as Blinkit dark stores mature. Cash flow generation validated (CFO > 0)."
+  },
+  "TATATECH": {
+   "as_of": "2026-10-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 20.0,
+   "guided_pat_margin": 0.1129,
+   "reliability": 0.718,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "margin_track_record_n": 0,
+   "track_record": [
+    {
+     "metric": "revenue_growth",
+     "period_fy": 2026,
+     "guided": 10.0,
+     "actual": 6.54,
+     "ratio": 0.654,
+     "call_date": "2026-01",
+     "quote": "For Q4, we expect sequential revenue growth in excess of 10%, and despite the impacts of new labour codes, deliver EBITDA Margins that exceed our Q2 run-rate.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 20.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Based on our first -half performance, continued program ramp-ups, and healthy pipeline conversion, we remain confident in maintaining strong double-digit growth for FY27.",
+     "method": "llm",
+     "call_date": "2026-10",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=043e9a8c-acc0-45a3-9570-ffcc69fef87d.pdf"
+    },
+    {
+     "metric": "ebitda_margin",
+     "value": 18.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "We continue to expect double-digit organic top-line growth, excluding any inorganic contribution from ES-Tec, and we expect to exit FY27 with an operating margin run rate that exceeds 18%, driven by operating leverage, portfolio mix improvement, and disciplined execution.",
+     "method": "llm",
+     "call_date": "2026-05",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=dc5682bc-d973-4cc7-97fc-4984cf9dfadb.pdf"
+    }
+   ],
+   "calls_parsed": 4,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=043e9a8c-acc0-45a3-9570-ffcc69fef87d.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c279cb4f-e386-4a6e-9057-b385f4793186.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=dc5682bc-d973-4cc7-97fc-4984cf9dfadb.pdf"
+   ],
+   "notes": "Auto-extracted from 4 concall transcripts (llm); growth reliability 0.718 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
   }
  }
 }

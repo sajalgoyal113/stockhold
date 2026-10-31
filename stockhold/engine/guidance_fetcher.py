@@ -44,7 +44,7 @@ DATA_DIR = next((d for d in _DATA_DIR_CANDIDATES if os.path.isdir(d)), _DATA_DIR
 REGISTRY_PATH = os.path.join(DATA_DIR, "guidance_registry.json")
 TRANSCRIPT_DIR = os.path.join(DATA_DIR, "transcripts")
 
-MAX_CALLS = 8                 # ~2 years of quarterly calls
+MAX_CALLS = 4                 # ~1 year of quarterly calls (fast, responsive concall parsing)
 FRESH_DAYS = 200              # guidance older than this is not "current"
 PRIOR_RELIABILITY = 0.75      # shrinkage prior for delivery ratio
 PRIOR_WEIGHT = 2.0            # pseudo-observations behind the prior
@@ -63,6 +63,12 @@ def gemini_api_key():
     key = os.environ.get("GEMINI_API_KEY")
     if key:
         return key.strip()
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            return str(st.secrets["GEMINI_API_KEY"]).strip()
+    except Exception:
+        pass
     root = os.path.dirname(os.path.dirname(_SCRIPT_DIR))
     for p in (os.path.expanduser("~/.streamlit/secrets.toml"),
               os.path.join(root, ".streamlit", "secrets.toml"),
@@ -544,6 +550,11 @@ def get_guidance(ticker, data=None, allow_network=True, max_age_days=120):
         return entry
     try:
         live = build_guidance_entry(t, data=data)
+        if live and (live.get("guided_rev_cagr") is not None or live.get("guided_pat_margin") is not None):
+            try:
+                write_entries({t: live})
+            except Exception:
+                pass
     except Exception:
         live = None
     _MEM_CACHE[t] = live or entry
