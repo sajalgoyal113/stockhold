@@ -333,7 +333,7 @@
      "value": 13.5,
      "period_fy": 2027,
      "period_inferred": false,
-     "quote": "at a blended level the EBITDA margins could be in the range of 19 % to 20% with profitability’s in the range of somewhere around 13 % to 14%.",
+     "quote": "at a blended level the EBITDA margins could be in the range of 19 % to 20% with profitability\u2019s in the range of somewhere around 13 % to 14%.",
      "method": "llm-reviewed",
      "call_date": "2026-08",
      "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bc46700d-475d-4647-8630-bf6a26ffeb01.pdf"
@@ -430,87 +430,43 @@
    "notes": "Transcripts reviewed: no quantitative company-level guidance found."
   },
   "KAYNES": {
-   "as_of": "2026-05-15",
-   "fetched_at": "2026-10-31",
-   "method": "llm-reviewed",
-   "guided_rev_cagr": null,
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 30.0,
    "guided_pat_margin": null,
-   "reliability": 0.79,
-   "margin_reliability": 0.881,
-   "track_record_n": 4,
-   "margin_track_record_n": 2,
+   "reliability": 0.802,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
    "track_record": [
     {
-     "metric": "revenue_growth",
-     "period_fy": 2025,
-     "guided": 55.0,
-     "actual": 50.8,
-     "ratio": 0.924,
-     "call_date": "2025-02",
-     "quote": "the annual operating revenue growth would exceed 55% on year-on-year basis and an expansion in terms of profitability for year FY ’25.",
-     "method": "llm-reviewed"
-    },
-    {
-     "metric": "revenue_target",
-     "period_fy": 2025,
-     "guided": 2850.0,
-     "actual": 2722.0,
-     "ratio": 0.955,
-     "call_date": "2025-02",
-     "quote": "So revenue guidance will be somewhere between INR2,800 crores and INR2,900 crores.",
-     "method": "llm-reviewed"
-    },
-    {
-     "metric": "ebitda_margin",
-     "period_fy": 2025,
-     "guided": 15.0,
-     "actual": 15.0,
-     "ratio": 1.0,
-     "call_date": "2025-02",
-     "quote": "And the margins will be 15% plus for the year.",
-     "method": "llm-reviewed"
-    },
-    {
-     "metric": "revenue_growth",
-     "period_fy": 2026,
-     "guided": 60.0,
-     "actual": 33.21,
-     "ratio": 0.554,
-     "call_date": "2025-05",
-     "quote": "So in terms of gro wth numbers for our consolidated numbers this year, we can safely say that minimum 60% growt h will be there in operating revenues.",
-     "method": "llm-reviewed"
-    },
-    {
-     "metric": "ebitda_margin",
-     "period_fy": 2026,
-     "guided": 15.6,
-     "actual": 16.0,
-     "ratio": 1.026,
-     "call_date": "2025-05",
-     "quote": "we are saying that core business will yield another 50 basis points, so about 15.6% EBITDA.",
-     "method": "llm-reviewed"
-    },
-    {
-     "metric": "revenue_target",
-     "period_fy": 2026,
-     "guided": 4500.0,
      "actual": 3626.0,
-     "ratio": 0.806,
-     "call_date": "2025-08",
-     "quote": "So we maintain our what I call the guidance of INR4,500 crores plus on a consol basis.",
-     "method": "llm-reviewed"
+     "call_date": "2026-02",
+     "guided": 4000.0,
+     "method": "llm",
+     "metric": "revenue_target",
+     "period_fy": 2026,
+     "quote": "So, in terms of revenue, I think last quarter is going to be a busy quarter for us, and including the last quarter for FY '26, we'll cross about INR4,000 crores minimum and mainly driven by EMS revenues.",
+     "ratio": 0.906
     }
    ],
-   "current_guidance": [],
-   "calls_parsed": 5,
-   "sources": [
-    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2189aa12-5b09-4c30-9c69-e58597b92840.pdf",
-    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2cf46e32-c51c-4842-8a96-2f079f7ef3e5.pdf",
-    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7fcb06f1-08f9-4ebd-a6ac-783e8abfda40.pdf",
-    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9ed5c7b3-510f-4570-8d68-92c16e782894.pdf",
-    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c2aa16ac-08ab-430a-819a-833f94c09dde.pdf"
+   "current_guidance": [
+    {
+     "call_date": "2026-05",
+     "method": "llm",
+     "metric": "revenue_growth",
+     "period_fy": 2027,
+     "quote": "Rail business, I'm expecting this year to grow by around 20%, 25% because of these coming in.",
+     "value": 30.0
+    }
    ],
-   "notes": "Auto-extracted from 5 concall transcripts (llm-reviewed); growth reliability 0.79 from 4 revenue/PAT promises, margin reliability 0.881 from 2 (prior 0.75, weight 2.0)."
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7fcb06f1-08f9-4ebd-a6ac-783e8abfda40.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c2aa16ac-08ab-430a-819a-833f94c09dde.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e8d82234-f369-467f-a76f-75bb2747aaa1.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.802 from 1 revenue/PAT promise."
   },
   "MAPMYINDIA": {
    "as_of": "2026-08-15",
@@ -770,7 +726,7 @@
      "value": 24.5,
      "period_fy": 2027,
      "period_inferred": false,
-     "quote": "We continue t o expect EBITDA margins to return to the 24% –25% range on a pre -Ind AS basis by the end of the year.",
+     "quote": "We continue t o expect EBITDA margins to return to the 24% \u201325% range on a pre -Ind AS basis by the end of the year.",
      "method": "llm-reviewed",
      "call_date": "2026-08",
      "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8970d382-3968-4128-9b4c-cddf4546db10.pdf"
@@ -1080,7 +1036,7 @@
      "actual": -16.08,
      "ratio": -0.919,
      "call_date": "2024-07",
-     "quote": "Sarfaraz Ahmed: Can’t tell about the numbers, but yes, growth will be 15% to 20%.",
+     "quote": "Sarfaraz Ahmed: Can\u2019t tell about the numbers, but yes, growth will be 15% to 20%.",
      "method": "llm-reviewed"
     },
     {
@@ -1377,6 +1333,497 @@
     "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=dc5682bc-d973-4cc7-97fc-4984cf9dfadb.pdf"
    ],
    "notes": "Auto-extracted from 4 concall transcripts (llm); growth reliability 0.718 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "DIVISLAB": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 10.0,
+   "guided_pat_margin": null,
+   "reliability": 0.85,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "margin_track_record_n": 0,
+   "track_record": [
+    {
+     "metric": "revenue_growth",
+     "period_fy": 2026,
+     "guided": 10.79,
+     "actual": 12.82,
+     "ratio": 1.188,
+     "call_date": "2025-11",
+     "quote": "Currently, the half year is about 10.79%, and we are assuming that for the rest of the year also, it would be around the similar number.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 10.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Now coming to the future outlook, we would say that as historically that we always look for a double -digit growth in our revenues, and that's what we would also say today.",
+     "method": "llm",
+     "call_date": "2026-05",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=935b6619-ebf7-48e4-bb29-d5197eadec03.pdf"
+    }
+   ],
+   "calls_parsed": 4,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=935b6619-ebf7-48e4-bb29-d5197eadec03.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bd0db744-7bda-4476-8aa2-a966a585f084.pdf"
+   ],
+   "notes": "Auto-extracted from 4 concall transcripts (llm); growth reliability 0.85 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "CIPLA": {
+   "as_of": "2026-10-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": 0.1196,
+   "reliability": 0.75,
+   "margin_reliability": 0.833,
+   "track_record_n": 0,
+   "margin_track_record_n": 1,
+   "track_record": [
+    {
+     "metric": "ebitda_margin",
+     "period_fy": 2026,
+     "guided": 21.0,
+     "actual": 21.0,
+     "ratio": 1.0,
+     "call_date": "2026-01",
+     "quote": "Now, these are deliberate strategic choices and will lead to FY\u201926 EBITDA margin guidance to land at around 21%.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "ebitda_margin",
+     "value": 19.25,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "And for the EBITDA guidance for the full year will be 18.5% to 20%.",
+     "method": "llm",
+     "call_date": "2026-10",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b3ecbdbf-929d-4e28-9598-94a0069417b4.pdf"
+    }
+   ],
+   "calls_parsed": 4,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=85f5f17a-ce72-45a5-9acb-43f1f8c77b27.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8a642d4a-4e66-484a-a5cd-91e807f955d3.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a036a014-e0e9-4194-9a9e-9d44134da589.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b3ecbdbf-929d-4e28-9598-94a0069417b4.pdf"
+   ],
+   "notes": "Auto-extracted from 4 concall transcripts (llm); growth reliability 0.75 from 0 revenue/PAT promises, margin reliability 0.833 from 1 (prior 0.75, weight 2.0)."
+  },
+  "DIXON": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 22.5,
+   "guided_pat_margin": null,
+   "reliability": 0.715,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "track_record": [
+    {
+     "actual": 25.77,
+     "call_date": "2025-10",
+     "guided": 40.0,
+     "method": "llm",
+     "metric": "revenue_growth",
+     "period_fy": 2026,
+     "quote": "And sir, at the beginning of the year, the firm had given a guidance of 40%-45% revenue growth.",
+     "ratio": 0.644
+    }
+   ],
+   "current_guidance": [
+    {
+     "call_date": "2026-05",
+     "method": "llm",
+     "metric": "revenue_target",
+     "period_fy": 2027,
+     "quote": "Next year, we are targeting almost INR56,000 crores without the Vivo numbers, and mobile volume being flat.",
+     "value": 56000.0
+    },
+    {
+     "call_date": "2026-08",
+     "method": "llm",
+     "metric": "revenue_growth",
+     "period_fy": 2027,
+     "quote": "while our top line witnessed a strong revenue growth due to higher input cost realization.",
+     "value": 22.5
+    }
+   ],
+   "calls_parsed": 4,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=38b72f07-55a6-4503-91fd-ed3b2c209e96.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7ce2ca16-3043-48f4-97f9-a62a6a086c2f.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=95dbb3ac-5662-4cd9-a145-78effb6c373c.pdf"
+   ],
+   "notes": "Auto-extracted from 4 concall transcripts (llm); growth reliability 0.715 from 1 revenue/PAT promise."
+  },
+  "TRENT": {
+   "as_of": "2026-11-01",
+   "fetched_at": "2026-11-01",
+   "method": "no-concalls",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": null,
+   "reliability": null,
+   "track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [],
+   "calls_parsed": 0,
+   "sources": [],
+   "notes": "Trent does not conduct quarterly earnings conference calls. Forward growth is derived deterministically from audited 3-year historical velocity via First-Principles Derivation."
+  },
+  "HAL": {
+   "as_of": "2026-05-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": null,
+   "reliability": 0.784,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "margin_track_record_n": 0,
+   "track_record": [
+    {
+     "metric": "revenue_growth",
+     "period_fy": 2026,
+     "guided": 8.0,
+     "actual": 6.8,
+     "ratio": 0.851,
+     "call_date": "2025-05",
+     "quote": "So, to neutralize that and then we will maintain the revenue growth.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94da53ef-52aa-4fdd-8cc2-9dcf291a112d.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.784 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "BEL": {
+   "as_of": "2026-07-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 15.0,
+   "guided_pat_margin": 0.209,
+   "reliability": 0.75,
+   "margin_reliability": 0.85,
+   "track_record_n": 0,
+   "margin_track_record_n": 1,
+   "track_record": [
+    {
+     "metric": "ebitda_margin",
+     "period_fy": 2026,
+     "guided": 27.0,
+     "actual": 29.0,
+     "ratio": 1.074,
+     "call_date": "2026-01",
+     "quote": "Damodar Bhattad: No. As of now, we maintain the EBITDA margin of 27% what we have guided for the current year , because it is a composition of products which we sell.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 15.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "The revenue growth of 15%, EBITDA margin 21% to 23%, order inflow of more than INR20,000 crores including QRSAM, the R&D investment more than INR2,200 crores , capex more than INR1,200 crores with a typical defence non - defence business of 90:10.",
+     "method": "llm",
+     "call_date": "2026-07",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d2a747a3-664c-4c5d-9373-fcddc0d2a3ae.pdf"
+    },
+    {
+     "metric": "ebitda_margin",
+     "value": 28.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "As far as margins are concerned, as we have already told, current year EBITDA margin guidance we have given of 2 8 %, we remain at that.",
+     "method": "llm",
+     "call_date": "2026-07",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d2a747a3-664c-4c5d-9373-fcddc0d2a3ae.pdf"
+    },
+    {
+     "metric": "revenue_target",
+     "value": 55000.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "The order inflow we are expecting this year more than INR55,000 crores.",
+     "method": "llm",
+     "call_date": "2026-05",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f32d2ed7-e599-42b4-ab37-d8e5e79ae0ca.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bb8b13a8-bf5d-410c-ac76-7a0f41a3cbdc.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d2a747a3-664c-4c5d-9373-fcddc0d2a3ae.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f32d2ed7-e599-42b4-ab37-d8e5e79ae0ca.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts; verified management guidance: 15% revenue growth, 21-23% EBITDA margin."
+  },
+  "POLYCAB": {
+   "as_of": "2026-10-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": 0.0807,
+   "reliability": 0.75,
+   "margin_reliability": 0.75,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [
+    {
+     "metric": "ebitda_margin",
+     "value": 12.0,
+     "period_fy": 2030,
+     "period_inferred": false,
+     "quote": "In line with our Project Spring roadmap, we remain confident of sustaining medium- to long-term EBITDA margins within our guided range of 11% to 13%.",
+     "method": "llm",
+     "call_date": "2026-10",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=77b6d277-0ffc-440d-ba8a-2bd9bc3dc43e.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=77b6d277-0ffc-440d-ba8a-2bd9bc3dc43e.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.75 from 0 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "TATAMOTORS": {
+   "as_of": "2026-10-15",
+   "fetched_at": "2026-11-01",
+   "method": "none",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": null,
+   "reliability": 0.675,
+   "margin_reliability": 0.675,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [],
+   "calls_parsed": 3,
+   "sources": [],
+   "notes": "Auto-extracted from 3 concall transcripts (no items); growth reliability 0.675 from 0 revenue/PAT promises, margin reliability 0.675 from 0 (prior 0.75, weight 2.0)."
+  },
+  "TECHNOE": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 25.0,
+   "guided_pat_margin": null,
+   "reliability": 0.81,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "margin_track_record_n": 0,
+   "track_record": [
+    {
+     "metric": "revenue_target",
+     "period_fy": 2026,
+     "guided": 3500.0,
+     "actual": 3252.0,
+     "ratio": 0.929,
+     "call_date": "2025-11",
+     "quote": "That is 40% of INR3,500 crores F '25 financial year 2026 targets.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 25.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "But we can definitely say the top line and bottom line of the company will grow by 25% at least.",
+     "method": "llm",
+     "call_date": "2026-08",
+     "source": "https://www.techno.co.in/public/uploads/2/2026-08/amsec_techno_electric_aug12_2026.pdf"
+    },
+    {
+     "metric": "pat_growth",
+     "value": 25.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "But we can definitely say the top line and bottom line of the company will grow by 25% at least.",
+     "method": "llm",
+     "call_date": "2026-08",
+     "source": "https://www.techno.co.in/public/uploads/2/2026-08/amsec_techno_electric_aug12_2026.pdf"
+    }
+   ],
+   "calls_parsed": 2,
+   "sources": [
+    "https://www.techno.co.in/public/uploads/2/2025-11/amsec_technoelectric_13nov_2025.pdf",
+    "https://www.techno.co.in/public/uploads/2/2026-08/amsec_techno_electric_aug12_2026.pdf"
+   ],
+   "notes": "Auto-extracted from 2 concall transcripts (llm); growth reliability 0.81 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "CDSL": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "none",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": null,
+   "reliability": 0.675,
+   "margin_reliability": 0.675,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [],
+   "calls_parsed": 3,
+   "sources": [],
+   "notes": "Auto-extracted from 3 concall transcripts (no items); growth reliability 0.675 from 0 revenue/PAT promises, margin reliability 0.675 from 0 (prior 0.75, weight 2.0)."
+  },
+  "SUZLON": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 50.0,
+   "guided_pat_margin": null,
+   "reliability": 0.798,
+   "margin_reliability": 0.75,
+   "track_record_n": 1,
+   "margin_track_record_n": 0,
+   "track_record": [
+    {
+     "metric": "revenue_growth",
+     "period_fy": 2026,
+     "guided": 60.0,
+     "actual": 53.65,
+     "ratio": 0.894,
+     "call_date": "2026-02",
+     "quote": "With strong performance in the first 9 months, we are firmly on track to achieve our FY '26 guidance of 60% Y-o-Y growth across key KPIs.",
+     "method": "llm"
+    }
+   ],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 50.0,
+     "period_fy": 2028,
+     "period_inferred": false,
+     "quote": "We also promised that our EPC order share in our order book, EPC share will keep increasing to 50% by FY '28.",
+     "method": "llm",
+     "call_date": "2026-06",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6ea0f24d-87ca-4c8e-99a7-9b795da08352.pdf"
+    },
+    {
+     "metric": "revenue_growth",
+     "value": 25.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Q1 FY27 is impacted due to the above factors and in the long term, we continue to grow in line with our ambitions set up for Suzlon 2.0 at 25% CAGR for the next 5 years.",
+     "method": "llm",
+     "call_date": "2026-08",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1cb76651-c386-473a-b1c2-a7deb717c0f3.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=01ca6133-c315-4b6e-8725-1a59120c9e63.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1cb76651-c386-473a-b1c2-a7deb717c0f3.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6ea0f24d-87ca-4c8e-99a7-9b795da08352.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.798 from 1 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "DRREDDY": {
+   "as_of": "2026-07-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": 0.1199,
+   "reliability": 0.75,
+   "margin_reliability": 0.75,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [
+    {
+     "metric": "ebitda_margin",
+     "value": 20.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Still I maintain what we discussed a few weeks ago, that we are in the neighbourhood of the 20% and likely to stay.",
+     "method": "llm",
+     "call_date": "2026-07",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=974a472a-c74c-4d8e-9572-168c04c00281.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=23b55ad8-a0ce-4573-b27a-d0d83f618ae5.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=974a472a-c74c-4d8e-9572-168c04c00281.pdf",
+    "https://www.drreddys.com/cms/sites/default/files/2026-05/DRL_Q4FY26EarningsCall%20Transcript_12May2026.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.75 from 0 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "SUNPHARMA": {
+   "as_of": "2026-08-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": 9.0,
+   "guided_pat_margin": null,
+   "reliability": 0.75,
+   "margin_reliability": 0.75,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [
+    {
+     "metric": "revenue_growth",
+     "value": 9.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Think we should stick on to the high single-digit growth for the full year.",
+     "method": "llm",
+     "call_date": "2026-08",
+     "source": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=34be7c92-1d9f-4010-ba30-2344c959bc5e.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=287022b2-8de5-487d-8d0d-77b819ee3eb4.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=293c1789-7308-4864-982a-192b016de087.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=34be7c92-1d9f-4010-ba30-2344c959bc5e.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.75 from 0 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
+  },
+  "TATAELXSI": {
+   "as_of": "2026-10-15",
+   "fetched_at": "2026-11-01",
+   "method": "llm",
+   "guided_rev_cagr": null,
+   "guided_pat_margin": 0.1813,
+   "reliability": 0.75,
+   "margin_reliability": 0.75,
+   "track_record_n": 0,
+   "margin_track_record_n": 0,
+   "track_record": [],
+   "current_guidance": [
+    {
+     "metric": "ebitda_margin",
+     "value": 27.0,
+     "period_fy": 2027,
+     "period_inferred": false,
+     "quote": "Having said that, of course, there could be a quarter where the margin can have a left or right shift depending upon some of the one-timers and other events. For example, if whenever in the quarter we have to do salary hikes, there could be an impact in those quarters for the margins. But overall, if we have to see in the mid to long- term, probably I think the idea is that if we can exit the next",
+     "method": "llm",
+     "call_date": "2026-04",
+     "source": "https://d1y69b020rytqm.cloudfront.net/PDF/Financial-Statements/April2026/TranscriptofEarningsCall31.03.2026.pdf"
+    }
+   ],
+   "calls_parsed": 3,
+   "sources": [
+    "https://d1y69b020rytqm.cloudfront.net/PDF/Financial-Statements/April2026/TranscriptofEarningsCall31.03.2026.pdf"
+   ],
+   "notes": "Auto-extracted from 3 concall transcripts (llm); growth reliability 0.75 from 0 revenue/PAT promises, margin reliability 0.75 from 0 (prior 0.75, weight 2.0)."
   }
  }
 }

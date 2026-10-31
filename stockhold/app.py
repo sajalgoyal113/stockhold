@@ -895,6 +895,11 @@ if "base_reason" not in val_res:
 if "bull_reason" not in val_res:
     val_res["bull_reason"] = calibrated.get("bull_reason", "Flawless execution, market share consolidation, and strong operational leverage")
 
+# Explicitly sync guidance metadata from calibrated
+for _gk in ["guided_rev_cagr", "guidance_status", "guidance_reliability", "guidance_quote", "guidance_as_of", "is_guidance_anchored", "ss_margin"]:
+    if calibrated.get(_gk) is not None:
+        val_res[_gk] = calibrated[_gk]
+
 forensic_res = run_forensic_audit(**forensic_inputs_from_data(data))
 
 # Normalize FCF for platform/expansion compounders

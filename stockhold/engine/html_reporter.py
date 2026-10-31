@@ -2139,6 +2139,42 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 | **Net Profit** | 100 | 150 | 220 | 290 |
 | **Operating Cash Flow** | 110 | 160 | 240 | 310 |"""
 
+    # Guidance vs First-Principles Bridge Formatting
+    g_cagr = val_res.get("guided_rev_cagr")
+    g_status = val_res.get("guidance_status") or "MISSING"
+    g_rel = val_res.get("guidance_reliability")
+    g_as_of = val_res.get("guidance_as_of")
+    g_pat_m = val_res.get("guided_pat_margin") or val_res.get("ss_margin")
+    is_guided = bool(val_res.get("is_guidance_anchored") or (g_cagr is not None and g_cagr > 0))
+
+    if is_guided and g_cagr is not None:
+        rel_str = f", Delivery Reliability {g_rel*100:.0f}%" if g_rel is not None else ""
+        as_of_str = f" ({g_as_of})" if g_as_of else ""
+        guidance_rev_text = f"🟢 Guided +{g_cagr:.1f}% Revenue CAGR{as_of_str}{rel_str}"
+        guidance_margin_text = f"Guided steady-state NPM: {g_pat_m*100:.1f}%" if g_pat_m else "Operating leverage reflected in target net margins"
+        guidance_pat_text = "Guided PAT growth trajectory"
+        rationale_rev_text = f"Anchor discounted from management guidance (Guided {g_cagr:.1f}% × Reliability {g_rel if g_rel else 1.0:.2f}) blended with demonstrated momentum"
+    elif g_status == "MARGIN ONLY" or (g_pat_m is not None and g_cagr is None):
+        guidance_rev_text = f"🟡 Margin Guidance Active ({g_pat_m*100:.1f}% target NPM). No numeric revenue CAGR given in concalls."
+        guidance_margin_text = f"Guided steady-state NPM: {g_pat_m*100:.1f}%"
+        guidance_pat_text = "First-Principles PAT Compounding"
+        rationale_rev_text = f"First-Principles Derivation: Top-line growth derived from audited 3-year historical velocity ({data.get('sales_growth_3yr', 0.0):.1f}%)"
+    elif "REVIEWED" in g_status or "none given" in str(val_res.get("guidance_method", "")).lower():
+        guidance_rev_text = "⚪ Qualitative Outlook Only (No quantitative numeric CAGR provided by management)"
+        guidance_margin_text = "Steady-state margin baseline"
+        guidance_pat_text = "First-Principles PAT Compounding"
+        rationale_rev_text = f"First-Principles Derivation: Anchor derived deterministically from audited 3-year sales velocity ({data.get('sales_growth_3yr', 0.0):.1f}%)"
+    elif "no-concalls" in str(val_res.get("guidance_method", "")).lower() or not data.get("concalls"):
+        guidance_rev_text = "⚪ No Concalls Hosted (Company does not host quarterly earnings calls)"
+        guidance_margin_text = "Steady-state margin baseline"
+        guidance_pat_text = "First-Principles PAT Compounding"
+        rationale_rev_text = f"First-Principles Derivation: Anchor derived deterministically from audited 3-year sales velocity ({data.get('sales_growth_3yr', 0.0):.1f}%)"
+    else:
+        guidance_rev_text = "⚪ First-Principles Derivation (No quantitative revenue CAGR on file in concall disclosures)"
+        guidance_margin_text = "Steady-state margin baseline"
+        guidance_pat_text = "First-Principles PAT Compounding"
+        rationale_rev_text = f"First-Principles Derivation: Forward compounding anchored to audited 3-year sales velocity ({data.get('sales_growth_3yr', 0.0):.1f}%) and PAT momentum"
+
     report_md = f"""```text
 ================================================================================
  VALUATION & EXPECTED TARGET PRICE SUMMARY (FROM LAST CLOSING PRICE)
@@ -2238,9 +2274,9 @@ def build_institutional_markdown_dossier(data: dict, val_res: dict, forensic_res
 
 | Metric / Parameter | Official Management Guidance | Our Proposed Research Projection | Delta & Operational Rationale / Haircut |
 | :--- | :--- | :--- | :--- |
-| **Revenue Growth** | {(f"Guided {val_res['guided_rev_cagr']:.1f}%" if val_res.get('guided_rev_cagr') is not None else f"No numeric revenue guidance ({val_res.get('guidance_status') or 'MISSING'})")} | Anchor: {val_res.get('anchor_cagr', 0.0)*100:.1f}%, Bear: {val_res.get('bear_cagr', 0.0)*100:.1f}%, Bull: {val_res.get('bull_cagr', 0.25)*100:.1f}% | Anchor = guidance x reliability blended with reported momentum |
-| **EBITDA / NPM Margin** | Guided margin expansion | Operating leverage reflected in target net margins | Scale density benefits |
-| **PAT Compounding** | Guided PAT trajectory | FY+2 Bear: ₹{val_res.get('eps_bear_yr2', 10.0)}, Expected: ₹{val_res.get('expected_eps_yr2', 10.0)}, Bull: ₹{val_res.get('eps_bull_yr2', 15.0)} | Compounded from rolling TTM EPS base of ₹{ttm_eps:.2f} |
+| **Revenue Growth** | {guidance_rev_text} | Anchor: {val_res.get('anchor_cagr', 0.0)*100:.1f}%, Bear: {val_res.get('bear_cagr', 0.0)*100:.1f}%, Bull: {val_res.get('bull_cagr', 0.25)*100:.1f}% | {rationale_rev_text} |
+| **EBITDA / NPM Margin** | {guidance_margin_text} | Operating leverage reflected in target net margins | Scale density benefits |
+| **PAT Compounding** | {guidance_pat_text} | FY+2 Bear: ₹{val_res.get('eps_bear_yr2', 10.0)}, Expected: ₹{val_res.get('expected_eps_yr2', 10.0)}, Bull: ₹{val_res.get('eps_bull_yr2', 15.0)} | Compounded from rolling TTM EPS base of ₹{ttm_eps:.2f} |
 | **Target Horizon** | 2-Year Planning Cycle | {val_res.get('regime', 'H2 Roll-Forward')} ({val_res.get('base_fy', 'FY26')} to {val_res.get('target_yr2_fy', 'FY28')}) | Multi-year roll-forward compounding |
 
 ---
